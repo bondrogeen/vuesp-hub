@@ -1,21 +1,57 @@
-import { app, BrowserWindow, Menu, Tray } from 'electron';
+import { app, BrowserWindow } from 'electron';
 import path from 'node:path';
 import started from 'electron-squirrel-startup';
 
-// Handle creating/removing shortcuts on Windows when installing/uninstalling.
+import { fileURLToPath } from 'url';
+import { createServer } from 'http';
+import { Server } from 'socket.io';
+import { setupSocket } from '../server/socket.mjs'
+import router from '../server/routes/index.mjs'
+
+
+const port = 3005
+
 if (started) {
   app.quit();
 }
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+let mainWindow;
+let httpServer;
+
+async function createExpress() {
+  const express = await import('express');
+  const app = express.default();
+
+  app.use(express.json());
+  app.use(express.static(path.join(__dirname, 'src/public')));
+
+  httpServer = createServer(app);
+  const io = new Server(httpServer);
+
+  app.use('/api/v1', router);
+  setupSocket(io);
+
+  httpServer.listen(port, () => {
+    console.log(`Server started on port ${port}`);
+  });
+}
+
 const createWindow = () => {
-  // Create the browser window.
   const mainWindow = new BrowserWindow({
     width: 800,
     height: 600,
+    icon: path.join(__dirname, "..", "favicon.ico"),
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
     },
   });
+
+  mainWindow.menuBarVisible = false
+
+  console.log(MAIN_WINDOW_VITE_DEV_SERVER_URL);
 
   // and load the index.html of the app.
   if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {
@@ -23,6 +59,8 @@ const createWindow = () => {
   } else {
     mainWindow.loadFile(path.join(__dirname, `../renderer/${MAIN_WINDOW_VITE_NAME}/index.html`));
   }
+
+  // mainWindow.loadURL(`http://localhost:${port}`);
 
   // Open the DevTools.
   mainWindow.webContents.openDevTools();
@@ -33,6 +71,7 @@ const createWindow = () => {
 // Some APIs can only be used after this event occurs.
 
 app.whenReady().then(() => {
+  createExpress();
   createWindow();
 
   // On OS X it's common to re-create a window in the app when the
@@ -49,6 +88,7 @@ app.whenReady().then(() => {
 // explicitly with Cmd + Q.
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
+    httpServer.close();
     app.quit();
   }
 });

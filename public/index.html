@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>WebSocket Demo</title>
+  </head>
+  <body>
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+      const socket = io();
+
+      socket.on("user:created", (user) => {
+        console.log("New user created:", user);
+      });
+
+      socket.on("user:updated", (user) => {
+        console.log("User updated:", user);
+      });
+
+      socket.on("user:deleted", (userId) => {
+        console.log("User deleted:", userId);
+      });
+    </script>
+  </body>
+</html>
