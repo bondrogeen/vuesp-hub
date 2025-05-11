@@ -19,5 +19,19 @@ declare module 'vue-router/auto-routes' {
    */
   export interface RouteNamedMap {
     '/': RouteRecordInfo<'/', '/', Record<never, never>, Record<never, never>>,
+    '/404': RouteRecordInfo<'/404', '/404', Record<never, never>, Record<never, never>>,
+    '/auth/login': RouteRecordInfo<'/auth/login', '/auth/login', Record<never, never>, Record<never, never>>,
+    '/auth/reset-password': RouteRecordInfo<'/auth/reset-password', '/auth/reset-password', Record<never, never>, Record<never, never>>,
+    '/auth/singup': RouteRecordInfo<'/auth/singup', '/auth/singup', Record<never, never>, Record<never, never>>,
+    '/auth/two-step-verification': RouteRecordInfo<'/auth/two-step-verification', '/auth/two-step-verification', Record<never, never>, Record<never, never>>,
+    '/device/[id]': RouteRecordInfo<'/device/[id]', '/device/:id', { id: ParamValue<true> }, { id: ParamValue<false> }>,
+    '/device/list/': RouteRecordInfo<'/device/list/', '/device/list', Record<never, never>, Record<never, never>>,
+    '/device/main': RouteRecordInfo<'/device/main', '/device/main', Record<never, never>, Record<never, never>>,
+    '/device/profile': RouteRecordInfo<'/device/profile', '/device/profile', Record<never, never>, Record<never, never>>,
+    '/kanban': RouteRecordInfo<'/kanban', '/kanban', Record<never, never>, Record<never, never>>,
+    '/media': RouteRecordInfo<'/media', '/media', Record<never, never>, Record<never, never>>,
+    '/saas': RouteRecordInfo<'/saas', '/saas', Record<never, never>, Record<never, never>>,
+    '/stocks': RouteRecordInfo<'/stocks', '/stocks', Record<never, never>, Record<never, never>>,
+    '/video': RouteRecordInfo<'/video', '/video', Record<never, never>, Record<never, never>>,
   }
 }

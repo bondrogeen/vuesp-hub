@@ -6,6 +6,6 @@ import vuespRoutes from './vuespRoutes';
 const router = new Router();
 
 router.use('/user', userRoutes);
-router.use('/vuesp', vuespRoutes);
+router.use('/device', vuespRoutes);
 
 export default router;

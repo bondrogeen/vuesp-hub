@@ -1,13 +1,17 @@
-// routes/userRoutes.js
 import { Router } from 'express';
-import { userController } from '../controllers/index.mjs';
+import { generalController } from '../controllers/index.mjs';
+import { storeModel } from '../models/index.mjs';
 
 const router = Router();
 
-router.get('/', userController.getAll);
-router.get('/:id', userController.getById);
-router.post('/', userController.create);
-router.put('/:id', userController.update);
-router.delete('/:id', userController.delete);
+const model = storeModel('user');
+const controller = generalController(model);
+
+
+router.get('/', controller.getAll);
+router.get('/:id', controller.getById);
+router.post('/', controller.create);
+router.put('/:id', controller.update);
+router.delete('/:id', controller.delete);
 
 export default router;

@@ -7,12 +7,12 @@ import { defineStore } from 'pinia';
 // const struct = new VuespStruct();
 
 export const useWebSocket = defineStore('websocket', {
-  // state: () => ({
-  //   socket: null,
-  //   pingClient: 5000,
-  //   pingDevice: 0,
-  //   struct: null,
-  // }),
+  state: () => ({
+    socket: null,
+    pingClient: 5000,
+    pingDevice: 0,
+    struct: null,
+  }),
   // actions: {
   //   async onStruct() {
   //     const res = await (await fetch(`/struct.json`, { method: 'GET' })).json();
@@ -63,7 +63,7 @@ export const useWebSocket = defineStore('websocket', {
   //     this.pingClient = Date.now();
   //   },
   // },
-  // getters: {
-  //   isConnect: state => state.pingClient - state.pingDevice < 10000,
-  // },
+  getters: {
+    isConnect: state => true,
+  },
 });

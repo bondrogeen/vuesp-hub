@@ -31,4 +31,4 @@
 import { useApp } from '../frontend/main.js'
 
 const app = useApp()
-console.log(app);
+

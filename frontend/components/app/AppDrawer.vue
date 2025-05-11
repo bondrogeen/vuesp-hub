@@ -4,11 +4,13 @@
     :class="[value ? 'translate-x-0' : '-translate-x-full', { 'fixed h-[100dvh]': position }]"
   >
     <div class="overflow-auto min-w-[360px] absolute h-full w-full border-r border-gray-300 dark:border-gray-700">
-      <div class="bg-blue-50 dark:bg-gray-800 flex justify-between p-4 ">
-        <button @click="changeTheme()">
-          <IconDark v-if="!theme" />
-          
-          <IconLight v-else />
+      <div class="bg-blue-50 dark:bg-gray-900 flex justify-between p-4">
+        <button
+          class="hover:text-dark-900 relative flex h-11 w-11 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white"
+          @click="changeTheme"
+        >
+          <IconDark class="hidden dark:block" />
+          <IconLight class="dark:hidden" />
         </button>
 
         <div @click="onClose">
@@ -32,11 +34,6 @@
 <script setup>
 import { defineProps, defineEmits, inject } from 'vue';
 
-import IconLogo from '@/components/icons/IconLogo';
-import IconClose from '@/components/icons/IconClose';
-import IconDark from '@/components/icons/IconDark';
-import IconLight from '@/components/icons/IconLight';
-
 const props = defineProps({
   value: { type: Boolean, default: false },
   position: { type: Boolean, default: true },
@@ -44,8 +41,8 @@ const props = defineProps({
 });
 
 const emit = defineEmits(['close']);
-const theme = inject('theme');
-const onClose = e => {
+
+const onClose = (e) => {
   if (props.value) {
     emit('close', e);
   }

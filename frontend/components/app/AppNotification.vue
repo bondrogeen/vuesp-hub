@@ -9,8 +9,6 @@
 <script setup>
 import { defineProps, defineEmits } from 'vue';
 
-import VNotification from '@/components/general/VNotification';
-
 defineProps({
   notifications: { type: Array, default: () => [] },
 });

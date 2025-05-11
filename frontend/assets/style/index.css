@@ -1,8 +1,15 @@
-@import "tailwindcss";
+@import 'tailwindcss';
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme static {
+  /* --color-primary: var(--color-red-500);
+  --color-secondary: var(--color-blue-500); */
+}
 
 @layer base {
   html {
-    font-family: "Roboto", sans-serif;
+    font-family: 'Roboto', sans-serif;
 
     @apply min-h-screen leading-[140%] text-base md:overflow-y-scroll;
   }

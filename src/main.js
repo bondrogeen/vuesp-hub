@@ -1,11 +1,15 @@
 import { app, BrowserWindow } from 'electron';
+import express from 'express';
+
 import path from 'node:path';
 import started from 'electron-squirrel-startup';
 
 import { fileURLToPath } from 'url';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
-import { setupSocket } from '../server/socket.mjs'
+
+import { socketDevice } from '../server/socketDevice.mjs'
+import { socketStream } from '../server/socketStream.mjs'
 import router from '../server/routes/index.mjs'
 
 
@@ -22,17 +26,20 @@ let mainWindow;
 let httpServer;
 
 async function createExpress() {
-  const express = await import('express');
-  const app = express.default();
+  // const express = await import('express');
+  const app = express();
 
   app.use(express.json());
   app.use(express.static(path.join(__dirname, 'src/public')));
 
   httpServer = createServer(app);
-  const io = new Server(httpServer);
+  const ioDevice = new Server(httpServer, { path: "/ws/device/", cors: { origin: "*", methods: ["GET", "POST"] } });
+  const ioStream = new Server(httpServer, { path: "/ws/stream/", cors: { origin: "*", methods: ["GET", "POST"] } });
 
   app.use('/api/v1', router);
-  setupSocket(io);
+  socketDevice(ioDevice);
+  socketStream(ioStream);
+
 
   httpServer.listen(port, () => {
     console.log(`Server started on port ${port}`);
@@ -41,8 +48,8 @@ async function createExpress() {
 
 const createWindow = () => {
   const mainWindow = new BrowserWindow({
-    width: 800,
-    height: 600,
+    width: 'max',
+    height: 'max',
     icon: path.join(__dirname, "..", "favicon.ico"),
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),

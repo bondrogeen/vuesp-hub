@@ -1,12 +1,17 @@
-// routes/userRoutes.js
 import { Router } from 'express';
-import { vuespController } from '../controllers/index.mjs';
+import { generalController } from '../controllers/index.mjs';
+import { storeModel } from '../models/index.mjs';
 
 const router = Router();
 
-router.get('/', vuespController.getAll);
-router.post('/', vuespController.create);
-router.put('/:id', vuespController.update);
-router.delete('/:id', vuespController.delete);
+const model = storeModel('device');
+const controller = generalController(model);
+
+
+router.get('/', controller.getAll);
+router.get('/:id', controller.getById);
+router.post('/', controller.create);
+router.put('/:id', controller.update);
+router.delete('/:id', controller.delete);
 
 export default router;

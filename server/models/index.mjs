@@ -1,4 +1,3 @@
-import vuespModel from './vuespModel';
-import userModel from './userModel';
+import storeModel from './storeModel';
 
-export { userModel, vuespModel };
+export { storeModel };
