@@ -1,3 +1,4 @@
 import generalController from './generalController';
+import vuespController from './vuespController';
 
-export { generalController };
+export { generalController, vuespController };

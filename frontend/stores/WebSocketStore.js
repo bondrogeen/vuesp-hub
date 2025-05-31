@@ -1,57 +1,59 @@
 import { defineStore } from 'pinia';
-import { useWebSocket } from '@/stores/WebSocket';
-import { useAppStore } from '@/stores/AppStore';
 
 export const useWebSocketStore = defineStore('websocketstore', {
   state: () => ({
+    socket: null,
     info: {},
-    progress: {},
-    scanList: [],
-    fileList: [],
-    path: ['root'],
-    settings: {},
-    gpio: {},
-    unknown: {},
-    device: {},
-    dallas: {},
+    connection: {},
+    devices: {},
   }),
   actions: {
-    SET_INFO(info) {
-      this.info = info;
+    onData({ event, data, id, device }) {
+      if (event === 'ping') {
+        this.connection[id] = Date.now()
+      }
+      if (event === 'info') {
+        this.devices[id] = {}
+      }
+      if (!this.devices?.[id]) {
+        this.devices[id]['info'] = device
+      }
+      console.log(data);
     },
-    SET_SCAN(data) {
-      this.scanList = [...this.scanList, data];
+
+    sendDevice({ ip, name, comm, data }) {
+      console.log(ip, name, comm, data);
+
+      this.socket.emit('device:send', { ip, name, comm, data }, (response) => {
+        console.log('sendDevice:', response);
+      });
     },
-    SET_FILES(data) {
-      this.fileList = [...this.fileList, data];
+
+    sendDeviceAll({ comm, data }) {
+      this.socket.emit('device:sendAll', { comm, data }, (response) => {
+        console.log('sendDevice:', response);
+      });
     },
-    SET_SETTINGS(value) {
-      this.settings = value;
+
+    startService() {
+      this.socket.emit('service:start', {}, (response) => {
+        console.log('Start response:', response);
+      });
     },
-    SET_PROGRESS(value) {
-      const app = useAppStore();
-      app.setNotification({ id: 1, text: 'Progress...', timeout: 60, ...value, });
-      this.progress = value;
+
+    stopService() {
+      this.socket.emit('service:stop', {}, (response) => {
+        console.log('Stop response:', response);
+      });
     },
-    SET_PORT(value) {
-      this.gpio[value.gpio] = value;
-    },
-    SET_DEVICE(value) {
-      this.device = value;
-    },
-    SET_DALLAS(data) {
-      const name = (data.address || []).map(i => i < 15 ? `0${i.toString(16)}` : i.toString(16)).join('')
-      this.dallas[name] = data
-    },
-    SET_UNKNOWN({ object, key }) {
-      this.unknown[key] = object;
-    },
-    onSend(comm, data) {
-      const store = useWebSocket();
-      store.onSend(comm, data);
-    },
+
+    statusService() {
+      this.socket.emit('service:get-status', {}, (response) => {
+        console.log(response);
+      });
+    }
   },
   getters: {
-    isConnect: () => useWebSocket()?.isConnect || false,
+    // isConnect: () => useWebSocket()?.isConnect || false,
   },
 });

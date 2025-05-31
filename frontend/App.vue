@@ -8,7 +8,9 @@
 import { useRoute } from 'vue-router';
 import { computed, onMounted } from 'vue';
 import { useAppStore } from '@/stores/AppStore';
+import { useWebSocketStore } from '@/stores/WebSocketStore';
 import { io } from 'socket.io-client';
+import { storeToRefs } from 'pinia';
 
 import LayoutEmpty from '@/layouts/LayoutEmpty.vue';
 import LayoutMain from '@/layouts/LayoutMain.vue';
@@ -20,54 +22,38 @@ const layouts = { LayoutEmpty, LayoutMain };
 const layout = computed(() => layouts[route?.meta?.layout]);
 
 const appStore = useAppStore();
+const webSocketStore = useWebSocketStore();
 
-let socket = null;
+const { socket } = storeToRefs(webSocketStore);
 
 const init = () => {
-  socket = io({ transports: ['websocket'], path: '/ws/device' });
-  socket.on('connect', () => {
+  socket.value = io({ transports: ['websocket'], path: '/ws/device' });
+  socket.value.on('connect', () => {
     console.log('connect');
   });
 
-  socket.on('broadcast', msg => {
+  socket.value.on('broadcast', (msg) => {
     console.log(msg);
   });
 
-  // Обработчики событий
-  socket.on('service:status', data => {
+  socket.value.on('service:status', (data) => {
     console.log(data);
   });
 
-  socket.on('service:log', log => {
-    console.log(log);
+  socket.value.on('device:data', (data) => {
+    webSocketStore.onData(data);
   });
 
-  socket.on('service:error', error => {
+  socket.value.on('service:error', (error) => {
     console.log(error);
-  });
-
-  // Запрос статуса при загрузке
-  socket.emit('service:get-status', {}, response => {
-    console.log(response);
   });
 };
 // Методы управления
-function startService() {
-  socket.emit('service:start', {}, response => {
-    console.log('Start response:', response);
-  });
-}
-
-function stopService() {
-  socket.emit('service:stop', {}, response => {
-    console.log('Stop response:', response);
-  });
-}
 
 onMounted(() => {
   appStore.init();
   init();
-  startService();
+  webSocketStore.startService();
 });
 </script>
 

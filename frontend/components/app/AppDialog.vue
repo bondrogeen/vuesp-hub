@@ -1,6 +1,14 @@
 <template>
-  <transition name="slide">
-    <div v-if="value" class="z-20 fixed top-0 h-[100dvh] w-full left-0 flex flex-col" @wheel.stop>
+  <transition
+    name="slide"
+    enter-active-class="duration-300 ease-out"
+    enter-from-class="transform opacity-0"
+    enter-to-class="opacity-100"
+    leave-active-class="duration-200 ease-in"
+    leave-from-class="opacity-100"
+    leave-to-class="transform opacity-0"
+  >
+    <div v-if="show" class="z-20 fixed top-0 h-[100dvh] w-full left-0 flex flex-col" @wheel.stop>
       <div class="absolute h-full w-full top-0 left-0 bg-gray-900/70" @click="onClose"></div>
 
       <div class="flex-auto flex align-center p-4">
@@ -33,7 +41,7 @@
 </template>
 
 <script setup lang="ts">
-import { defineProps, defineEmits, computed } from 'vue';
+import { ref, defineProps, defineEmits, computed, onMounted } from 'vue';
 
 interface Props {
   value?: boolean;
@@ -50,6 +58,8 @@ const emit = defineEmits<{
   (e: 'close', value: Event): void;
 }>();
 
+const show = ref(false);
+
 const sizes: { [index: string]: string } = { sm: 'max-w-[330px]', md: 'max-w-[600px]', lg: 'max-w-[960px]' };
 
 const getClass = computed(() => [`${sizes?.[size] || ''}`]);
@@ -60,4 +70,9 @@ const onButton = (e: Event) => {
   if (callback) callback();
   onClose(e);
 };
+onMounted(() => {
+  setTimeout(() => {
+    show.value = true;
+  }, 100);
+});
 </script>

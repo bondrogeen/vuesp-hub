@@ -2,9 +2,12 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
-@theme static {
-  /* --color-primary: var(--color-red-500);
-  --color-secondary: var(--color-blue-500); */
+@source inline("dark:{flex,hidden}");
+
+@theme {
+  --color-primary: #24c0eb;
+  --color-secondary: #66d3f1;
+  --color-bermuda: #78dcca;
 }
 
 @layer base {
@@ -14,7 +17,7 @@
     @apply min-h-screen leading-[140%] text-base md:overflow-y-scroll;
   }
   body {
-    @apply min-h-screen min-w-[360px] text-gray-900 bg-white dark:bg-gray-900 dark:text-white;
+    @apply min-h-screen min-w-[320px] text-gray-900 bg-gray-50 dark:bg-gray-900 dark:text-white;
   }
   input {
     outline: none;

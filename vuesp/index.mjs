@@ -55,11 +55,18 @@ class VuespDevices extends EventEmitter {
     }
   }
 
-  onSend(find, data) {
-    const device = this.#devices.find(item => {
-      return item.name === find || item.ip === find;
+  onSend(find, comm, data) {
+    const device = this.#devices.find(device => device.name === find || device.ip === find);
+    if (device) {
+      return device.send(comm, data);
+    }
+    return false
+  }
+  onSendAll(comm, data) {
+    const device = this.#devices.forEach(device => {
+      device.send(comm, data);
     });
-    if (device) device.send(data);
+    return false
   }
 }
 

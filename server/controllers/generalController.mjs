@@ -19,7 +19,6 @@ export default (model) => ({
     async create(req, res) {
         try {
             const newUser = await model.create(req.body);
-            // io.emit('user:created', newUser);
             res.status(201).json(newUser);
         } catch (error) {
             res.status(400).json({ error: error.message });
@@ -29,7 +28,6 @@ export default (model) => ({
         try {
             const updatedUser = await model.update(Number(req.params.id), req.body);
             if (updatedUser) {
-                // io.emit('user:updated', updatedUser);
                 res.json(updatedUser);
             } else {
                 res.status(404).json({ error: 'Not found' });

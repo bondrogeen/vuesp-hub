@@ -1,15 +1,9 @@
 
 import { VuespDevices } from '../vuesp/index.mjs';
 
-const devices = [
-    {
-        ip: '192.0.2.46',
-        username: 'admin',
-        password: 'admin',
-    },
-];
+import Store from 'electron-store';
+const store = new Store();
 
-let serviceProcess = null;
 let isServiceRunning = false;
 
 export const socketDevice = (io) => {
@@ -20,20 +14,15 @@ export const socketDevice = (io) => {
         console.log('Client connected');
 
         socket.on('service:start', (data, callback) => {
-            console.log('service:start');
-
             if (isServiceRunning) {
                 return callback({ status: 'error', message: 'Service already running' });
             }
-
             try {
+                const devices = store.get('device') || []
                 vuespDevices = new VuespDevices(devices);
-
                 vuespDevices.on('*', payload => {
-                    // console.log(payload);
-                    io.emit('service:log', payload);
+                    io.emit('device:data', payload);
                 });
-
                 vuespDevices.connection();
 
                 isServiceRunning = true;
@@ -44,15 +33,28 @@ export const socketDevice = (io) => {
             }
         });
 
-        // Остановка сервиса
+        socket.on('device:send', ({ ip, name, comm, data }, callback) => {
+            if (!isServiceRunning) {
+                return callback({ status: 'error', message: 'Service not running' });
+            }
+            console.log({ ip, name, comm, data });
+            if (!(ip || name), !comm) return callback({ status: 'failed', message: '!(ip || name), !comm' });
+
+            try {
+                console.log('vuespDevices.onSend');
+                vuespDevices.onSend(ip || name, comm, data);
+                // callback({ status: 'success', message: 'Service started' });
+            } catch (error) {
+                callback({ status: 'error', message: 'Start failed' });
+            }
+        });
+
         socket.on('service:stop', (data, callback) => {
             if (!isServiceRunning) {
                 return callback({ status: 'error', message: 'Service not running' });
             }
-
             try {
                 vuespDevices.disconnection();
-
                 isServiceRunning = false;
                 io.emit('service:status', { running: false });
                 callback({ status: 'success', message: 'Service stopped' });
@@ -61,7 +63,6 @@ export const socketDevice = (io) => {
             }
         });
 
-        // Запрос статуса
         socket.on('service:get-status', (data, callback) => {
             callback({ running: isServiceRunning });
         });

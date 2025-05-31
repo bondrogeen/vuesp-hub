@@ -1,7 +1,7 @@
 <template>
   <aside
     :class="sidebarToggle ? 'translate-x-0 lg:w-[90px]' : '-translate-x-full'"
-    class="sidebar fixed top-0 left-0 z-9999 flex h-screen w-[290px] flex-col overflow-y-auto border-r border-gray-200 px-5 transition-all duration-300 lg:static lg:translate-x-0 dark:border-gray-800 bg-blue-50 dark:bg-gray-900 -translate-x-full"
+    class="sidebar fixed top-0 left-0 z-9 flex h-screen w-[290px] flex-col overflow-y-auto border-r border-gray-200 px-5 transition-all duration-300 lg:static lg:translate-x-0 dark:border-gray-800 bg-blue-50 dark:bg-gray-900 -translate-x-full"
     @mouseenter="onHover(true)"
     @mouseleave="onHover(false)"
   >

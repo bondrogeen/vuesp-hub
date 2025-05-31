@@ -39,9 +39,18 @@ class Device extends EventEmitter {
     this.#reconnectTime = reconnectTime;
   }
 
+  get ip() {
+    return this.#ip;
+  }
+
+  get name() {
+    return this.#name;
+  }
+
   async onInit() {
     try {
       const { data } = await this.#fetch.get({ url: `http://${this.#ip}/struct.json` });
+
       this.#struct.init(data);
       this.#onEvent('init', true);
       this.send('INFO');
@@ -150,10 +159,8 @@ class Device extends EventEmitter {
         this.#ws.send(buffer);
         return true;
       }
-      return false;
-    } else {
-      return false;
     }
+    return false;
   }
 }
 

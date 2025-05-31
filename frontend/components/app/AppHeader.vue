@@ -48,10 +48,9 @@
         <div class="flex-auto"></div>
 
         <div class="flex gap-4">
-          <VButton type="icon" color="gray" class="hidden md:flex" @click="onChangeTheme">
-            <IconDark class="hidden dark:block" />
-            <IconLight class="dark:hidden" />
-          </VButton>
+          <v-button type="icon" color="gray" class="hidden md:flex" @click="onChangeTheme">
+            <IconTheme />
+          </v-button>
 
           <VButton
             type="icon"
@@ -74,22 +73,20 @@
         </div>
 
         <div class="md:hidden flex gap-4">
-          <VDropdown left="unset" right="0" top="0">
-            <template #activator="{ on }">
-              <VButton type="icon" color="gray" class="flex" @click="on.click()">
-                <IconDots />
-              </VButton>
-            </template>
+          <div class="md:hidden flex gap-4">
+            <v-dropdown left="unset" right="0" top="0">
+              <template #activator="{ on }">
+                <v-button type="icon" color="gray" class="flex" @click="on.click()">
+                  <icon-dots />
+                </v-button>
+              </template>
 
-            <VList v-slot="{ item }" :list="listMenu" @click="onMenu">
-              <IconLogout v-if="item.icon === 'logout'" class="h-4"></IconLogout>
-
-              <IconDark v-if="item.icon === 'theme'" class="hidden dark:block" />
-              <IconLight v-if="item.icon === 'theme'" class="dark:hidden" />
-
-              <span class="ms-2">{{ item.name }}</span>
-            </VList>
-          </VDropdown>
+              <v-list v-slot="{ item }" :list="listMenu" @click="onMenu">
+                <component :is="item.icon"></component>
+                <span class="ms-2">{{ item.name }}</span>
+              </v-list>
+            </v-dropdown>
+          </div>
         </div>
       </div>
     </div>

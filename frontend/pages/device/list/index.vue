@@ -1,83 +1,52 @@
 <template>
   <main class="flex-auto max-w-(--breakpoint-2xl) p-4 md:p-6">
-    <VBreadcrumb :items="[{ name: 'Device', path: '/' }, { name: 'List' }]" />
+    <!-- <VBreadcrumb :items="[{ name: 'Device', path: '/' }, { name: 'List' }]" /> -->
 
-    <VCardGray title="All">
+    <VCardGray title="Devices">
       <template #header>
         <div class="flex flex-col gap-3 sm:flex-row">
-          <VButton type="" @click="onAdd">
-            <IconPlus></IconPlus>
+          <VButton type="icon" @click="onScan">
+            <IconSearch></IconSearch>
+          </VButton>
+          <VButton type="icon" @click="rebootService">
+            <IconUpdate></IconUpdate>
           </VButton>
         </div>
       </template>
-      <table class="min-w-full">
-        <thead class="border-y border-gray-100 py-3 dark:border-gray-800">
-          <tr>
-            <th class="py-3 font-normal whitespace-nowrap">
-              <div class="flex items-center">
-                <p class="text-theme-sm text-gray-500 dark:text-gray-400">Name</p>
-              </div>
-            </th>
-            <th class="py-3 font-normal whitespace-nowrap">
-              <div class="flex items-center">
-                <p class="text-theme-sm text-gray-500 dark:text-gray-400">IP</p>
-              </div>
-            </th>
-            <th class="py-3 font-normal whitespace-nowrap">
-              <div class="flex items-center">
-                <p class="text-theme-sm text-gray-500 dark:text-gray-400">Status</p>
-              </div>
-            </th>
-          </tr>
-        </thead>
-        <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
-          <tr v-for="{ name, id, ip, surname } of items" :key="id">
-            <td class="py-3 whitespace-nowrap">
-              <div class="col-span-3 flex items-center">
-                <div class="flex items-center gap-3">
-                  <div class="h-8 w-8">
-                    <img src="@/assets/images/product-01.jpg" alt="brand" />
-                  </div>
 
-                  <div>
-                    <span class="text-theme-sm block font-medium text-gray-700 dark:text-gray-400">{{ name }}</span>
-                  </div>
-                </div>
-              </div>
-            </td>
-            <td class="py-3 whitespace-nowrap">
-              <div class="flex items-center">
-                <p class="text-theme-sm text-gray-700 dark:text-gray-400">{{ ip }}</p>
-              </div>
-            </td>
-            <td class="py-3 whitespace-nowrap">
-              <div class="flex items-center">
-                <p class="text-theme-sm text-gray-700 dark:text-gray-400">{{ surname }}</p>
-              </div>
-            </td>
+      <VTablet :headers="headers" :items="items" @click="addDevice">
+        <template #header="{ item }">
+          {{ item.name }}
+        </template>
 
-            <td class="py-3 whitespace-nowrap">
-              <div class="flex items-center justify-center">
-                <VDropdown right="0" left="unset" top="0">
-                  <template #activator="{ on }">
-                    <VButton type="" @click="on.click">
-                      <IconDots class="rotate-90"></IconDots>
-                    </VButton>
-                  </template>
+        <template #status="{ item }">
+          <div class="w-1 h-5 bg-green-500 rounded-full"></div>
+          {{ getStatus(item) }}
+        </template>
 
-                  <VList :list="listMenu" @click="onMenu"></VList>
-                </VDropdown>
-              </div>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+        <template #ip="{ item }">
+          <a :href="`http://${item.ip}`" target="_blank" @click.stop="">{{ item.ip }}</a>
+        </template>
+
+        <template #action="{ item }">
+          <div class="flex-auto flex justify-end">
+            <v-dropdown left="unset" right="0" top="0">
+              <template #activator="{ on }">
+                <v-button type="icon" color="gray" class="flex" @click.stop="on.click()">
+                  <icon-dots />
+                </v-button>
+              </template>
+
+              <v-list :list="listMenu" @click="onMenu($event, item)" />
+            </v-dropdown>
+          </div>
+        </template>
+      </VTablet>
     </VCardGray>
-
-    <AppDialog title="SCAN" size="sm" :value="showDialog" @close="onClose">
-      <template #footer>
-        <VButton color="blue" @click="onAdd()">Save</VButton>
-      </template>
+    {{ devices }}
+    {{ connection }}
+    <AppDialog v-if="showDialog" title="Add device" size="sm" @close="onClose">
+      <DialogAddDevice :device="device" :scan="onScan" @add="onAddDevice" />
     </AppDialog>
   </main>
 </template>
@@ -85,58 +54,126 @@
 <script setup lang="ts">
 import type { Ref } from 'vue';
 import { onMounted, ref } from 'vue';
+import { storeToRefs } from 'pinia';
 
 import { api } from '@/utils/helpers.ts';
 
 import AppDialog from '@/components/app/AppDialog.vue';
+import VTablet from '@/components/VTablet.vue';
+
+import DialogAddDevice from '@/components/device/DialogAddDevice.vue';
+
+import { useWebSocketStore } from '@/stores/WebSocketStore';
+
+const webSocketStore = useWebSocketStore();
+
+const { connection, devices } = storeToRefs(webSocketStore);
 
 interface TypeDevice {
   id: number;
   name: string;
   ip: string;
 }
+
+interface TypeMenu {
+  name: string;
+  icon: string;
+  type: number;
+}
+
+const enum EnumMenu {
+  REMOVE = 1,
+  VIEW = 2,
+}
+
+const headers = [
+  { key: 'status', name: 'Status', className: 'w-15' },
+  { key: 'name', name: 'Name', className: 'w-40' },
+  { key: 'ip', name: 'IP', className: 'w-40' },
+  { key: 'deviceId', name: 'ID', className: 'w-40' },
+  // { key: 'password', name: 'Password', className: 'w-40' },
+  { key: 'action', name: '', className: 'w-40' },
+];
+
+const device: Ref<TypeDevice> = ref({
+  id: 0,
+  name: '',
+  ip: '',
+});
+
 const items: Ref<TypeDevice[]> = ref([]);
 
 const listMenu = [
-  { name: 'View', icon: 'IconDots' },
-  { name: 'Delete', icon: 'IconDots' },
+  { name: 'Delete', type: EnumMenu.REMOVE },
+  { name: 'View', type: EnumMenu.VIEW },
 ];
-
-const onMenu = (e: any) => {
-  console.log(e);
-};
 
 const showDialog = ref(false);
 
-const onAdd = () => {
+const getStatus = (device) => {
+  console.log(device);
+};
+
+const addDevice = ({ item }) => {
+  // const { name, ip } = item;
+  device.value = item;
   showDialog.value = true;
 };
+
 const onClose = () => {
   showDialog.value = false;
 };
 
-onMounted(async () => {
-  // let user = {
-  //   name: 'John',
-  //   surname: 'Smith',
-  // };
+const onScan = async () => {
+  const res = await api.get('/device/scan/');
+  const devices = items.value.map((i) => i.ip);
+  items.value = res.filter((i: string) => !devices.includes(i));
+};
 
-  // let response = await fetch('/api/v1/device/', {
-  //   method: 'POST',
-  //   headers: {
-  //     'Content-Type': 'application/json;charset=utf-8',
-  //   },
-  //   body: JSON.stringify(user),
-  // });
-
-  // let result = await response.json();
+const onRemoveDevice = async ({ id }: TypeDevice) => {
   try {
-    // let response = await api.delete('/device/4/');
-
-    items.value = await api.get('/device/');
-    // items.value = await api.get('/device/2/');
+    let res = await api.delete(`/device/${id}/`);
+    items.value = items.value.filter((i) => i.id !== id);
+    return res;
   } catch (error) {
-    console.log(error);
+    console.error(error);
   }
+};
+
+const onAddDevice = async (device: TypeDevice) => {
+  try {
+    await api.post('/device/', { body: JSON.stringify(device) });
+    await getAllDevices();
+    onClose();
+  } catch (error) {
+    console.error(error);
+  }
+};
+
+const getAllDevices = async () => {
+  try {
+    items.value = await api.get('/device/');
+  } catch (error) {
+    console.error(error);
+  }
+};
+
+const onMenu = (e: TypeMenu, device: TypeDevice) => {
+  if (e.type === EnumMenu.REMOVE) {
+    onRemoveDevice(device);
+  }
+};
+
+const rebootService = async () => {
+  await webSocketStore.stopService();
+  await webSocketStore.startService();
+};
+
+onMounted(async () => {
+  await getAllDevices();
+
+  setTimeout(() => {
+    webSocketStore.sendDevice({ ip: '192.0.2.132', comm: 'INFO' });
+  }, 3000);
 });
 </script>
