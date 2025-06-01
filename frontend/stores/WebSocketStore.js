@@ -8,17 +8,16 @@ export const useWebSocketStore = defineStore('websocketstore', {
     devices: {},
   }),
   actions: {
-    onData({ event, data, id, device }) {
+    onData({ event, data, id, key }) {
+      console.log(event, data, id, key);
       if (event === 'ping') {
         this.connection[id] = Date.now()
       }
-      if (event === 'info') {
+      if (!this.devices?.[id]) {
         this.devices[id] = {}
       }
-      if (!this.devices?.[id]) {
-        this.devices[id]['info'] = device
-      }
-      console.log(data);
+      this.devices[id][key] = data
+      // console.log(data);
     },
 
     sendDevice({ ip, name, comm, data }) {

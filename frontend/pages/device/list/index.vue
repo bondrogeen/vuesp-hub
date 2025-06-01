@@ -14,14 +14,13 @@
         </div>
       </template>
 
-      <VTablet :headers="headers" :items="items" @click="addDevice">
+      <VTable :headers="headers" :items="items" @click="addDevice">
         <template #header="{ item }">
           {{ item.name }}
         </template>
 
         <template #status="{ item }">
-          <div class="w-1 h-5 bg-green-500 rounded-full"></div>
-          {{ getStatus(item) }}
+          <div class="w-1 h-5 rounded-full" :class="getStatus(item, devices)"></div>
         </template>
 
         <template #ip="{ item }">
@@ -41,7 +40,7 @@
             </v-dropdown>
           </div>
         </template>
-      </VTablet>
+      </VTable>
     </VCardGray>
     {{ devices }}
     {{ connection }}
@@ -59,7 +58,6 @@ import { storeToRefs } from 'pinia';
 import { api } from '@/utils/helpers.ts';
 
 import AppDialog from '@/components/app/AppDialog.vue';
-import VTablet from '@/components/VTablet.vue';
 
 import DialogAddDevice from '@/components/device/DialogAddDevice.vue';
 
@@ -110,8 +108,15 @@ const listMenu = [
 
 const showDialog = ref(false);
 
-const getStatus = (device) => {
-  console.log(device);
+const getStatus = ({ deviceId }, devices) => {
+  if (!devices?.[deviceId]) {
+    return 'bg-gray-500';
+  }
+  if (devices?.[deviceId]?.PING?.delta > 5000) {
+    return 'bg-red-500';
+  } else {
+    return 'bg-green-500';
+  }
 };
 
 const addDevice = ({ item }) => {
@@ -172,8 +177,6 @@ const rebootService = async () => {
 onMounted(async () => {
   await getAllDevices();
 
-  setTimeout(() => {
-    webSocketStore.sendDevice({ ip: '192.0.2.132', comm: 'INFO' });
-  }, 3000);
+  webSocketStore.sendDevice({ ip: '192.0.2.132', comm: 'INFO' });
 });
 </script>

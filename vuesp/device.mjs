@@ -9,6 +9,7 @@ const fetch = digestAuth => ({
 });
 
 class Device extends EventEmitter {
+  #id;
   #ip;
   #ws;
   #time;
@@ -21,6 +22,7 @@ class Device extends EventEmitter {
   #interval;
   #isConnect;
   #reconnectTime;
+  #menu;
 
   constructor({ name = '', ip, username = '', password = '', options = {}, reconnectTime = 15000 }) {
     if (!ip) throw new TypeError("'ip' is required!");
@@ -47,6 +49,16 @@ class Device extends EventEmitter {
     return this.#name;
   }
 
+  get menu() {
+    return this.#menu;
+  }
+
+  get id() {
+    const device = this.getInfo();
+    const id = device?.id || -1;
+    return id
+  }
+
   async onInit() {
     try {
       const { data } = await this.#fetch.get({ url: `http://${this.#ip}/struct.json` });
@@ -60,6 +72,20 @@ class Device extends EventEmitter {
     }
   }
 
+  async onMenu() {
+    try {
+      const { data } = await this.#fetch.get({ url: `http://${this.#ip}/menu.json` });
+      this.#menu = data || []
+    } catch (error) {
+      this.#onEvent('error', error);
+      console.warn(error);
+    }
+  }
+
+  get fetch() {
+    return this.#fetch
+  }
+
   getInfo() {
     const info = this.#state?.INFO || {};
     return { ...info, name: this.#name, ip: this.#ip, time: this.#time };
@@ -68,22 +94,23 @@ class Device extends EventEmitter {
   #onEvent(event, data) {
     const device = this.getInfo();
     const id = device?.id || 0;
-    const payload = { event, data, device, id: id.toString(16) };
+    const payload = { event, ...data, id: this.id };
     this.emit(event, payload);
     this.emit('*', payload);
   }
 
   #onPing() {
     const delta = new Date().getTime() - this.#time;
-    this.#onEvent('ping', delta);
+    this.#onEvent('ping', { key: 'PING', data: { delta } });
     this.#isConnect = delta < this.#reconnectTime;
     // console.log(delta);
     if (delta > this.#reconnectTime) this.#onReconnect();
   }
 
-  #onOpen(e) {
+  async #onOpen(e) {
     this.#isConnect = true;
-    this.onInit();
+    await this.onInit();
+    await this.onMenu();
     this.#onEvent('open', e);
   }
 
@@ -96,7 +123,7 @@ class Device extends EventEmitter {
         const { object, key } = data;
         if (key === 'PING') return;
         this.#state[key] = object;
-        this.#onEvent('message', { object, key });
+        this.#onEvent('message', { data: object, key });
       }
     }
   }

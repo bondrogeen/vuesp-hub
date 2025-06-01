@@ -1,8 +1,6 @@
 <template>
-  <div>
-    {{ device }}
-
-    <form class="flex flex-col gap-6" action="#" @submit.prevent="">
+  <div class="pt-4">
+    <form class="flex flex-col" action="#" @submit.prevent="">
       <VTextField v-model="v.name.value" label="Name" :message="getError('name')" @blur="v.name.blur" />
 
       <VTextField v-model="v.ip.value" label="IP" :message="getError('ip')" @blur="v.ip.blur" />
@@ -10,6 +8,8 @@
       <VTextField v-model="v.username.value" label="Login" :message="getError('username')" @blur="v.username.blur" />
 
       <VTextField v-model="v.password.value" label="Password" :message="getError('password')" @blur="v.password.blur" />
+
+      <VTextField v-model="v.deviceId.value" label="DeviceId" disabled />
 
       <VButton color="blue" :disabled="invalid" @click="onAdd">Add</VButton>
     </form>
