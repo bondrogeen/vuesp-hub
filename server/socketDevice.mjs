@@ -43,7 +43,34 @@ export const socketDevice = (io) => {
             try {
                 console.log('vuespDevices.onSend');
                 vuespDevices.onSend(ip || name, comm, data);
+            } catch (error) {
+                callback({ status: 'error', message: 'Start failed' });
+            }
+        });
+
+        socket.on('device:sendAll', ({ comm, data }, callback) => {
+            if (!isServiceRunning) {
+                return callback({ status: 'error', message: 'Service not running' });
+            }
+            console.log({ comm, data });
+            if (!comm) return callback({ status: 'failed', message: '!comm' });
+
+            try {
+                console.log('vuespDevices.sendAll');
+                vuespDevices.onSendAll(comm, data);
                 // callback({ status: 'success', message: 'Service started' });
+            } catch (error) {
+                callback({ status: 'error', message: 'Start failed' });
+            }
+        });
+
+        socket.on('device:menus', (_, callback) => {
+            try {
+                if (!isServiceRunning) {
+                    return callback({ status: 'error', message: 'Service not running' });
+                }
+                const menus = vuespDevices.getMenu();
+                callback({ status: 'success', menus });
             } catch (error) {
                 callback({ status: 'error', message: 'Start failed' });
             }

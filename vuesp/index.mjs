@@ -55,6 +55,14 @@ class VuespDevices extends EventEmitter {
     }
   }
 
+  getMenu() {
+    const menu = []
+    this.#devices.forEach(device => {
+      menu.push({ id: device.id, ip: device.ip, name: device.name, menu: device.menu })
+    });
+    return menu
+  }
+
   onSend(find, comm, data) {
     const device = this.#devices.find(device => device.name === find || device.ip === find);
     if (device) {
@@ -63,7 +71,7 @@ class VuespDevices extends EventEmitter {
     return false
   }
   onSendAll(comm, data) {
-    const device = this.#devices.forEach(device => {
+    this.#devices.forEach(device => {
       device.send(comm, data);
     });
     return false

@@ -30,6 +30,7 @@ const init = () => {
   socket.value = io({ transports: ['websocket'], path: '/ws/device' });
   socket.value.on('connect', () => {
     console.log('connect');
+    webSocketStore.getMenus();
   });
 
   socket.value.on('broadcast', (msg) => {
@@ -48,7 +49,6 @@ const init = () => {
     console.log(error);
   });
 };
-// Методы управления
 
 onMounted(() => {
   appStore.init();

@@ -4,15 +4,12 @@ export const useWebSocketStore = defineStore('websocketstore', {
   state: () => ({
     socket: null,
     info: {},
-    connection: {},
     devices: {},
+    menus: [],
   }),
   actions: {
     onData({ event, data, id, key }) {
       console.log(event, data, id, key);
-      if (event === 'ping') {
-        this.connection[id] = Date.now()
-      }
       if (!this.devices?.[id]) {
         this.devices[id] = {}
       }
@@ -31,6 +28,13 @@ export const useWebSocketStore = defineStore('websocketstore', {
     sendDeviceAll({ comm, data }) {
       this.socket.emit('device:sendAll', { comm, data }, (response) => {
         console.log('sendDevice:', response);
+      });
+    },
+    getMenus() {
+      this.socket.emit('device:menus', {}, ({ status, menus }) => {
+        if (status === 'success') {
+          this.menus = menus
+        }
       });
     },
 

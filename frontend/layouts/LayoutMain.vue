@@ -3,7 +3,7 @@
     <AppDialog v-if="dialog.value" v-bind="dialog" @close="dialog = {}" />
 
     <div class="flex h-screen overflow-hidden">
-      <AppAside :menu="menu" :sidebarToggle="sidebarToggle" @sidebar="sidebarToggle = !sidebarToggle" />
+      <AppAside :menu="getMenu" :sidebarToggle="sidebarToggle" @sidebar="sidebarToggle = !sidebarToggle" />
 
       <div class="relative flex flex-1 flex-col overflow-y-auto overflow-x-hidden">
         <AppHeader :change-theme="appStore.changeTheme" @sidebar="sidebarToggle = !sidebarToggle" />
@@ -17,9 +17,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, provide } from 'vue';
+import { ref, onMounted, provide, computed } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useAppStore } from '@/stores/AppStore';
+import { useWebSocketStore } from '@/stores/WebSocketStore';
 
 import { menu } from '@/temp.js';
 
@@ -28,9 +29,13 @@ import AppDialog from '@/components/app/AppDialog.vue';
 import AppHeader from '@/components/app/AppHeader.vue';
 import AppNotification from '@/components/app/AppNotification.vue';
 
+const webSocketStore = useWebSocketStore();
 const appStore = useAppStore();
 
+const { menus } = storeToRefs(webSocketStore);
 const { dialog, notifications } = storeToRefs(appStore);
+
+const getMenu = computed(() => menu(menus.value));
 
 const drawer = ref(false);
 const sidebarToggle = ref(false);
