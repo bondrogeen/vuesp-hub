@@ -12,7 +12,7 @@ export const command = {
   GPIO_COMMAND_GET_ALL: 2,
 };
 
-export const parseDateGPIO = array => {
+export const parseDateGPIO = (array: any): any => {
   const arr = [];
   for (let i = 0; i < array.length; i += 2) {
     arr.push({ gpio: array[i], data: array[i + 1] });
@@ -20,7 +20,7 @@ export const parseDateGPIO = array => {
   return arr;
 };
 
-export const stringifyDateGPIO = object => {
+export const stringifyDateGPIO = (object: any) => {
   const arr = [];
 
   for (const key in object) {
@@ -30,15 +30,15 @@ export const stringifyDateGPIO = object => {
   return arr;
 };
 
-export const getBit = (byte, mask) => (byte & mask ? 1 : 0);
+export const getBit = (byte: number, mask: number) => (byte & mask ? 1 : 0);
 
-export const setBit = (byte, mask) => (byte |= mask);
+export const setBit = (byte: number, mask: number) => (byte |= mask);
 
-export const clearBit = (byte, mask) => (byte &= ~mask);
+export const clearBit = (byte: number, mask: number) => (byte &= ~mask);
 
-export const toggleBit = (byte, mask) => (byte ^= mask);
+export const toggleBit = (byte: number, mask: number) => (byte ^= mask);
 
-export const getData = byte => {
+export const getData = (byte: number): any => {
   return {
     init: (byte & mask.GPIO_INIT) >> 7,
     mode: (byte & mask.GPIO_MODE) >> 4,
@@ -48,7 +48,7 @@ export const getData = byte => {
   };
 };
 
-export const setData = obj => {
+export const setData = (obj: any) => {
   let data = 0;
   data = obj.value ? setBit(data, mask.GPIO_VALUE) : clearBit(data, mask.GPIO_VALUE);
   data = obj.init ? setBit(data, mask.GPIO_INIT) : clearBit(data, mask.GPIO_INIT);
@@ -58,7 +58,7 @@ export const setData = obj => {
   return data;
 };
 
-export const getKey = (byte, key) => {
+export const getKey = (byte: number, key: string) => {
   return getData(byte)?.[key];
 };
 
@@ -71,7 +71,7 @@ export const getKey = (byte, key) => {
 //   };
 // };
 
-export const getValue = data => {
+export const getValue = (data: number) => {
   return Boolean(data | mask.GPIO_VALUE);
 };
 

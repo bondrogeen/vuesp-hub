@@ -53,8 +53,6 @@ import { storeToRefs } from 'pinia';
 
 import { api } from '@/utils/helpers.ts';
 
-import AppDialog from '@/components/app/AppDialog.vue';
-
 import DialogAddDevice from '@/components/device/DialogAddDevice.vue';
 
 import { useWebSocketStore } from '@/stores/WebSocketStore';

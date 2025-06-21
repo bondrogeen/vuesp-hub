@@ -39,6 +39,16 @@ export const menu = (menus) => ([
     //     ],
     // },
 
+    {
+        title: 'Service',
+        items: [
+            {
+                name: 'Modbus',
+                icon: 'IconVideo',
+                path: '/modbus/',
+            },
+        ],
+    },
     // {
     //     title: 'Video',
     //     items: [

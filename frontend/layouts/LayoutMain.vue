@@ -25,9 +25,7 @@ import { useWebSocketStore } from '@/stores/WebSocketStore';
 import { menu } from '@/temp.js';
 
 import AppAside from '@/components/app/AppAside.vue';
-import AppDialog from '@/components/app/AppDialog.vue';
-import AppHeader from '@/components/app/AppHeader.vue';
-import AppNotification from '@/components/app/AppNotification.vue';
+
 
 const webSocketStore = useWebSocketStore();
 const appStore = useAppStore();

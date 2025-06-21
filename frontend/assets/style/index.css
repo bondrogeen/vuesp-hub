@@ -2,7 +2,7 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
-@source inline("dark:{flex,hidden}");
+@source inline("dark:{flex,hidden} dark:border-gray-700/50 dark:border-gray-700 dark:hover:bg-gray-700");
 
 @theme {
   --color-primary: #24c0eb;
@@ -15,6 +15,8 @@
     font-family: 'Roboto', sans-serif;
 
     @apply min-h-screen leading-[140%] text-base md:overflow-y-scroll;
+
+    /* @apply overflow-y-auto [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:bg-gray-800 [&::-webkit-scrollbar-thumb]:bg-gray-600 dark:[&::-webkit-scrollbar-track]:bg-blue-700 dark:[&::-webkit-scrollbar-thumb]:bg-blue-500; */
   }
   body {
     @apply min-h-screen min-w-[320px] text-gray-900 bg-gray-50 dark:bg-gray-900 dark:text-white;
@@ -38,19 +40,19 @@
   }
 
   h1 {
-    @apply text-3xl md:text-4xl font-bold;
-  }
-  h2 {
     @apply text-2xl md:text-3xl font-bold;
   }
-  h3 {
+  h2 {
     @apply text-xl md:text-2xl font-bold;
   }
-  h4 {
+  h3 {
     @apply text-lg md:text-xl font-bold;
   }
-  h5 {
+  h4 {
     @apply text-base md:text-lg font-bold;
+  }
+  h5 {
+    @apply text-sm md:text-base font-bold;
   }
 
   input:-webkit-autofill,
@@ -77,5 +79,36 @@
   }
   .no-scrollbar::-webkit-scrollbar {
     display: none;
+  }
+
+  .scrollbar::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  .scrollbar::-webkit-scrollbar-track {
+    border-radius: 100vh;
+    @apply bg-gray-200;
+  }
+  .scrollbar::-webkit-scrollbar-thumb {
+    @apply bg-gray-400;
+    border-radius: 100vh;
+  }
+
+  .scrollbar::-webkit-scrollbar-thumb:hover {
+    @apply bg-gray-400;
+  }
+
+  .dark {
+    .scrollbar::-webkit-scrollbar-track {
+      @apply bg-gray-800;
+    }
+
+    .scrollbar::-webkit-scrollbar-thumb {
+      @apply bg-gray-600;
+    }
+
+    .scrollbar::-webkit-scrollbar-thumb:hover {
+      @apply bg-gray-600;
+    }
   }
 }

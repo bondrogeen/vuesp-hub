@@ -30,6 +30,7 @@ declare module 'vue-router/auto-routes' {
     '/device/profile': RouteRecordInfo<'/device/profile', '/device/profile', Record<never, never>, Record<never, never>>,
     '/kanban': RouteRecordInfo<'/kanban', '/kanban', Record<never, never>, Record<never, never>>,
     '/media': RouteRecordInfo<'/media', '/media', Record<never, never>, Record<never, never>>,
+    '/modbus': RouteRecordInfo<'/modbus', '/modbus', Record<never, never>, Record<never, never>>,
     '/saas': RouteRecordInfo<'/saas', '/saas', Record<never, never>, Record<never, never>>,
     '/stocks': RouteRecordInfo<'/stocks', '/stocks', Record<never, never>, Record<never, never>>,
     '/video': RouteRecordInfo<'/video', '/video', Record<never, never>, Record<never, never>>,

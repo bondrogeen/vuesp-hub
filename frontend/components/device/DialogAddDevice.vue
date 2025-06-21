@@ -21,7 +21,7 @@ import { ref, defineEmits, defineProps } from 'vue';
 
 import { useForm } from '@/composables/useForm.js';
 
-import { rules } from '@/utils/validate/index.js';
+import { required } from '@/utils/validate.ts';
 
 interface TypeDevice {
   id: number;
@@ -41,8 +41,6 @@ const { device = {} } = defineProps<Props>();
 const emit = defineEmits<{
   (e: 'add', value: TypeDevice): void;
 }>();
-
-const { required } = rules;
 
 const isLoading = ref(false);
 

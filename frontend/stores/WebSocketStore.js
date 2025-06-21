@@ -9,7 +9,7 @@ export const useWebSocketStore = defineStore('websocketstore', {
   }),
   actions: {
     onData({ event, data, id, key }) {
-      console.log(event, data, id, key);
+      // console.log(event, data, id, key);
       if (!this.devices?.[id]) {
         this.devices[id] = {}
       }
@@ -18,7 +18,7 @@ export const useWebSocketStore = defineStore('websocketstore', {
     },
 
     sendDevice({ ip, name, comm, data }) {
-      console.log(ip, name, comm, data);
+      // console.log(ip, name, comm, data);
 
       this.socket.emit('device:send', { ip, name, comm, data }, (response) => {
         console.log('sendDevice:', response);
