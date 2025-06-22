@@ -57,7 +57,7 @@ import { useForm } from '@/composables/useForm.ts';
 import { CRC, getInt16Bytes, functionList, intToHex, getBytesInt16 } from './modbus.js';
 
 const props = defineProps({
-  data: { type: Object, default: () => ({}) },
+  data: { type: Array, default: () => [] },
 });
 const emit = defineEmits(['send']);
 
@@ -91,11 +91,14 @@ watch(
   }
 );
 
-const getData = computed(() => props?.data?.data || []);
-const getSize = computed(() => props?.data?.size || []);
+const getData = computed(() => props?.data || []);
+const getSize = computed(() => props?.data?.length || []);
 
-const onSend = () => emit('send', dataPack.value);
-const getDataByte = (i) => data?.value?.data?.[i] || 0;
+const onSend = () => {
+   
+  emit('send', dataPack.value);
+};
+const getDataByte = (i) => data?.value?.[i] || 0;
 
 const onFunction = (item) => {
   code.value = item;

@@ -1,22 +1,16 @@
 <template>
   <main class="flex-auto max-w-(--breakpoint-2xl) p-4 md:p-6">
-    <VBreadcrumb :items="[{ name: 'Home', path: '/' }, { name: 'List' }]" class="mb-6" />
+    <VBreadcrumb :items="[{ name: 'Service', path: '/' }, { name: 'Modbus' }]" class="mb-6" />
 
-    <VCardGray title="Setting">
-      <div class="grid grid-cols-4 gap-4">
-        <v-select :value="modbus.port" label="Port" :list="listBaudRate" @change="onBaudRate"></v-select>
-        <v-select :value="modbus.baudRate" label="Baud rate" :list="listBaudRate" @change="onBaudRate"></v-select>
-        <v-select :value="modbus.parity" label="Parity" :list="listParity" @change="onParity"></v-select>
-        <v-select :value="modbus.stopBits" label="Stop bits" :list="listStopBits" @change="onStopBits"></v-select>
-        <v-button block @click="onConnect">Connect</v-button>
-      </div>
-    </VCardGray>
+    <div class="grid grid-cols-1 gap-4">
+      <VCardGray title="Serial" disabled>
+        <BlockSerial v-bind="settings" :list="listPort" :isConnect="isConnect" @change="onChange" @connect="onConnect" />
+      </VCardGray>
 
-    <div class="mt-4">
-      <VCardGray title="Master">
-        <h5 class="mb-6"></h5>
+      {{ buffer }}
+      <VCardGray title="Config" disabled>
         <div class="grid grid-cols-1 gap-4">
-          <BlockModBus :data="modbus" @send="onSendModBus" />
+          <BlockModBus :data="buffer" @send="onSend" />
         </div>
       </VCardGray>
     </div>
@@ -24,133 +18,73 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import type { Ref } from 'vue';
+import type { TypeSerialOption } from '@/components/blocks/modbus/types.ts';
 
-import { debounce } from '@/utils/helpers.ts';
+import { ref, onMounted, computed } from 'vue';
 
 import BlockModBus from '@/components/blocks/modbus/BlockModBus.vue';
+import BlockSerial from '@/components/blocks/modbus/BlockSerial.vue';
 
-const listBaudRate = [
-  { name: '1200', value: 1200 },
-  { name: '9600', value: 9600 },
-  { name: '14400', value: 14400 },
-  { name: '19220', value: 19220 },
-  { name: '28800', value: 28800 },
-  { name: '38400', value: 38400 },
-  { name: '57600', value: 57600 },
-  { name: '115200', value: 115200 },
-];
-const listParity = [
-  { name: 'None', value: 'None' },
-  { name: 'Event', value: 'Event' },
-  { name: 'Odd', value: 'Odd' },
-];
-const listStopBits = [
-  { name: '1', value: 1 },
-  { name: '2', value: 2 },
-];
+import { useChromeSerial } from '@/composables/modbus/useChromeSerial.ts';
+import { useServerSerial } from '@/composables/modbus/useServerSerial.ts';
+import { debounce } from '@/utils/helpers.ts';
 
-const modbus = ref({
-  port: 1,
+const buffer = ref([]);
+
+const isConnect = ref(false);
+
+const settings: Ref<TypeSerialOption> = ref({
+  path: '',
   baudRate: 9600,
-  parity: 'None',
-  stopBits: 2,
+  bufferSize: 255,
+  dataBits: 8,
+  parity: 'none', // 'even', 'odd'
+  stopBits: 1, // 2,
 });
 
-const onBaudRate = (item) => (modbus.value.baudRate = item.value);
-const onParity = (item) => (modbus.value.parity = item.value);
-const onStopBits = (item) => (modbus.value.stopBits = item.value);
+const onChange = ({ name, value }: any) => {
+  settings.value[name] = value;
+};
 
-let port;
-let reader;
-let writer;
+const isChrome = computed(() => settings.value.path === 'chrome');
 
-const connect = async () => {
-  try {
-    port = await navigator.serial.requestPort();
+const updateData = (value) => {
+  buffer.value.push(...Array.from(value));
+  onLoad(buffer.value);
+};
 
-    const { usbProductId, usbVendorId } = port.getInfo();
-    console.log(usbProductId, usbVendorId);
+const onStatus = ({ status, options }) => {
+  isConnect.value = status;
+  settings.value = options;
+};
 
-    await port.open({
-      baudRate: 9600,
-      bufferSize: 255,
-      dataBits: 8,
-      flowControl: 'none', // 'hardware'
-      parity: 'none', // 'even', 'odd'
-      stopBits: 1, // 2,
-    });
+const onLoad = debounce((data: any) => {
+  buffer.value = data;
+}, 100);
 
-    setInterval(() => {
-      send();
-    }, 5000);
+const { connectChrome, disconnectChrome, onWriteChrome } = useChromeSerial(updateData);
 
-    readData();
+const { listPort, init, connectServer, disconnectServer, onWriteServer } = useServerSerial(updateData, onStatus);
 
-    log('Успешно подключено!');
-  } catch (error) {
-    log(`Ошибка подключения: ${error}`);
+const onConnect = async (options: TypeSerialOption) => {
+  if (isConnect.value) {
+    if (isChrome.value) await disconnectChrome();
+    else disconnectServer();
+  } else {
+    if (isChrome.value) await connectChrome(options);
+    else connectServer(options);
   }
+  isConnect.value = !isConnect.value;
 };
 
-let buffer = [];
-const onLoad = debounce(() => {
-  console.log(buffer);
-}, 300);
-
-const addBuffer = (value) => {
-  const regularArray = Array.from(value);
-  buffer.push(...regularArray);
-  onLoad();
+const onSend = (data: any) => {
+  if (isChrome.value) onWriteChrome(data);
+  else onWriteServer(data);
+  buffer.value = [];
 };
 
-const readData = async () => {
-  try {
-    const decoder = new TextDecoder();
-    reader = port.readable.getReader();
-
-    while (true) {
-      const { value, done } = await reader.read();
-      if (done) break;
-      addBuffer(value);
-    }
-  } catch (error) {
-    log(`Ошибка чтения: ${error}`);
-  } finally {
-    reader?.releaseLock();
-  }
-};
-
-const send = async () => {
-  try {
-    if (!writer) writer = port.writable.getWriter();
-
-    const data = new Uint8Array([1, 4, 0, 0, 0, 1, 49, 202]);
-    await writer.write(data);
-
-    buffer = [];
-  } catch (error) {
-    log(`Ошибка отправки: ${error}`);
-  }
-};
-
-// 3. Чтение данных
-
-const disconnect = async () => {
-  try {
-    await reader?.cancel();
-    await writer?.close();
-    await port?.close();
-    log('Отключено');
-  } catch (error) {
-    log(`Ошибка отключения: ${error}`);
-  }
-};
-
-const log = (message) => {
-  console.log(message);
-};
-const onConnect = async (message) => {
-  await connect();
-};
+onMounted(() => {
+  init();
+});
 </script>

@@ -33,6 +33,9 @@ const appStore = useAppStore();
 const { menus } = storeToRefs(webSocketStore);
 const { dialog, notifications } = storeToRefs(appStore);
 
+console.log(menus.value);
+
+
 const getMenu = computed(() => menu(menus.value));
 
 const drawer = ref(false);

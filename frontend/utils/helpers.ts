@@ -101,3 +101,21 @@ export const debounce = (fn: Function, ms = 300) => {
     timeoutId = setTimeout(() => fn.apply(this, args), ms);
   };
 };
+
+export const detectBrowser = () => {
+  const userAgent = navigator.userAgent.toLowerCase();
+
+  if (userAgent.includes('firefox')) {
+    return 'Firefox';
+  } else if (userAgent.includes('chrome')) {
+    return 'Chrome';
+  } else if (userAgent.includes('safari')) {
+    return 'Safari';
+  } else if (userAgent.includes('opera') || userAgent.includes('opr')) {
+    return 'Opera';
+  } else if (userAgent.includes('msie') || userAgent.includes('trident')) {
+    return 'Internet Explorer';
+  } else {
+    return 'Unknown';
+  }
+};

@@ -1,5 +1,5 @@
 
-import { VuespDevices } from '../vuesp/index.mjs';
+import { VuespDevices } from '../../vuesp/index.mjs';
 
 import Store from 'electron-store';
 const store = new Store();

@@ -22,7 +22,7 @@ class Device extends EventEmitter {
   #interval;
   #isConnect;
   #reconnectTime;
-  #menu;
+  #menu = [];
 
   constructor({ name = '', ip, username = '', password = '', options = {}, reconnectTime = 15000 }) {
     if (!ip) throw new TypeError("'ip' is required!");
