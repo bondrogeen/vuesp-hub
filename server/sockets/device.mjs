@@ -76,6 +76,18 @@ export const socketDevice = (io) => {
             }
         });
 
+        socket.on('device:list', (_, callback) => {
+            try {
+                if (!isServiceRunning) {
+                    return callback({ status: 'error', message: 'Service not running' });
+                }
+                const list = vuespDevices.getList();
+                callback({ status: 'success', list });
+            } catch (error) {
+                callback({ status: 'error', message: 'Start failed' });
+            }
+        });
+
         socket.on('service:stop', (data, callback) => {
             if (!isServiceRunning) {
                 return callback({ status: 'error', message: 'Service not running' });

@@ -24,6 +24,7 @@ declare module 'vue-router/auto-routes' {
     '/auth/reset-password': RouteRecordInfo<'/auth/reset-password', '/auth/reset-password', Record<never, never>, Record<never, never>>,
     '/auth/singup': RouteRecordInfo<'/auth/singup', '/auth/singup', Record<never, never>, Record<never, never>>,
     '/auth/two-step-verification': RouteRecordInfo<'/auth/two-step-verification', '/auth/two-step-verification', Record<never, never>, Record<never, never>>,
+    '/dashboard': RouteRecordInfo<'/dashboard', '/dashboard', Record<never, never>, Record<never, never>>,
     '/device/[...path]': RouteRecordInfo<'/device/[...path]', '/device/:path(.*)', { path: ParamValue<true> }, { path: ParamValue<false> }>,
     '/device/list/': RouteRecordInfo<'/device/list/', '/device/list', Record<never, never>, Record<never, never>>,
     '/device/main': RouteRecordInfo<'/device/main', '/device/main', Record<never, never>, Record<never, never>>,

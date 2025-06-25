@@ -3,7 +3,7 @@
     <AppDialog v-if="dialog.value" v-bind="dialog" @close="dialog = {}" />
 
     <div class="flex h-screen overflow-hidden">
-      <AppAside :menu="getMenu" :sidebarToggle="sidebarToggle" @sidebar="sidebarToggle = !sidebarToggle" />
+      <AppAside :menu="getMenu" :list="list" :sidebarToggle="sidebarToggle" @sidebar="sidebarToggle = !sidebarToggle" />
 
       <div class="relative flex flex-1 flex-col overflow-y-auto overflow-x-hidden">
         <AppHeader :change-theme="appStore.changeTheme" @sidebar="sidebarToggle = !sidebarToggle" />
@@ -26,15 +26,14 @@ import { menu } from '@/temp.js';
 
 import AppAside from '@/components/app/AppAside.vue';
 
-
 const webSocketStore = useWebSocketStore();
 const appStore = useAppStore();
 
-const { menus } = storeToRefs(webSocketStore);
+const { menus, list } = storeToRefs(webSocketStore);
 const { dialog, notifications } = storeToRefs(appStore);
 
 console.log(menus.value);
-
+console.log(list.value);
 
 const getMenu = computed(() => menu(menus.value));
 

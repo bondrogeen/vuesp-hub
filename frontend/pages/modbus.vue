@@ -50,6 +50,8 @@ const onChange = ({ name, value }: any) => {
 const isChrome = computed(() => settings.value.path === 'chrome');
 
 const updateData = (value) => {
+  console.log(value);
+
   buffer.value.push(...Array.from(value));
   onLoad(buffer.value);
 };
@@ -79,6 +81,8 @@ const onConnect = async (options: TypeSerialOption) => {
 };
 
 const onSend = (data: any) => {
+  console.log(data);
+
   if (isChrome.value) onWriteChrome(data);
   else onWriteServer(data);
   buffer.value = [];

@@ -14,6 +14,7 @@ class Device extends EventEmitter {
   #ws;
   #time;
   #name;
+  #list;
   #fetch;
   #state;
   #struct;
@@ -31,6 +32,7 @@ class Device extends EventEmitter {
     this.#ws = null;
     this.#name = name;
     this.#time = new Date();
+    this.#list = [];
     this.#state = {};
     this.#fetch = fetch(new AxiosDigestAuth({ username, password }));
     this.#struct = new Struct();
@@ -53,6 +55,10 @@ class Device extends EventEmitter {
     return this.#menu;
   }
 
+  get list() {
+    return this.#list;
+  }
+
   get id() {
     const device = this.getInfo();
     const id = device?.id || -1;
@@ -70,6 +76,28 @@ class Device extends EventEmitter {
       this.#onEvent('error', error);
       console.warn(error);
     }
+  }
+
+  async loadModule(url) {
+    try {
+      return await this.#fetch.get({ url });
+    } catch (error) {
+      console.warn(error);
+      return;
+    }
+  };
+
+  async onList() {
+    let list = await this.loadModule(`http://${this.#ip}/fs?file=/tmp/list.js`);
+    if (!list) {
+      list = await this.loadModule(`http://${this.#ip}/list.js`);
+    }
+    const data = list?.data
+    if (data.includes('export default')) {
+      const module = await import('data:text/javascript,' + data);
+      this.#list = module?.default || []
+    }
+
   }
 
   async onMenu() {
@@ -110,6 +138,7 @@ class Device extends EventEmitter {
   async #onOpen(e) {
     this.#isConnect = true;
     await this.onInit();
+    await this.onList();
     await this.onMenu();
     this.#onEvent('open', e);
   }

@@ -31,6 +31,7 @@ const init = () => {
   socket.value.on('connect', () => {
     console.log('connect');
     webSocketStore.getMenus();
+    webSocketStore.getList();
   });
 
   socket.value.on('broadcast', (msg) => {

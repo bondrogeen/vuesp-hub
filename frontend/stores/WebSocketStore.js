@@ -6,6 +6,7 @@ export const useWebSocketStore = defineStore('websocketstore', {
     info: {},
     devices: {},
     menus: [],
+    list: [],
   }),
   actions: {
     onData({ event, data, id, key }) {
@@ -34,6 +35,13 @@ export const useWebSocketStore = defineStore('websocketstore', {
       this.socket.emit('device:menus', {}, ({ status, menus }) => {
         if (status === 'success') {
           this.menus = menus
+        }
+      });
+    },
+    getList() {
+      this.socket.emit('device:list', {}, ({ status, list }) => {
+        if (status === 'success') {
+          this.list = list
         }
       });
     },

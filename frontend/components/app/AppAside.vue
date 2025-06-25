@@ -98,9 +98,10 @@ import { MenuType, MenuItemType, MenuChildType } from '@/types.js';
 interface Props {
   sidebarToggle?: boolean;
   menu?: MenuType[];
+  list?: MenuType[];
 }
 
-const { sidebarToggle = false, menu = [] } = defineProps<Props>();
+const { sidebarToggle = false, menu = [], list = [] } = defineProps<Props>();
 
 const emit = defineEmits<{
   (e: 'sidebar', value: boolean): void;

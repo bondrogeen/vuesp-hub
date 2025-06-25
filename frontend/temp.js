@@ -40,6 +40,16 @@ export const menu = (menus) => ([
     // },
 
     {
+        title: 'Dashboard',
+        items: [
+            {
+                name: 'Dashboard',
+                icon: 'IconVideo',
+                path: '/dashboard/',
+            },
+        ],
+    },
+    {
         title: 'Service',
         items: [
             {

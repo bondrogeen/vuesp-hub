@@ -5,7 +5,11 @@ import path from 'node:path';
 import { fileURLToPath } from 'url';
 
 import { server } from '../server/server.mjs'
-const { createExpress, closeExpress } = server()
+import Core from '../core/core.mjs'
+
+const core = new Core();
+
+const { createExpress, closeExpress } = server();
 
 if (started) {
   app.quit();
@@ -44,9 +48,15 @@ const createWindow = () => {
 };
 
 
-app.whenReady().then(() => {
-  createExpress();
+app.whenReady().then(async () => {
   createWindow();
+  createExpress();
+  await core.init();
+
+  const runner = core.getService('script-runner');
+  const result = await runner.runScript(`return console.log(555555)`);
+  console.log(result);
+
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
@@ -55,8 +65,9 @@ app.whenReady().then(() => {
   });
 });
 
-app.on('window-all-closed', () => {
+app.on('window-all-closed', async () => {
   if (process.platform !== 'darwin') {
+    await core.shutdown();
     closeExpress()
     app.quit();
   }

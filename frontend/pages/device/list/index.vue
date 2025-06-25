@@ -14,7 +14,7 @@
           </VButton>
         </div>
       </template>
-      {{ devices }}
+
       <VTable :headers="headers" :items="items">
         <template #status="{ item }">
           <div class="w-1 h-5 rounded-full" :class="getStatus(item, devices)"></div>
@@ -120,7 +120,7 @@ const getStatus = ({ deviceId, isNew }, devices) => {
     return 'bg-gray-500';
   }
   if (!devices?.[deviceId]) return 'bg-red-500';
-  
+
   const delta = devices?.[deviceId]?.PING?.delta;
   if (delta > 5000) {
     return 'bg-red-500';

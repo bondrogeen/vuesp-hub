@@ -10,6 +10,8 @@ const addMeta = (routes) => {
 
     if ((route.name || route.path).includes('/auth')) {
       route.meta.layout = 'LayoutEmpty'
+    } else if ((route.name || route.path).includes('/dashboard')) {
+      route.meta.layout = 'LayoutEmpty'
     } else {
       route.meta.layout = 'LayoutMain'
     }
