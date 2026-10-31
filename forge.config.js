@@ -1,9 +1,16 @@
 const { FusesPlugin } = require('@electron-forge/plugin-fuses');
 const { FuseV1Options, FuseVersion } = require('@electron/fuses');
 
+const packagerIgnore = file => {
+  if (!file) return false;
+  const packagedRoots = ['/.vite', '/node_modules', '/public', '/package.json'];
+  return !packagedRoots.some(root => file === root || file.startsWith(`${root}/`));
+};
+
 module.exports = {
   packagerConfig: {
-    asar: true,
+    asar: { unpack: '**/.vite/build/worker-script.cjs' },
+    ignore: packagerIgnore,
   },
   rebuildConfig: {},
   makers: [
@@ -26,6 +33,10 @@ module.exports = {
   ],
   plugins: [
     {
+      name: '@electron-forge/plugin-auto-unpack-natives',
+      config: {},
+    },
+    {
       name: '@electron-forge/plugin-vite',
       config: {
         // `build` can specify multiple entry builds, which can be Main process, Preload scripts, Worker process, etc.
@@ -33,14 +44,19 @@ module.exports = {
         build: [
           {
             // `entry` is just an alias for `build.lib.entry` in the corresponding file of `config`.
-            entry: 'src/main.js',
+            entry: 'src/main.ts',
             config: 'vite.main.config.mjs',
             target: 'main',
           },
           {
-            entry: 'src/preload.js',
+            entry: 'src/preload.ts',
             config: 'vite.preload.config.mjs',
             target: 'preload',
+          },
+          {
+            entry: 'core/modules/script/worker-script.ts',
+            config: 'vite.main.config.mjs',
+            target: 'main',
           },
         ],
         renderer: [

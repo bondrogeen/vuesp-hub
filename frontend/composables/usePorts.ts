@@ -2,7 +2,7 @@ import type { Ref } from 'vue';
 import { ref } from 'vue';
 import { getBinary, onUploadBinary } from '@/utils/fs';
 
-import { command, getKey, getData, setData, parseDateGPIO, stringifyDateGPIO } from '@/utils/gpio/index.ts';
+import { command, getKey, getData, setData, parseDateGPIO, stringifyDateGPIO } from '@/utils/gpio.ts';
 
 import { pathGPIO } from '@/utils/const.ts';
 

@@ -53,6 +53,7 @@ export const useModule = () => {
 
   const onSaveDef = () => {
     const device = main.value.device;
+    if (!device || typeof device !== 'object') return;
     onSend('DEVICE', { ...device, command: 4 });
   };
 

@@ -18,11 +18,13 @@
 </template>
 
 <script setup lang="ts">
+import { BlockBreadcrumb as VBreadcrumb } from 'vuesp-components/components';
 import type { Ref } from 'vue';
 import type { TypeSerialOption } from '@/components/blocks/modbus/types.ts';
 
 import { ref, onMounted, computed } from 'vue';
 
+import VCardGray from '@/components/app/VCardGray.vue';
 import BlockModBus from '@/components/blocks/modbus/BlockModBus.vue';
 import BlockSerial from '@/components/blocks/modbus/BlockSerial.vue';
 

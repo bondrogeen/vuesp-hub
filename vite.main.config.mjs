@@ -1,4 +1,12 @@
 import { defineConfig } from 'vite';
 
-// https://vitejs.dev/config
-export default defineConfig({});
+export default defineConfig({
+  build: {
+    rollupOptions: {
+      external: ['serialport', '@serialport/bindings-cpp', 'bufferutil', 'utf-8-validate'],
+      output: {
+        assetFileNames: 'assets/[name][extname]',
+      },
+    },
+  },
+});

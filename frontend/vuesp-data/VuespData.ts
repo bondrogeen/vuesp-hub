@@ -1,6 +1,6 @@
 import type { TypeProperty, TypePropertyString, TypeVuespData } from './types.ts';
 
-import { stringToFunction, saveObjectWithFunctions, createObjectFromPaths } from './utils.ts';
+import { stringToFunction, functionToString, createObjectFromPaths } from './utils.ts';
 
 class Property implements TypeProperty {
   id: string;
@@ -61,7 +61,7 @@ export class VuespData implements TypeVuespData {
 
   init(list: TypeProperty[]) {
     for (let i = 0; i < list.length; i++) {
-      const item: TypeProperty = list[i];
+      const item = stringToFunction(list[i]);
       this.items.set(item.id, new Property(item));
     }
   }
@@ -124,9 +124,8 @@ export class VuespData implements TypeVuespData {
   }
 
   saveList() {
-    const list = Array.from(this.items, ([_, item]) => ({ ...item }));
-    let content = saveObjectWithFunctions(list);
-    return `export default ${content};`;
+    const list = Array.from(this.items.values(), item => functionToString(item));
+    return JSON.stringify(list, null, 2);
   }
 
   getList() {

@@ -53,17 +53,9 @@
       </div>
       <div class="relative items-center hidden w-full h-full bg-brand-950 dark:bg-white/5 lg:grid lg:w-1/2">
         <div class="flex items-center justify-center z-1">
-          <!-- ===== Common Grid Shape Start ===== -->
-          <div class="absolute right-0 top-0 -z-1 w-full max-w-[250px] xl:max-w-[450px]">
-            <img src="src/images/shape/grid-01.svg" alt="grid" />
-          </div>
-          <div class="absolute bottom-0 left-0 -z-1 w-full max-w-[250px] rotate-180 xl:max-w-[450px]">
-            <img src="src/images/shape/grid-01.svg" alt="grid" />
-          </div>
-
           <div class="flex flex-col items-center max-w-xs">
             <a href="index.html" class="block mb-4">
-              <img src="src/images/logo/auth-logo.svg" alt="Logo" />
+              <VIconLogo class="h-10 w-auto" />
             </a>
             <p class="text-center text-gray-400 dark:text-white/60">Free and Open-Source Tailwind CSS Admin Dashboard Template</p>
           </div>
@@ -71,7 +63,7 @@
       </div>
       <!-- Toggler -->
       <div class="fixed z-50 bottom-6 right-6">
-        <button class="inline-flex items-center justify-center text-white transition-colors rounded-full size-14 bg-brand-500 hover:bg-brand-600" @click.prevent="darkMode = !darkMode">
+        <button class="inline-flex items-center justify-center text-white transition-colors rounded-full size-14 bg-brand-500 hover:bg-brand-600" @click.prevent="toggleDarkMode">
           <svg class="hidden fill-current dark:block" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path
               fill-rule="evenodd"
@@ -91,3 +83,9 @@
     </div>
   </div>
 </template>
+
+<script setup lang="ts">
+import { useDarkMode } from '@/composables/useDarkMode.ts';
+
+const { toggleDarkMode } = useDarkMode();
+</script>

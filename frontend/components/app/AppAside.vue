@@ -29,7 +29,7 @@
                 :to="item.path"
                 class="flex gap-2 items-center px-3 py-2 rounded-lg"
                 :class="isActive(item.path) ? 'bg-blue-500/10' : 'hover:bg-gray-500/10'"
-                @click.prevent.stop="onSelect(item)"
+                @click.stop="onSelect(item)"
               >
                 <component :is="getComponent(item.icon)" class="flex-[0_0_24px] size-5" />
 
@@ -48,7 +48,7 @@
                       :to="path"
                       class="flex gap-2 items-center px-3 py-2 rounded-lg"
                       :class="isActive(path) ? 'bg-blue-500/10' : 'hover:bg-gray-500/10'"
-                      @click.prevent.stop="onSelectChildren({ name })"
+                      @click.stop="onSelectChildren({ name })"
                     >
                       <component :is="getComponent(icon)" class="flex-[0_0_24px] size-5" />
 
@@ -92,45 +92,44 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue';
 import { useRoute } from 'vue-router';
+import legacyIcons from '@/components/app/legacyIcons.ts';
 
-import { MenuType, MenuItemType, MenuChildType } from '@/types.js';
+import type { MenuType, MenuItemType, MenuChildType, IconName } from '@/types.ts';
 
 interface Props {
   sidebarToggle?: boolean;
   menu?: MenuType[];
-  list?: MenuType[];
 }
 
-const { sidebarToggle = false, menu = [], list = [] } = defineProps<Props>();
+const { sidebarToggle = false, menu = [] } = defineProps<Props>();
+const { IconLogo, IconLogoMini, IconDots, IconChevron, IconDashboard, IconDevice, IconVideo, IconList } = legacyIcons;
 
 const emit = defineEmits<{
   (e: 'sidebar', value: boolean): void;
 }>();
 
 const components = {
-  IconDashboard: 'IconDashboard',
-  IconDevice: 'IconDevice',
-  IconVideo: 'IconVideo',
-  IconList: 'IconList',
+  IconDashboard,
+  IconDevice,
+  IconVideo,
+  IconList,
 };
 
 const route = useRoute();
 
-const getComponent = (name: string = 'IconDashboard') => components[name];
+const getComponent = (name: IconName = 'IconDashboard') => components[name as keyof typeof components] ?? components.IconDashboard;
 
 const selected = ref('');
 const selectedChildren = ref('');
 
-const onSelect = ({ name, path }: MenuType) => {
-  if (selected.value === name) return;
+const onSelect = ({ name }: MenuItemType) => {
   selected.value = selected.value === name ? '' : name;
 };
-const onSelectChildren = ({ name }: MenuType) => {
-  if (selected.value === name) return;
+const onSelectChildren = ({ name }: MenuChildType) => {
   selectedChildren.value = selectedChildren.value === name ? '' : name;
 };
 
-const isActive = (path: string) => route.fullPath === path;
+const isActive = (path?: string) => Boolean(path && route.fullPath === path);
 
 const onHover = (value: boolean) => {
   if (sidebarToggle) {
@@ -141,7 +140,7 @@ const onHover = (value: boolean) => {
 onMounted(() => {
   menu.forEach(({ items }) => {
     items.forEach((item: MenuItemType) => {
-      const el = (item?.children || []).find((i: MenuChildType) => route.fullPath.includes(i.path));
+      const el = (item?.children || []).find((i: MenuChildType) => i.path && route.fullPath.includes(i.path));
       if (el) selected.value = item.name;
     });
   });

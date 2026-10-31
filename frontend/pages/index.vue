@@ -2,7 +2,7 @@
   <div class="flex"></div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { io } from 'socket.io-client';
 import { onMounted } from 'vue';
 

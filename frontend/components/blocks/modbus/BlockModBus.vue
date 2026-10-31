@@ -50,15 +50,13 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, defineProps, defineEmits, computed, watch, onMounted } from 'vue';
 import { required, maxNumber, minNumber } from '@/utils/validate.ts';
 import { useForm } from '@/composables/useForm.ts';
-import { CRC, getInt16Bytes, functionList, intToHex, getBytesInt16 } from './modbus.js';
+import { CRC, getInt16Bytes, functionList, intToHex, getBytesInt16 } from './modbus.ts';
 
-const props = defineProps({
-  data: { type: Array, default: () => [] },
-});
+const props = withDefaults(defineProps<{ data?: number[] }>(), { data: () => [] });
 const emit = defineEmits(['send']);
 
 const slaveID = ref(1);
@@ -66,7 +64,7 @@ const address = ref(0);
 const length = ref(1);
 const code = ref({ ...functionList[3] });
 
-const data = ref(1);
+const data = ref<number[]>([]);
 
 const packAddress = computed(() => getInt16Bytes(address.value));
 const packLength = computed(() => getInt16Bytes(length.value));
@@ -92,7 +90,7 @@ watch(
 );
 
 const getData = computed(() => props?.data || []);
-const getSize = computed(() => props?.data?.length || []);
+const getSize = computed(() => props?.data?.length || 0);
 
 const onSend = () => {
    

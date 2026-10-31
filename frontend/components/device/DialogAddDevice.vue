@@ -19,42 +19,28 @@
 <script setup lang="ts">
 import { ref, defineEmits, defineProps } from 'vue';
 
-import { useForm } from '@/composables/useForm.js';
+import { useForm } from '@/composables/useForm.ts';
 
 import { required } from '@/utils/validate.ts';
-
-interface TypeDevice {
-  id: number;
-  name: string;
-  username: string;
-  password: string;
-  ip: string;
-  deviceId: number;
-}
+import type { DeviceFormInput } from '@/types.ts';
 
 interface Props {
-  device?: TypeDevice;
+  device?: Partial<DeviceFormInput>;
 }
 
 const { device = {} } = defineProps<Props>();
 
 const emit = defineEmits<{
-  (e: 'add', value: TypeDevice): void;
+  (e: 'add', value: DeviceFormInput): void;
 }>();
 
 const isLoading = ref(false);
 
-const form: TypeDevice = { id: 0, name: '', username: 'admin', password: 'admin', ip: '', deviceId: 0 };
+const form: DeviceFormInput = { id: 0, name: '', username: 'admin', password: 'admin', ip: '', deviceId: 0 };
 
 const validators = { name: { required }, ip: { required }, username: {}, password: {}, deviceId: 0 };
 
-if (Object.keys(device).length) {
-  for (const key in form) {
-    if (device?.[key]) {
-      form[key] = device[key];
-    }
-  }
-}
+Object.assign(form, device);
 
 const { v, invalid, getError, data } = useForm(validators, form);
 

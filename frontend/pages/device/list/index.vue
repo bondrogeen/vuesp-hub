@@ -50,29 +50,38 @@
 import type { Ref } from 'vue';
 import { onMounted, ref } from 'vue';
 import { storeToRefs } from 'pinia';
+import { BlockBreadcrumb as VBreadcrumb, VTable } from 'vuesp-components/components';
 
 import { api } from '@/utils/helpers.ts';
 
+import AppDialog from '@/components/app/AppDialog.vue';
+import VCardGray from '@/components/app/VCardGray.vue';
 import DialogAddDevice from '@/components/device/DialogAddDevice.vue';
+import legacyIcons from '@/components/app/legacyIcons.ts';
 
 import { useWebSocketStore } from '@/stores/WebSocketStore';
+import type { DeviceFormInput } from '@/types.ts';
 
 const webSocketStore = useWebSocketStore();
+const { IconSearch, IconUpdate } = legacyIcons;
 
 const { devices } = storeToRefs(webSocketStore);
 
 interface TypeDevice {
-  id: number;
+  id?: number;
+  uuid?: string;
   deviceId: number;
   name: string;
   ip: string;
-  firmware: number[];
+  firmware?: number[];
+  username?: string;
+  password?: string;
   isNew?: boolean;
 }
 
 interface TypeMenu {
   name: string;
-  icon: string;
+  icon?: string;
   type: number;
 }
 
@@ -103,8 +112,8 @@ const device: Ref<TypeDevice> = ref({
 
 const items: Ref<TypeDevice[]> = ref([]);
 
-const getListMenu = ({ isNew }) => {
-  const menu = [];
+const getListMenu = ({ isNew }: TypeDevice): TypeMenu[] => {
+  const menu: TypeMenu[] = [];
   if (isNew) {
     menu.push({ name: 'Add', type: EnumMenu.ADD });
   } else {
@@ -115,13 +124,14 @@ const getListMenu = ({ isNew }) => {
 
 const showDialog = ref(false);
 
-const getStatus = ({ deviceId, isNew }, devices) => {
+const getStatus = ({ deviceId, isNew }: TypeDevice, devices: Record<string, Record<string, unknown>>) => {
   if (isNew) {
     return 'bg-gray-500';
   }
   if (!devices?.[deviceId]) return 'bg-red-500';
 
-  const delta = devices?.[deviceId]?.PING?.delta;
+  const ping = devices[String(deviceId)]?.PING;
+  const delta = typeof ping === 'object' && ping !== null && 'delta' in ping ? Number(ping.delta) : 0;
   if (delta > 5000) {
     return 'bg-red-500';
   } else {
@@ -140,7 +150,7 @@ const onClose = () => {
 
 const onScan = async () => {
   isLoading.value = true;
-  const res = await api.get('/device/scan/');
+  const res = await api.get<TypeDevice[]>('/device/scan/');
   const devices = items.value.map((i) => i.deviceId);
   const newDevice = res.filter((i: TypeDevice) => !devices.includes(i.deviceId)).map((i: TypeDevice) => ({ ...i, isNew: true }));
   items.value = [...newDevice, ...items.value];
@@ -148,6 +158,7 @@ const onScan = async () => {
 };
 
 const onRemoveDevice = async ({ id }: TypeDevice) => {
+  if (id == null) return;
   try {
     let res = await api.delete(`/device/${id}/`);
     items.value = items.value.filter((i) => i.id !== id);
@@ -157,7 +168,7 @@ const onRemoveDevice = async ({ id }: TypeDevice) => {
   }
 };
 
-const onAddDevice = async (device: TypeDevice) => {
+const onAddDevice = async (device: DeviceFormInput) => {
   try {
     isChange.value = true;
     items.value = items.value.map((i: TypeDevice) => (device.deviceId === i.deviceId ? { ...i, isNew: false } : i));
@@ -171,7 +182,7 @@ const onAddDevice = async (device: TypeDevice) => {
 
 const getAllDevices = async () => {
   try {
-    const res = await api.get('/device/');
+    const res = await api.get<TypeDevice[]>('/device/');
 
     items.value = items.value.filter((i) => i.isNew);
     items.value = [...items.value, ...res];

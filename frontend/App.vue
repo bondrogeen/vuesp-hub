@@ -4,58 +4,34 @@
   </component>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { useRoute } from 'vue-router';
-import { computed, onMounted } from 'vue';
+import { computed, onBeforeUnmount, onMounted, watch, type Component } from 'vue';
 import { useAppStore } from '@/stores/AppStore';
 import { useWebSocketStore } from '@/stores/WebSocketStore';
-import { io } from 'socket.io-client';
-import { storeToRefs } from 'pinia';
 
 import LayoutEmpty from '@/layouts/LayoutEmpty.vue';
 import LayoutMain from '@/layouts/LayoutMain.vue';
 
 const route = useRoute();
 
-const layouts = { LayoutEmpty, LayoutMain };
+const layouts: Record<string, Component> = { LayoutEmpty, LayoutMain };
 
-const layout = computed(() => layouts[route?.meta?.layout]);
+const layout = computed(() => layouts[String(route.meta.layout)] ?? LayoutEmpty);
 
 const appStore = useAppStore();
 const webSocketStore = useWebSocketStore();
 
-const { socket } = storeToRefs(webSocketStore);
-
-const init = () => {
-  socket.value = io({ transports: ['websocket'], path: '/ws/device' });
-  socket.value.on('connect', () => {
-    console.log('connect');
-    webSocketStore.getMenus();
-    webSocketStore.getList();
-  });
-
-  socket.value.on('broadcast', (msg) => {
-    console.log(msg);
-  });
-
-  socket.value.on('service:status', (data) => {
-    console.log(data);
-  });
-
-  socket.value.on('device:data', (data) => {
-    webSocketStore.onData(data);
-  });
-
-  socket.value.on('service:error', (error) => {
-    console.log(error);
-  });
-};
+watch(() => webSocketStore.connectionError, message => {
+  if (message) appStore.setNotification({ message });
+});
 
 onMounted(() => {
   appStore.init();
-  init();
-  webSocketStore.startService();
+  webSocketStore.connect();
 });
+
+onBeforeUnmount(() => webSocketStore.disconnect());
 </script>
 
 <style lang="scss"></style>

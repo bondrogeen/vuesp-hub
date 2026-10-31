@@ -181,4 +181,10 @@
   </div>
 </template>
 
-<script setup lang="ts"></script>
+<script setup lang="ts">
+import { ref } from 'vue';
+import { BlockBreadcrumb as VBreadcrumb } from 'vuesp-components/components';
+
+const isProfileInfoModal = ref(false);
+const isProfileAddressModal = ref(false);
+</script>

@@ -9,12 +9,16 @@ export const fetchText = async (path: string, init?: RequestInit) => {
   return await res.text();
 };
 
-export const loadModule = async (path: string, init?: RequestInit) => {
-  const text = await fetchText(path, init);
-  return await import('data:text/javascript,' + text);
+export const loadDashboard = async (path: string, init?: RequestInit) => {
+  const res = await fetch(path, init);
+  if (!res.ok) throw new Error(`Could not load dashboard (${res.status})`);
+  const data = await res.json();
+  if (Array.isArray(data)) return data;
+  if (data && typeof data === 'object' && Array.isArray(data.dashboard)) return data.dashboard;
+  throw new TypeError('Device dashboard JSON has an unsupported format');
 };
 
-export const saveModule = async (path: string, content: string) => {
+export const saveDashboard = async (path: string, content: string) => {
   return onUploadBinary(path, content);
 };
 

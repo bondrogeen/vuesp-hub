@@ -7,6 +7,7 @@
 </template>
 
 <script setup lang="ts">
+import { BlockBreadcrumb as VBreadcrumb } from 'vuesp-components/components';
 import { ref, computed, onMounted, watch } from 'vue';
 import { useRoute } from 'vue-router';
 
@@ -16,13 +17,18 @@ const route = useRoute();
 
 const show = ref(false);
 
-const getPath = computed(() => `http://${route.params.path}`);
+const getRoutePath = () => {
+  const path = (route.params as Record<string, unknown>).path;
+  return Array.isArray(path) ? path.join('/') : typeof path === 'string' ? path : '';
+};
+
+const getPath = computed(() => `http://${getRoutePath()}`);
 
 watch(
-  () => route.params.path,
+  getRoutePath,
   () => {
     console.log('23232323');
-    const url: string = route.params?.path || '';
+    const url = getRoutePath();
     const [device, ...all] = url.split('/');
     const path = all.join('/');
     console.log(path);

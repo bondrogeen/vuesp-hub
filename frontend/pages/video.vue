@@ -14,6 +14,7 @@
 </template>
 
 <script setup lang="ts">
+import { BlockBreadcrumb as VBreadcrumb } from 'vuesp-components/components';
 import { io } from 'socket.io-client';
 import { onMounted, onUnmounted } from 'vue';
 
@@ -28,7 +29,7 @@ let mediaSource;
 let sourceBuffer;
 
 function initMediaSource() {
-  const video = document.getElementById('videoElement');
+  const video = document.getElementById('videoElement') as HTMLVideoElement | null;
   console.log(video);
 
   mediaSource = new MediaSource();
@@ -36,7 +37,7 @@ function initMediaSource() {
   mediaSource.addEventListener('sourceopen', () => {
     sourceBuffer = mediaSource.addSourceBuffer('video/mp2t; codecs="avc1.42E01E, mp4a.40.2"');
   });
-  video.src = URL.createObjectURL(mediaSource);
+  if (video) video.src = URL.createObjectURL(mediaSource);
 }
 
 const init = () => {

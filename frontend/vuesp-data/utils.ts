@@ -1,45 +1,32 @@
 import type { TypeProperty, TypePropertyString } from './types.ts';
+import {
+  legacyFormatterFromString,
+  legacyFormatterToString,
+  legacyGetterFromString,
+  legacyGetterToString,
+  legacySetterFromString,
+  legacySetterToString,
+} from './legacyExpressions.ts';
 
-export const saveObjectWithFunctions = (obj: any) => {
-  const processValue = (value: any) => {
-    if (typeof value === 'function') return `${value.toString()}`;
-    if (Array.isArray(value)) {
-      const items: any = value.map((v) => processValue(v));
-      return `[${items.join(',')}]`;
-    }
-    if (typeof value === 'object' && value !== null) {
-      const entries: any = Object.entries(value).map(([key, val]) => `${JSON.stringify(key)}: ${processValue(val)}`);
-      return `{${entries.join(',')}}`;
-    }
-    return JSON.stringify(value);
-  };
-  return processValue(obj);
-};
-
-export const safeEval = (code: any) => {
-  if (typeof code !== 'string' || code.trim() === '') {
-    return null;
-  }
-  try {
-    return eval(code);
-  } catch (error) {
-    return null;
-  }
-};
-
-export const stringToFunction = ({ set, get, modifyValue, ...all }: any) => {
-  const obj = { ...all };
-  if (set && typeof set === 'string') obj.set = safeEval(set);
-  if (get && typeof get === 'string') obj.get = safeEval(get);
-  if (modifyValue && typeof modifyValue === 'string') obj.modifyValue = safeEval(modifyValue);
+export const stringToFunction = ({ set, get, modifyValue, ...all }: TypePropertyString | TypeProperty): TypeProperty => {
+  const obj: TypeProperty = { ...all };
+  const setter = typeof set === 'string' ? legacySetterFromString(set) : set;
+  const getter = typeof get === 'string' ? legacyGetterFromString(get) : get;
+  const modifier = typeof modifyValue === 'string' ? undefined : modifyValue;
+  if (setter) obj.set = setter;
+  if (getter) obj.get = getter;
+  if (modifier) obj.modifyValue = modifier;
   return obj;
 };
 
-export const functionToString = ({ set, get, modifyValue, ...arg }: TypeProperty) => {
+export const functionToString = ({ set, get, modifyValue, ...arg }: TypeProperty): TypePropertyString => {
   const obj: TypePropertyString = { ...arg };
-  if (set) obj.set = set.toString();
-  if (get) obj.get = get.toString();
-  if (modifyValue) obj.modifyValue = modifyValue.toString();
+  const setter = set && legacySetterToString(set);
+  const getter = get && legacyGetterToString(get);
+  const formatter = modifyValue && legacyFormatterToString(modifyValue);
+  if (setter) obj.set = setter;
+  if (getter) obj.get = getter;
+  if (formatter) obj.modifyValue = formatter;
   return obj;
 };
 

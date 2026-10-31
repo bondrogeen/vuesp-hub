@@ -62,15 +62,14 @@
                       Password
                       <span class="text-error-500">*</span>
                     </label>
-                    <div x-data="{ showPassword: false }" class="relative">
+                    <div class="relative">
                       <input
                         :type="showPassword ? 'text' : 'password'"
                         placeholder="Enter your password"
                         class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent py-2.5 pl-4 pr-11 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
-                        type="password"
                       />
                       <span @click="showPassword = !showPassword" class="absolute z-30 text-gray-500 -translate-y-1/2 cursor-pointer right-4 top-1/2 dark:text-gray-400">
-                        <svg x-show="!showPassword" class="fill-current" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <svg v-show="!showPassword" class="fill-current" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
                           <path
                             fill-rule="evenodd"
                             clip-rule="evenodd"
@@ -78,7 +77,7 @@
                             fill="#98A2B3"
                           ></path>
                         </svg>
-                        <svg x-show="showPassword" class="fill-current" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" style="display: none">
+                        <svg v-show="showPassword" class="fill-current" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" style="display: none">
                           <path
                             fill-rule="evenodd"
                             clip-rule="evenodd"
@@ -91,7 +90,7 @@
                   </div>
                   <!-- Checkbox -->
                   <div class="flex items-center justify-between">
-                    <div x-data="{ checkboxToggle: false }">
+                    <div>
                       <label for="checkboxLabelOne" class="flex items-center text-sm font-normal text-gray-700 cursor-pointer select-none dark:text-gray-400">
                         <div class="relative">
                           <input type="checkbox" id="checkboxLabelOne" class="sr-only" @change="checkboxToggle = !checkboxToggle" />
@@ -149,7 +148,7 @@
       </div>
       <!-- Toggler -->
       <div class="fixed z-50 bottom-6 right-6">
-        <button class="inline-flex items-center justify-center text-white transition-colors rounded-full size-14 bg-brand-500 hover:bg-brand-600" @click.prevent="darkMode = !darkMode">
+        <button class="inline-flex items-center justify-center text-white transition-colors rounded-full size-14 bg-brand-500 hover:bg-brand-600" @click.prevent="toggleDarkMode">
           <svg class="hidden fill-current dark:block" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path
               fill-rule="evenodd"
@@ -170,11 +169,16 @@
   </div>
 </template>
 
-<script setup>
-import { onMounted } from 'vue';
+<script setup lang="ts">
+import { ref } from 'vue';
+import { useDarkMode } from '@/composables/useDarkMode.ts';
+
+const showPassword = ref(false);
+const checkboxToggle = ref(false);
+const { toggleDarkMode } = useDarkMode();
 
 const yaLogin = () => {
-  YaAuthSuggest.init(
+  window.YaAuthSuggest.init(
     {
       client_id: '8867370283c94fe0b2f57a7c9b363cc3',
       response_type: 'token',
@@ -184,8 +188,6 @@ const yaLogin = () => {
   )
     .then(({ handler }) => handler())
     .then(data => console.log('Сообщение с токеном', data))
-    .catch(error => console.log('Обработка ошибки', error));
+    .catch(error => console.error('Yandex sign-in failed:', error));
 };
-
-onMounted(() => {});
 </script>

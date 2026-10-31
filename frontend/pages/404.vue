@@ -1,21 +1,8 @@
 <template>
   <div class="relative z-1 flex min-h-screen flex-col items-center justify-center overflow-hidden p-6">
-    <!-- ===== Common Grid Shape Start ===== -->
-    <div class="absolute right-0 top-0 -z-1 w-full max-w-[250px] xl:max-w-[450px]">
-      <img src="src/images/shape/grid-01.svg" alt="grid" />
-    </div>
-    <div class="absolute bottom-0 left-0 -z-1 w-full max-w-[250px] rotate-180 xl:max-w-[450px]">
-      <img src="src/images/shape/grid-01.svg" alt="grid" />
-    </div>
-
-    <!-- ===== Common Grid Shape End ===== -->
-
     <!-- Centered Content -->
     <div class="mx-auto w-full max-w-[242px] text-center sm:max-w-[472px]">
-      <h1 class="mb-8 text-title-md font-bold text-gray-800 dark:text-white/90 xl:text-title-2xl">ERROR</h1>
-
-      <img src="src/images/error/404.svg" alt="404" class="dark:hidden" />
-      <img src="src/images/error/404-dark.svg" alt="404" class="hidden dark:block" />
+      <h1 class="mb-8 text-6xl font-bold text-gray-800 dark:text-white/90 xl:text-8xl">404</h1>
 
       <p class="mb-6 mt-10 text-base text-gray-700 dark:text-gray-400 sm:text-lg">We can’t seem to find the page you are looking for!</p>
 

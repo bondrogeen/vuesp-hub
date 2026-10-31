@@ -1,4 +1,4 @@
-import type { TypeMenuItem } from '@/types/types.ts';
+import type { MenuItemType } from '@/types.ts';
 
 export const jsonParse = (data: string | undefined | null): any => {
   try {
@@ -33,16 +33,23 @@ const headers = { 'Content-Type': 'application/json;charset=utf-8' };
 export const apiFetch = async <T>(path: string, init?: RequestInit): Promise<T> => {
   const response = await fetch(`${basePath}${path}`, init);
   if (!response.ok) {
-    throw new Error(response.statusText);
+    let message = response.statusText;
+    try {
+      const body = await response.json();
+      if (typeof body?.error === 'string') message = body.error;
+    } catch {
+      // The response may not contain JSON.
+    }
+    throw new Error(message || `Request failed with status ${response.status}`);
   }
   return (await response.json()) as T;
 };
 
 export const api = {
-  get: (path: string, init?: RequestInit) => apiFetch(path, { method: 'GET', headers, ...init }),
-  post: (path: string, init?: RequestInit) => apiFetch(path, { method: 'POST', headers, ...init }),
-  delete: (path: string, init?: RequestInit) => apiFetch(path, { method: 'DELETE', headers, ...init }),
-  put: (path: string, init?: RequestInit) => apiFetch(path, { method: 'PUT', headers, ...init }),
+  get: <T = unknown>(path: string, init?: RequestInit) => apiFetch<T>(path, { method: 'GET', headers, ...init }),
+  post: <T = unknown>(path: string, init?: RequestInit) => apiFetch<T>(path, { method: 'POST', headers, ...init }),
+  delete: <T = unknown>(path: string, init?: RequestInit) => apiFetch<T>(path, { method: 'DELETE', headers, ...init }),
+  put: <T = unknown>(path: string, init?: RequestInit) => apiFetch<T>(path, { method: 'PUT', headers, ...init }),
 };
 
 export const sendFrameRoute = (src: string) => {
@@ -62,7 +69,7 @@ export const changeTheme = (value: string) => {
 
 export const findMenuTitle = (items: any, path: string) => items.reduce((acc: any, i: any) => (i.path === path ? i : i.children ? findMenuTitle(i.children, path) : acc), null);
 
-export const getPageTitle = (menu: TypeMenuItem[], path: string) => findMenuTitle(menu, path);
+export const getPageTitle = (menu: MenuItemType[], path: string) => findMenuTitle(menu, path);
 
 export const toByte = (value: number) => {
   const sizes = ['B', 'KB', 'MB'];
