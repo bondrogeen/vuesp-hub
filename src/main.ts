@@ -6,16 +6,23 @@ import path from 'node:path';
 import { server } from '../server/server.ts';
 import { closeDeviceModel, getDeviceModel, storeModel } from '../server/models/index.ts';
 import Core from '../core/core.ts';
+import { DeviceRuntime } from '../core/application/deviceRuntime.ts';
+import { VuespDevices } from '../server/devices/vuespDevices.ts';
+import type { DeviceConnectionRecord } from '../shared/device.ts';
 
 if (started) {
   app.quit();
 }
 
 const appPath = app.getAppPath();
+const deviceRuntime = new DeviceRuntime<DeviceConnectionRecord>({
+  loadDevices: async () => (await getDeviceModel()).getAll({ includeCredentials: true }),
+  createConnections: devices => new VuespDevices(devices),
+});
 const { createExpress, closeExpress } = server({
   staticDirectory: path.join(appPath, 'public'),
+  deviceRuntime,
   getDeviceModel,
-  closeDeviceModel,
   storeModel,
   serialSettingsStore: new Store<Record<string, unknown>>(),
 });
@@ -29,6 +36,9 @@ const core = new Core({
 });
 
 let mainWindow;
+let shutdownPromise: Promise<void> | undefined;
+let allowQuit = false;
+let isQuitting = false;
 
 const createWindow = () => {
   mainWindow = new BrowserWindow({
@@ -58,9 +68,13 @@ const createWindow = () => {
 };
 
 
-app.whenReady().then(async () => {
+const startupPromise = app.whenReady().then(async () => {
+  await deviceRuntime.start();
+  if (isQuitting) return;
   await createExpress();
+  if (isQuitting) return;
   await core.init();
+  if (isQuitting) return;
 
   createWindow();
 
@@ -70,16 +84,54 @@ app.whenReady().then(async () => {
       createWindow();
     }
   });
-}).catch(error => {
+});
+
+void startupPromise.catch(error => {
   console.error('Application startup failed:', error);
-  dialog.showErrorBox('Vuesp could not start', error instanceof Error ? error.message : String(error));
+  if (!isQuitting) {
+    dialog.showErrorBox('Vuesp could not start', error instanceof Error ? error.message : String(error));
+  }
   app.quit();
 });
 
 app.on('window-all-closed', async () => {
   if (process.platform !== 'darwin') {
-    await core.shutdown();
-    await closeExpress()
     app.quit();
   }
+});
+
+app.on('before-quit', event => {
+  if (allowQuit) return;
+  event.preventDefault();
+  isQuitting = true;
+  shutdownPromise ??= (async () => {
+    const errors: unknown[] = [];
+    await startupPromise.catch(() => undefined);
+    for (const shutdown of [
+      closeExpress,
+      () => core.shutdown(),
+      () => deviceRuntime.stop(),
+      closeDeviceModel,
+    ]) {
+      try {
+        await shutdown();
+      } catch (error) {
+        errors.push(error);
+      }
+    }
+    if (errors.length) throw new AggregateError(errors, 'One or more application services failed to shut down');
+  })();
+
+  void shutdownPromise.then(
+    () => {
+      allowQuit = true;
+      app.quit();
+    },
+    error => {
+      console.error('Application shutdown failed:', error);
+      dialog.showErrorBox('Vuesp shutdown failed', error instanceof Error ? error.message : String(error));
+      allowQuit = true;
+      app.quit();
+    },
+  );
 });

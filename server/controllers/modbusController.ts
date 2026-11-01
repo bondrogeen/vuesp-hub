@@ -1,26 +1,22 @@
 import Serial from '../services/serial/ServiceSerial.ts';
+import type { Request, Response } from 'express';
+import { sendApiError } from '../http/apiResponse.ts';
 
-console.log(Serial);
+export type ModbusSerial = Pick<Serial, 'getList' | 'writeAsync'>;
 
-const serial = new Serial();
-
-export default () => ({
-    async send(req, res) {
+export const createModbusController = (serial: ModbusSerial) => ({
+    async send(_req: Request, res: Response) {
         try {
-            const data = req.query.data
-            console.log(data);
-
-            const list = await serial.getList()
-
-            console.log(11111111);
+            await serial.getList();
             const t = await serial.writeAsync([1, 4, 0, 0, 0, 1, 49, 202])
 
-            console.log(34434343434);
-            console.log(t);
             res.status(200).json({ t });
 
         } catch (error) {
-            res.status(500).json({ error: error.message });
+            console.error('Modbus API request failed:', error);
+            sendApiError(res, 500, 'Internal server error');
         }
     },
 });
+
+export default () => createModbusController(new Serial());

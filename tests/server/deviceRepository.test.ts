@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { mkdtempSync, readFileSync, rmSync, rmdirSync } from 'node:fs';
+import { chmodSync, mkdtempSync, readFileSync, rmSync, rmdirSync, statSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
@@ -7,13 +7,18 @@ import { test } from 'node:test';
 
 import { createDeviceRepository } from '../../server/models/deviceRepository.ts';
 
-const createRepository = (options = {}) => createDeviceRepository({ databasePath: ':memory:', ...options });
+const secretProvider = {
+  encrypt: password => `encrypted:${password}`,
+  decrypt: password => password.replace('encrypted:', ''),
+};
+const createRepository = (options = {}) => createDeviceRepository({
+  databasePath: ':memory:',
+  secretProvider,
+  ...options,
+});
 
 test('persists device records and does not expose credentials in registry responses', async () => {
-  const repository = await createRepository({
-    encryptPassword: password => `encrypted:${password}`,
-    decryptPassword: password => password.replace('encrypted:', ''),
-  });
+  const repository = await createRepository();
 
   const device = repository.create({
     deviceId: 1234,
@@ -39,8 +44,6 @@ test('imports existing registry entries once and supports deletion', async () =>
     legacyDevices: [
       { deviceId: 42, firmware: [1, 0, 0], ip: '192.0.2.21', name: 'Legacy', id: 8, password: 'legacy-secret' },
     ],
-    encryptPassword: password => `encrypted:${password}`,
-    decryptPassword: password => password.replace('encrypted:', ''),
   });
 
   const [device] = repository.getAll();
@@ -56,12 +59,17 @@ test('imports existing registry entries once and supports deletion', async () =>
 test('persists registry data across database reopen', async () => {
   const directory = mkdtempSync(join(tmpdir(), 'vuesp-device-registry-'));
   const databasePath = join(directory, 'devices.sqlite');
+  if (process.platform !== 'win32') chmodSync(directory, 0o755);
   try {
-    const first = await createDeviceRepository({ databasePath });
+    const first = await createDeviceRepository({ databasePath, secretProvider });
     const added = first.create({ deviceId: 55, ip: '192.0.2.23', name: 'Persistent' });
+    if (process.platform !== 'win32') {
+      assert.equal(statSync(directory).mode & 0o777, 0o700);
+      assert.equal(statSync(databasePath).mode & 0o777, 0o600);
+    }
     first.close();
 
-    const second = await createDeviceRepository({ databasePath });
+    const second = await createDeviceRepository({ databasePath, secretProvider });
     assert.equal(second.getById(added.id).uuid, added.uuid);
     second.close();
   } finally {
@@ -95,7 +103,7 @@ test('opens an existing SQLite registry file without replacing its device UUID',
   legacyDatabase.close();
 
   try {
-    const repository = await createDeviceRepository({ databasePath });
+    const repository = await createDeviceRepository({ databasePath, secretProvider });
     assert.deepEqual(repository.getAll(), [{
       id: 1,
       uuid: 'saved-hub-uuid',
@@ -119,12 +127,14 @@ test('does not re-import legacy devices after the one-time migration', async () 
   try {
     const first = await createDeviceRepository({
       databasePath,
+      secretProvider,
       legacyDevices: [{ deviceId: 1, ip: '192.0.2.25', name: 'Imported' }],
     });
     first.close();
 
     const second = await createDeviceRepository({
       databasePath,
+      secretProvider,
       legacyDevices: [{ deviceId: 2, ip: '192.0.2.26', name: 'Should not import' }],
     });
     assert.deepEqual(second.getAll().map(device => device.name), ['Imported']);
@@ -144,5 +154,78 @@ test('rejects invalid addresses and duplicate registrations', async () => {
   assert.throws(() => repository.create(device), error =>
     error instanceof Error && 'code' in error && error.code === 'SQLITE_CONSTRAINT_UNIQUE',
   );
+  repository.close();
+});
+
+test('database schema migrations are atomic when secure credential import fails', async () => {
+  const directory = mkdtempSync(join(tmpdir(), 'vuesp-failed-migration-'));
+  const databasePath = join(directory, 'devices.sqlite');
+  try {
+    await assert.rejects(
+      createDeviceRepository({
+        databasePath,
+        legacyDevices: [{
+          ip: '192.0.2.27',
+          name: 'Legacy',
+          password: 'legacy-secret',
+        }],
+        secretProvider: {
+          encrypt: () => { throw new Error('keyring unavailable'); },
+          decrypt: value => value,
+        },
+      }),
+      /keyring unavailable/,
+    );
+
+    const database = new DatabaseSync(databasePath);
+    assert.equal(Number(database.prepare('PRAGMA user_version').get().user_version), 0);
+    assert.equal(database.prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'devices'").get(), undefined);
+    database.close();
+  } finally {
+    rmSync(databasePath, { force: true });
+    rmdirSync(directory);
+  }
+});
+
+test('rejects database schema versions newer than the application supports', async () => {
+  const directory = mkdtempSync(join(tmpdir(), 'vuesp-newer-schema-'));
+  const databasePath = join(directory, 'devices.sqlite');
+  const database = new DatabaseSync(databasePath);
+  database.exec('PRAGMA user_version = 3');
+  database.close();
+
+  try {
+    await assert.rejects(
+      createDeviceRepository({ databasePath, secretProvider }),
+      /Unsupported device database schema version: 3/,
+    );
+  } finally {
+    rmSync(databasePath, { force: true });
+    rmdirSync(directory);
+  }
+});
+
+test('updates device details without decrypting an unchanged password', async () => {
+  let decryptCalls = 0;
+  const repository = await createRepository({
+    secretProvider: {
+      encrypt: value => `encrypted:${value}`,
+      decrypt: value => {
+        decryptCalls += 1;
+        return value.replace('encrypted:', '');
+      },
+    },
+  });
+  const device = repository.create({
+    deviceId: 1,
+    ip: '192.0.2.28',
+    name: 'Before',
+    password: 'secret',
+  });
+
+  repository.update(device.id, { name: 'After' });
+  assert.equal(decryptCalls, 0);
+  assert.equal(repository.getById(device.id, { includeCredentials: true }).password, 'secret');
+  assert.equal(decryptCalls, 1);
   repository.close();
 });

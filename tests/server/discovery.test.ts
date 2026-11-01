@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import Struct from 'c-struct-to-json';
 
-import { decodeDiscoveryMessage } from '../../server/controllers/vuespController.ts';
+import { createDiscoveryQuery, decodeDiscoveryMessage } from '../../server/devices/protocols/vuespDiscovery.ts';
 
 const discoveryStruct = [
   { name: 'command', type: 'uint8_t' },
@@ -29,8 +29,19 @@ test('decodes discovery payloads from a Buffer view and strips padded name bytes
   });
 });
 
+test('creates the legacy discovery request with command 99 and the expected frame size', () => {
+  const query = createDiscoveryQuery();
+  const buffer = new ArrayBuffer(query.byteLength);
+  new Uint8Array(buffer).set(query);
+  const data = new Struct(discoveryStruct).setBuffer(buffer).getObject();
+
+  assert.equal(query.length, 28);
+  assert.equal(data.command, 99);
+});
+
 test('ignores malformed and non-discovery payloads', () => {
   assert.equal(decodeDiscoveryMessage(Buffer.alloc(2), '192.0.2.31'), null);
+  assert.equal(decodeDiscoveryMessage(Buffer.alloc(28), 'not-an-ip'), null);
   const response = Buffer.from(new Uint8Array(new Struct(discoveryStruct).setObject({
     command: 99,
     firmware: [0, 0, 0],

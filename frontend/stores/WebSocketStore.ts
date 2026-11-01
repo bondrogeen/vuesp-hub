@@ -2,13 +2,12 @@ import { defineStore } from 'pinia';
 import { markRaw } from 'vue';
 import { io } from 'socket.io-client';
 import type { DeviceListItem, DeviceMenu } from '@/types.ts';
-
-interface DeviceEvent {
-  event: string;
-  data: unknown;
-  id: string | number;
-  key?: string;
-}
+import {
+  isDeviceEventPayload,
+  isRecordValue,
+  type DeviceCommand,
+  type TargetedDeviceCommand,
+} from '../../shared/device.ts';
 
 type DeviceState = Record<string, Record<string, unknown>>;
 
@@ -56,18 +55,20 @@ export const useWebSocketStore = defineStore('websocketstore', {
       }
     },
 
-    onData({ event, data, id, key }: DeviceEvent) {
-      if (event === 'message' && key === 'INFO' && typeof data === 'object' && data !== null) {
-        this.main = data as Record<string, unknown>;
+    onData(payload: unknown) {
+      if (!isDeviceEventPayload(payload)) return;
+      const { event, data, id, key } = payload;
+      if (event === 'message' && key === 'INFO' && isRecordValue(data)) {
+        this.main = data;
       }
       if (!key) return;
-      if (!this.devices?.[id]) {
+      if (!Object.hasOwn(this.devices, id)) {
         this.devices[id] = {}
       }
       this.devices[id][key] = data
     },
 
-    sendDevice({ ip, name, comm, data }: { ip?: string; name?: string; comm: string; data?: unknown }) {
+    sendDevice({ ip, name, comm, data }: TargetedDeviceCommand) {
       // console.log(ip, name, comm, data);
 
       this.socket.emit('device:send', { ip, name, comm, data }, (response) => {
@@ -75,12 +76,12 @@ export const useWebSocketStore = defineStore('websocketstore', {
       });
     },
 
-    sendDeviceAll({ comm, data }: { comm: string; data?: unknown }) {
+    sendDeviceAll({ comm, data }: DeviceCommand) {
       this.socket.emit('device:sendAll', { comm, data }, (response) => {
         console.log('sendDevice:', response);
       });
     },
-    onSend(comm: string, data?: unknown) {
+    onSend(comm: string, data?: DeviceCommand['data']) {
       this.sendDeviceAll({ comm, data });
     },
     getMenus() {

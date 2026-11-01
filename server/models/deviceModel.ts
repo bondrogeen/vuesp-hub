@@ -4,6 +4,7 @@ import { mkdirSync } from 'node:fs';
 import path from 'node:path';
 
 import { createDeviceRepository } from './deviceRepository.ts';
+import type { SecretProvider } from './secretProvider.ts';
 
 interface LegacyDevice {
   id?: number;
@@ -21,18 +22,19 @@ interface LegacyStore {
 
 let repositoryPromise: ReturnType<typeof createDeviceRepository> | undefined;
 
-const encryptPassword = password => {
-  if (!safeStorage.isEncryptionAvailable()) {
-    throw new Error('Secure credential storage is unavailable. Configure an OS keyring before saving device credentials.');
-  }
-  return safeStorage.encryptString(password).toString('base64');
-};
-
-const decryptPassword = password => {
-  if (!safeStorage.isEncryptionAvailable()) {
-    throw new Error('Secure credential storage is unavailable. Configure an OS keyring to access saved device credentials.');
-  }
-  return safeStorage.decryptString(Buffer.from(password, 'base64'));
+const secretProvider: SecretProvider = {
+  encrypt(value) {
+    if (!safeStorage.isEncryptionAvailable()) {
+      throw new Error('Secure credential storage is unavailable. Configure an OS keyring before saving device credentials.');
+    }
+    return safeStorage.encryptString(value).toString('base64');
+  },
+  decrypt(value) {
+    if (!safeStorage.isEncryptionAvailable()) {
+      throw new Error('Secure credential storage is unavailable. Configure an OS keyring to access saved device credentials.');
+    }
+    return safeStorage.decryptString(Buffer.from(value, 'base64'));
+  },
 };
 
 export const getDeviceModel = () => {
@@ -44,8 +46,7 @@ export const getDeviceModel = () => {
     repositoryPromise = createDeviceRepository({
       databasePath,
       legacyDevices,
-      encryptPassword,
-      decryptPassword,
+      secretProvider,
     }).then(model => {
       if (Array.isArray(legacyDevices)) {
         const addresses = legacyDevices.map(device => device?.ip);

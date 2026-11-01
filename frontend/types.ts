@@ -1,3 +1,5 @@
+import type { DeviceRecord } from '../shared/device.ts';
+
 export type IconName = 'IconChevron' | 'IconDots' | 'IconSearch' | 'IconUpdate' | 'IconDashboard' | 'IconDevice' | 'IconVideo' | 'IconList';
 
 export interface MenuChildType {
@@ -60,13 +62,4 @@ export interface DeviceFormInput {
   password: string;
 }
 
-export interface RegisteredDevice {
-  id: number;
-  uuid: string;
-  deviceId: number;
-  name: string;
-  ip: string;
-  firmware: number[];
-  addedAt: string;
-  username?: string;
-}
+export type RegisteredDevice = DeviceRecord;

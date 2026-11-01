@@ -2,8 +2,7 @@ import express from 'express';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
 
-import { DeviceRuntime } from '../core/application/deviceRuntime.ts';
-import { VuespDevices } from './devices/vuespDevices.ts';
+import type { DeviceRuntime } from '../core/application/deviceRuntime.ts';
 import { createRouter } from './routes/index.ts';
 import proxy from './routes/proxy.ts';
 import type { DeviceRepository } from './models/deviceRepository.ts';
@@ -22,31 +21,24 @@ interface SettingsStore {
 
 interface ServerOptions {
   staticDirectory?: string;
+  deviceRuntime: DeviceRuntime<unknown>;
   getDeviceModel: () => Promise<DeviceRepository>;
-  closeDeviceModel: () => Promise<void>;
   storeModel: StoreModelFactory;
   serialSettingsStore: SettingsStore;
 }
 
-type StoredDevice = ReturnType<DeviceRepository['getAll']>[number];
-
 export const server = ({
   staticDirectory,
+  deviceRuntime,
   getDeviceModel,
-  closeDeviceModel,
   storeModel,
   serialSettingsStore,
 }: ServerOptions) => {
   let httpServer: ReturnType<typeof createServer> | undefined;
-  let deviceRuntime: DeviceRuntime<StoredDevice> | undefined;
   let detachDeviceSocket: (() => void) | undefined;
 
   const createExpress = async () => {
     await getDeviceModel();
-    deviceRuntime = new DeviceRuntime({
-      loadDevices: async () => (await getDeviceModel()).getAll({ includeCredentials: true }),
-      createConnections: devices => new VuespDevices(devices),
-    });
     const app = express();
 
     app.use(express.json());
@@ -82,14 +74,11 @@ export const server = ({
   const closeExpress = async () => {
     detachDeviceSocket?.();
     detachDeviceSocket = undefined;
-    await deviceRuntime?.stop();
-    deviceRuntime = undefined;
     if (httpServer?.listening) {
       await new Promise<void>((resolve, reject) => {
         httpServer?.close(error => error ? reject(error) : resolve());
       });
     }
-    await closeDeviceModel();
   };
 
   return {

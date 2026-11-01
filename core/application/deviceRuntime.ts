@@ -1,4 +1,5 @@
 import { EventEmitter } from 'node:events';
+import { isDeviceEventPayload, type DeviceCommandPayload } from '../../shared/device.ts';
 
 export interface DeviceConnectionManager {
   on(event: string, listener: (payload: unknown) => void): this;
@@ -7,8 +8,8 @@ export interface DeviceConnectionManager {
   disconnection(): void;
   getMenu(): unknown[];
   getList(): unknown[];
-  onSend(target: string, command: string, data: unknown): boolean;
-  onSendAll(command: string, data: unknown): boolean;
+  onSend(target: string, command: string, data?: DeviceCommandPayload): boolean;
+  onSendAll(command: string, data?: DeviceCommandPayload): boolean;
 }
 
 export interface DeviceRuntimeOptions<TDevice> {
@@ -21,7 +22,13 @@ export class DeviceRuntime<TDevice> extends EventEmitter {
   private readonly createConnections: DeviceRuntimeOptions<TDevice>['createConnections'];
   private manager: DeviceConnectionManager | undefined;
   private startPromise: Promise<boolean> | undefined;
-  private readonly onDeviceData = (payload: unknown) => this.emit('data', payload);
+  private readonly latestEvents = new Map<string, unknown>();
+  private readonly onDeviceData = (payload: unknown) => {
+    if (isDeviceEventPayload(payload) && payload.key && payload.event !== 'raw') {
+      this.latestEvents.set(`${payload.id}\0${payload.key}`, payload);
+    }
+    this.emit('data', payload);
+  };
 
   constructor({ loadDevices, createConnections }: DeviceRuntimeOptions<TDevice>) {
     super();
@@ -31,6 +38,10 @@ export class DeviceRuntime<TDevice> extends EventEmitter {
 
   get isRunning(): boolean {
     return this.manager !== undefined;
+  }
+
+  getSnapshot(): unknown[] {
+    return [...this.latestEvents.values()];
   }
 
   async start(): Promise<boolean> {
@@ -72,11 +83,11 @@ export class DeviceRuntime<TDevice> extends EventEmitter {
     return true;
   }
 
-  send(target: string, command: string, data: unknown): boolean {
+  send(target: string, command: string, data?: DeviceCommandPayload): boolean {
     return this.manager?.onSend(target, command, data) ?? false;
   }
 
-  sendAll(command: string, data: unknown): boolean {
+  sendAll(command: string, data?: DeviceCommandPayload): boolean {
     return this.manager?.onSendAll(command, data) ?? false;
   }
 

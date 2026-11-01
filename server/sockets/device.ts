@@ -1,7 +1,9 @@
 import type { Server as SocketIOServer } from 'socket.io';
 import type { DeviceRuntime } from '../../core/application/deviceRuntime.ts';
+import { parseBroadcastDeviceCommand, parseTargetedDeviceCommand } from '../../shared/device.ts';
+import type { ServiceSocketAcknowledgement } from '../../shared/socket.ts';
 
-const respond = (callback: unknown, payload: unknown) => {
+const respond = (callback: unknown, payload: ServiceSocketAcknowledgement) => {
   if (typeof callback === 'function') callback(payload);
 };
 
@@ -14,6 +16,11 @@ export const socketDevice = (io: SocketIOServer, runtime: DeviceRuntime<unknown>
   runtime.on('status', forwardStatus);
 
   io.on('connection', socket => {
+    socket.emit('service:status', { running: runtime.isRunning });
+    for (const payload of runtime.getSnapshot()) {
+      socket.emit('device:data', payload);
+    }
+
     socket.on('service:start', async (_data, callback) => {
       try {
         const started = await runtime.start();
@@ -27,37 +34,40 @@ export const socketDevice = (io: SocketIOServer, runtime: DeviceRuntime<unknown>
       }
     });
 
-    socket.on('device:send', ({ ip, name, comm, data } = {}, callback) => {
+    socket.on('device:send', (request: unknown, callback) => {
       if (!runtime.isRunning) {
         respond(callback, { status: 'error', message: 'Service not running' });
         return;
       }
-      if (!(ip || name) || !comm) {
-        respond(callback, { status: 'failed', message: 'A device and command are required' });
-        return;
-      }
       try {
-        const sent = runtime.send(ip || name, comm, data);
-        respond(callback, { status: sent ? 'success' : 'failed' });
+        const { ip, name, comm, data } = parseTargetedDeviceCommand(request);
+        const target = ip || name;
+        if (!target) throw new TypeError('A device and command are required');
+        const sent = runtime.send(target, comm, data);
+        if (sent) respond(callback, { status: 'success' });
+        else respond(callback, { status: 'failed' });
       } catch (error) {
-        respond(callback, { status: 'error', message: errorMessage(error, 'Could not send device command') });
+        const message = error instanceof TypeError
+          ? error.message
+          : errorMessage(error, 'Could not send device command');
+        respond(callback, { status: error instanceof TypeError ? 'failed' : 'error', message });
       }
     });
 
-    socket.on('device:sendAll', ({ comm, data } = {}, callback) => {
+    socket.on('device:sendAll', (request: unknown, callback) => {
       if (!runtime.isRunning) {
         respond(callback, { status: 'error', message: 'Service not running' });
         return;
       }
-      if (!comm) {
-        respond(callback, { status: 'failed', message: 'A command is required' });
-        return;
-      }
       try {
+        const { comm, data } = parseBroadcastDeviceCommand(request);
         runtime.sendAll(comm, data);
         respond(callback, { status: 'success' });
       } catch (error) {
-        respond(callback, { status: 'error', message: errorMessage(error, 'Could not send device command') });
+        const message = error instanceof TypeError
+          ? error.message
+          : errorMessage(error, 'Could not send device command');
+        respond(callback, { status: error instanceof TypeError ? 'failed' : 'error', message });
       }
     });
 

@@ -1,5 +1,6 @@
 import { EventEmitter } from 'node:events';
 import Device from './vuespDevice.ts';
+import type { DeviceCommandPayload } from '../../shared/device.ts';
 
 class VuespDevices extends EventEmitter {
   #list;
@@ -71,14 +72,14 @@ class VuespDevices extends EventEmitter {
     return list
   }
 
-  onSend(find, comm, data) {
+  onSend(find: string, comm: string, data?: DeviceCommandPayload) {
     const device = this.#devices.find(device => device.name === find || device.ip === find);
     if (device) {
       return device.send(comm, data);
     }
     return false
   }
-  onSendAll(comm, data) {
+  onSendAll(comm: string, data?: DeviceCommandPayload) {
     this.#devices.forEach(device => {
       device.send(comm, data);
     });

@@ -1,8 +1,9 @@
 import { EventEmitter } from 'node:events';
 import WebSocket from 'ws';
-import Struct from 'vuesp-struct';
 import AxiosDigestAuth from '@mhoc/axios-digest-auth';
 import { parseLegacyDashboard } from './legacyDashboard.ts';
+import { LegacyDeviceProtocol } from './protocols/legacyDeviceProtocol.ts';
+import type { DeviceCommandPayload } from '../../shared/device.ts';
 
 interface WebSocketClient {
   readyState: number;
@@ -42,7 +43,6 @@ class VuespDevice extends EventEmitter {
   #list;
   #fetch;
   #state;
-  #struct;
   #address;
   #options;
   #interval;
@@ -53,6 +53,7 @@ class VuespDevice extends EventEmitter {
   #reconnectAttempt;
   #reconnectTimer;
   #manualDisconnect;
+  #protocol;
   #menu = [];
 
   constructor(
@@ -78,7 +79,7 @@ class VuespDevice extends EventEmitter {
     this.#list = [];
     this.#state = {};
     this.#fetch = fetchClient ?? fetch(new AxiosDigestAuth({ username, password }));
-    this.#struct = new Struct();
+    this.#protocol = new LegacyDeviceProtocol();
     this.#address = `ws://${ip}/esp`;
     this.#options = options;
     this.#interval = null;
@@ -117,7 +118,7 @@ class VuespDevice extends EventEmitter {
     try {
       const { data } = await this.#fetch.get({ url: `http://${this.#ip}/struct.json` });
 
-      this.#struct.init(data);
+      this.#protocol.initialize(data);
       this.#onEvent('init', true);
       this.send('INFO');
     } catch (error) {
@@ -209,12 +210,16 @@ class VuespDevice extends EventEmitter {
     this.#time = new Date().getTime();
     this.#onEvent('raw', message);
     if (message instanceof ArrayBuffer) {
-      const data = this.#struct.get(message);
-      if (data) {
-        const { object, key } = data;
-        if (key === 'PING') return;
-        this.#state[key] = object;
-        this.#onEvent('message', { data: object, key });
+      try {
+        const data = this.#protocol.decode(message);
+        if (data) {
+          const { object, key } = data;
+          if (key === 'PING') return;
+          this.#state[key] = object;
+          this.#onEvent('message', { data: object, key });
+        }
+      } catch (error) {
+        this.#onEvent('error', error);
       }
     }
   }
@@ -301,9 +306,9 @@ class VuespDevice extends EventEmitter {
     return true;
   }
 
-  send(comm: string, data: unknown = {}) {
+  send(comm: string, data: DeviceCommandPayload = {}) {
     if (this.#isConnect) {
-      const buffer = this.#struct.set(comm, data);
+      const buffer = this.#protocol.encode(comm, data);
       if (buffer) {
         this.#ws.send(buffer);
         return true;

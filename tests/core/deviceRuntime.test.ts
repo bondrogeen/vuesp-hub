@@ -52,6 +52,13 @@ test('owns connection lifecycle and forwards device events independently of sock
   assert.deepEqual(runtime.getMenu(), []);
   assert.equal(runtime.send('192.0.2.1', 'INFO', {}), true);
 
+  manager.emit('*', { event: 'message', id: 123, key: 'INFO', data: { id: 123 } });
+  assert.deepEqual(runtime.getSnapshot(), [
+    { event: 'message', id: 123, key: 'INFO', data: { id: 123 } },
+  ]);
+  manager.emit('*', { event: 'raw', id: 123, key: 'INFO', data: 'binary' });
+  assert.equal(runtime.getSnapshot().length, 1);
+
   assert.equal(await runtime.stop(), true);
   assert.equal(runtime.isRunning, false);
   assert.equal(manager.disconnected, true);
@@ -77,4 +84,20 @@ test('coalesces concurrent starts', async () => {
   releaseLoad(['device']);
   assert.deepEqual(await Promise.all([firstStart, secondStart]), [true, true]);
   assert.equal(connectionCount, 1);
+});
+
+test('disconnects and detaches a manager when startup fails', async () => {
+  const manager = new FakeDeviceManager();
+  manager.connection = async () => {
+    throw new Error('connection failed');
+  };
+  const runtime = new DeviceRuntime({
+    loadDevices: async () => [],
+    createConnections: () => manager,
+  });
+
+  await assert.rejects(runtime.start(), /connection failed/);
+  assert.equal(runtime.isRunning, false);
+  assert.equal(manager.disconnected, true);
+  assert.equal(manager.listenerCount('*'), 0);
 });
