@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { scanDevices } from '../controllers/vuespController.ts';
-import type { DiscoveredDevice } from '../../shared/device.ts';
+import type { DeviceUiSession, DiscoveredDevice } from '../../shared/device.ts';
 import type { DeviceRepository } from '../models/deviceRepository.ts';
 import { sendApiError, sendApiFailure } from '../http/apiResponse.ts';
 
@@ -38,6 +38,25 @@ export const createVuespRouter = (getDeviceModel: () => Promise<DeviceRepository
       res.json(model.getAll());
     } catch (error) {
       sendDeviceFailure(res, error);
+    }
+  });
+
+  router.get('/:id/ui/', async (req, res) => {
+    try {
+      const id = parseDeviceRecordId(req.params.id);
+      const model = await getDeviceModel();
+      const device = model.getById(id, { includeCredentials: true });
+      if (!device) return res.status(404).json({ error: 'Device not found' });
+
+      const credentials = `${device.username}:${device.password}`;
+      const authorization = device.username || device.password
+        ? `Basic ${Buffer.from(credentials).toString('base64')}`
+        : '';
+      const host = device.ip.includes(':') ? `[${device.ip}]` : device.ip;
+      const session: DeviceUiSession = { origin: `http://${host}`, authorization };
+      return res.json(session);
+    } catch (error) {
+      return sendDeviceFailure(res, error);
     }
   });
 

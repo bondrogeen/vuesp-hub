@@ -3,36 +3,32 @@ import Store from 'electron-store';
 import started from 'electron-squirrel-startup';
 import path from 'node:path';
 
-import { server } from '../server/server.ts';
+import { createHub } from '../server/host.ts';
+import { createAuthService } from '../server/auth/authService.ts';
 import { closeDeviceModel, getDeviceModel, storeModel } from '../server/models/index.ts';
-import Core from '../core/core.ts';
-import { DeviceRuntime } from '../core/application/deviceRuntime.ts';
-import { VuespDevices } from '../server/devices/vuespDevices.ts';
-import type { DeviceConnectionRecord } from '../shared/device.ts';
 
 if (started) {
   app.quit();
 }
 
 const appPath = app.getAppPath();
-const deviceRuntime = new DeviceRuntime<DeviceConnectionRecord>({
-  loadDevices: async () => (await getDeviceModel()).getAll({ includeCredentials: true }),
-  createConnections: devices => new VuespDevices(devices),
-});
-const { createExpress, closeExpress } = server({
+const workerScriptPath = path.join(
+  app.isPackaged ? `${appPath}.unpacked` : appPath,
+  '.vite',
+  'build',
+  'worker-script.cjs',
+);
+
+const hub = createHub({
   staticDirectory: path.join(appPath, 'public'),
-  deviceRuntime,
   getDeviceModel,
+  closeDeviceModel,
   storeModel,
   serialSettingsStore: new Store<Record<string, unknown>>(),
-});
-const core = new Core({
-  workerScriptPath: path.join(
-    app.isPackaged ? `${appPath}.unpacked` : appPath,
-    '.vite',
-    'build',
-    'worker-script.cjs',
-  ),
+  workerScriptPath,
+  auth: createAuthService({ dataDirectory: app.getPath('userData') }),
+  host: process.env.VUESP_HOST || undefined,
+  port: process.env.VUESP_PORT ? Number(process.env.VUESP_PORT) : undefined,
 });
 
 let mainWindow;
@@ -61,23 +57,15 @@ const createWindow = () => {
     mainWindow.loadFile(path.join(appPath, '.vite', 'renderer', MAIN_WINDOW_VITE_NAME, 'index.html'));
   }
 
-  // mainWindow.loadURL(`http://localhost:${port}`);
-
   // Open the DevTools.
   mainWindow.webContents.openDevTools();
 };
 
-
 const startupPromise = app.whenReady().then(async () => {
-  await deviceRuntime.start();
-  if (isQuitting) return;
-  await createExpress();
-  if (isQuitting) return;
-  await core.init();
+  await hub.start();
   if (isQuitting) return;
 
   createWindow();
-
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
@@ -94,7 +82,7 @@ void startupPromise.catch(error => {
   app.quit();
 });
 
-app.on('window-all-closed', async () => {
+app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
     app.quit();
   }
@@ -104,22 +92,13 @@ app.on('before-quit', event => {
   if (allowQuit) return;
   event.preventDefault();
   isQuitting = true;
+
   shutdownPromise ??= (async () => {
-    const errors: unknown[] = [];
     await startupPromise.catch(() => undefined);
-    for (const shutdown of [
-      closeExpress,
-      () => core.shutdown(),
-      () => deviceRuntime.stop(),
-      closeDeviceModel,
-    ]) {
-      try {
-        await shutdown();
-      } catch (error) {
-        errors.push(error);
-      }
-    }
-    if (errors.length) throw new AggregateError(errors, 'One or more application services failed to shut down');
+    await Promise.race([
+      hub.stop(),
+      new Promise<never>((_, reject) => setTimeout(() => reject(new Error('Hub shutdown timed out')), 5000)),
+    ]);
   })();
 
   void shutdownPromise.then(
@@ -128,10 +107,11 @@ app.on('before-quit', event => {
       app.quit();
     },
     error => {
+      // Never trap the user in an unclosable window: force exit even if a
+      // device socket or worker did not shut down cleanly.
       console.error('Application shutdown failed:', error);
-      dialog.showErrorBox('Vuesp shutdown failed', error instanceof Error ? error.message : String(error));
       allowQuit = true;
-      app.quit();
+      app.exit(0);
     },
   );
 });

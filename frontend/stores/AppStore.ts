@@ -1,21 +1,6 @@
 import { defineStore } from 'pinia';
-import { changeTheme, localGet, localSet } from '@/utils/helpers.ts'
-
-interface AppNotification {
-  id: number | string;
-  timeout?: number;
-  message?: string;
-  title?: string;
-  text?: string;
-  isNew?: number;
-  color?: number;
-  date?: number;
-}
-
-interface AppDialogState {
-  value: boolean;
-  [key: string]: unknown;
-}
+import { changeTheme, localGet, localSet } from '@/utils/helpers.ts';
+import type { AppDialogState, AppNotification } from '@/types';
 
 export const useAppStore = defineStore('app', {
   state: () => ({
@@ -25,26 +10,26 @@ export const useAppStore = defineStore('app', {
       value: false,
     } as AppDialogState,
     notifications: (() => {
-      const saved = localGet('notifications');
+      const saved = localGet('notifications', true);
       return (Array.isArray(saved) ? saved : []) as AppNotification[];
     })(),
     struct: {},
   }),
   actions: {
-    init() {
+    init(): void {
       this.theme = localGet('theme') || 'dark';
-      changeTheme(this.theme)
+      changeTheme(this.theme);
     },
-    changeTheme() {
-      this.theme = this.theme === 'light' ? 'dark' : 'light'
-      changeTheme(this.theme)
+    changeTheme(): void {
+      this.theme = this.theme === 'light' ? 'dark' : 'light';
+      changeTheme(this.theme);
     },
-    setDialog(data: AppDialogState) {
+    setDialog(data: AppDialogState): void {
       this.dialog = data;
     },
-    setNotification(notification: Omit<AppNotification, 'id'> & { id?: number | string }) {
+    setNotification(notification: Omit<AppNotification, 'id'> & { id?: number | string }): void {
       const id = notification.id ?? Date.now();
-      const item = this.notifications.find(i => i.id === id)
+      const item = this.notifications.find(current => current.id === id);
       const updated: AppNotification = {
         ...item,
         ...notification,
@@ -56,21 +41,23 @@ export const useAppStore = defineStore('app', {
       };
 
       if (item) {
-        this.notifications = this.notifications.map(i => i.id === item.id ? updated : i)
+        this.notifications = this.notifications.map(current => (current.id === item.id ? updated : current));
       } else {
         this.notifications = [...this.notifications, updated];
       }
       localSet('notifications', this.notifications);
     },
-    readNotification(notification: Pick<AppNotification, 'date'>) {
-      this.notifications = this.notifications.map(item => item.date === notification.date ? { ...item, isNew: 0 } : item);
+    readNotification(notification: Pick<AppNotification, 'date'>): void {
+      this.notifications = this.notifications.map(item =>
+        item.date === notification.date ? { ...item, isNew: 0 } : item,
+      );
       localSet('notifications', this.notifications);
     },
-    readAllNotification() {
+    readAllNotification(): void {
       this.notifications = this.notifications.map(item => ({ ...item, isNew: 0 }));
       localSet('notifications', this.notifications);
     },
-    removeNotification(notification: Pick<AppNotification, 'date'>) {
+    removeNotification(notification: Pick<AppNotification, 'date'>): void {
       this.notifications = this.notifications.filter(item => item.date !== notification.date);
       localSet('notifications', this.notifications);
     },

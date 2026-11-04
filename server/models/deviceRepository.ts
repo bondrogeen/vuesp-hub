@@ -209,7 +209,9 @@ export const createDeviceRepository = async ({
         parsed.password ? secretProvider.encrypt(parsed.password) : null,
         new Date().toISOString(),
       ]);
-      return getById(Number(result));
+      const device = getById(Number(result));
+      if (!device) throw new Error('Created device could not be read back');
+      return device;
     },
 
     update(id, input) {

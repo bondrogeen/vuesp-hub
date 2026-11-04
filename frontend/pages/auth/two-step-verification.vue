@@ -8,20 +8,20 @@
             <svg class="stroke-current" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20" fill="none">
               <path d="M12.7083 5L7.5 10.2083L12.7083 15.4167" stroke="" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
             </svg>
-            Back to dashboard
+            {{ t('auth.backToDashboard') }}
           </a>
         </div>
         <div class="flex flex-col justify-center flex-1 w-full max-w-md mx-auto">
           <div class="mb-5 sm:mb-8">
-            <h1 class="mb-2 font-semibold text-gray-800 text-title-sm dark:text-white/90 sm:text-title-md">Two Step Verification</h1>
-            <p class="text-sm text-gray-500 dark:text-gray-400">A verification code has been sent to your mobile. Please enter it in the field below.</p>
+            <h1 class="mb-2 font-semibold text-gray-800 text-title-sm dark:text-white/90 sm:text-title-md">{{ t('auth.twoStepTitle') }}</h1>
+            <p class="text-sm text-gray-500 dark:text-gray-400">{{ t('auth.twoStepSubtitle') }}</p>
           </div>
           <div>
             <form>
               <div class="space-y-5">
                 <!-- Email -->
                 <div>
-                  <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Type your 6 digits security code</label>
+                  <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">{{ t('auth.codeLabel') }}</label>
                   <div class="flex gap-2 sm:gap-4" id="otp-container">
                     <input
                       type="text"
@@ -59,15 +59,15 @@
                 <!-- Button -->
                 <div>
                   <button class="flex items-center justify-center w-full px-4 py-3 text-sm font-medium text-white transition rounded-lg bg-brand-500 shadow-theme-xs hover:bg-brand-600">
-                    Verify My Account
+                    {{ t('auth.verifyAccount') }}
                   </button>
                 </div>
               </div>
             </form>
             <div class="mt-5">
               <p class="text-sm font-normal text-center text-gray-700 dark:text-gray-400 sm:text-start">
-                Didn’t get the code?
-                <a href="#" class="text-brand-500 hover:text-brand-600 dark:text-brand-400">Resend</a>
+                {{ t('auth.didntGetCode') }}
+                <a href="#" class="text-brand-500 hover:text-brand-600 dark:text-brand-400">{{ t('auth.resend') }}</a>
               </p>
             </div>
           </div>
@@ -79,7 +79,7 @@
             <a href="index.html" class="block mb-4">
               <VIconLogo class="h-10 w-auto" />
             </a>
-            <p class="text-center text-gray-400 dark:text-white/60">Free and Open-Source Tailwind CSS Admin Dashboard Template</p>
+            <p class="text-center text-gray-400 dark:text-white/60">{{ t('auth.templateTagline') }}</p>
           </div>
         </div>
       </div>
@@ -107,7 +107,9 @@
 </template>
 
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n';
 import { useDarkMode } from '@/composables/useDarkMode.ts';
 
+const { t } = useI18n();
 const { toggleDarkMode } = useDarkMode();
 </script>

@@ -1,15 +1,23 @@
+import type { Server, Socket } from 'socket.io';
+
 import Serial from '../services/serial/ServiceSerial.ts';
 
 const serial = new Serial();
 
-const key = 'serial'
+const key = 'serial';
 
-export const socketSerial = (io, store) => {
-    let port = null;
-    let savedOptions = store.get(key) || {}
+type SerialOptions = Parameters<InstanceType<typeof Serial>['connection']>[0];
+type Ack = (response: { status?: string | boolean; message?: string; data?: unknown; options?: unknown }) => void;
+interface SettingsStore {
+    get<T>(key: string, defaultValue?: T): T | undefined;
+    set(key: string, value: unknown): void;
+}
 
-    io.on('connection', (socket) => {
-        socket.on('serial:start', (options, callback) => {
+export const socketSerial = (io: Server, store: SettingsStore) => {
+    let savedOptions: unknown = store.get(key) ?? {};
+
+    io.on('connection', (socket: Socket) => {
+        socket.on('serial:start', (options: SerialOptions, callback: Ack) => {
             if (serial.getStatus()) return callback({ status: 'error', message: 'Service already running' });
 
             try {
@@ -17,13 +25,13 @@ export const socketSerial = (io, store) => {
                 savedOptions = options
                 store.set(key, options);
 
-                serial.on('data', (data) => {
+                serial.on('data', (data: unknown) => {
                     console.log(data);
 
                     io.emit('serial:data', { data });
                 })
 
-                serial.on('error', err => {
+                serial.on('error', (err: Error) => {
                     io.emit('serial:error', { data: err.message });
                 });
 
@@ -38,7 +46,7 @@ export const socketSerial = (io, store) => {
             }
         });
 
-        socket.on('serial:list', async (data, callback) => {
+        socket.on('serial:list', async (_data: unknown, callback: Ack) => {
             try {
                 const ports = await serial.getList()
                 callback({ data: ports.map(p => p) });
@@ -47,22 +55,22 @@ export const socketSerial = (io, store) => {
             }
         });
 
-        socket.on('serial:send', (data, callback) => {
+        socket.on('serial:send', (data: unknown, callback: Ack) => {
             if (!serial.getStatus()) return callback({ status: 'error', message: 'Service not running' });
 
             try {
-                serial.write(data)
+                serial.write(data as Buffer)
             } catch (error) {
                 callback({ status: 'error', message: 'serial:send' });
             }
         });
 
-        socket.on('serial:status', (_, callback) => {
+        socket.on('serial:status', (_data: unknown, callback: Ack) => {
             callback({ status: serial.getStatus(), options: savedOptions });
             io.emit('serial:status', { status: serial.getStatus(), options: savedOptions });
         });
 
-        socket.on('serial:stop', async (_, callback) => {
+        socket.on('serial:stop', async (_data: unknown, callback: Ack) => {
             if (!serial.getStatus()) return callback({ status: 'error', message: 'Service not running' });
 
             try {

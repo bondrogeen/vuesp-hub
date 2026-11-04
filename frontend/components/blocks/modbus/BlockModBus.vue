@@ -1,17 +1,17 @@
 <template>
   <div class="grid gap-4">
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-[100px_300px_100px_100px] gap-4">
-      <VTextField v-model="v.slaveID.value" label="Slave ID" :message="getError('slaveID')" @blur="v.slaveID.blur" />
+      <VTextField v-model="slaveID" v-bind="slaveIDAttrs" :label="t('modbus.slaveId')" />
 
-      <VSelect :value="code.name" class="" label="Function Code" :list="functionList" @change="onFunction"></VSelect>
+      <VSelect :model-value="codeLabel" class="" :label="t('modbus.functionCode')" :items="functionOptions" @change="onFunction" />
 
-      <VTextField v-model="v.address.value" label="Address" :message="getError('address')" @blur="v.address.blur" />
+      <VTextField v-model="address" v-bind="addressAttrs" :label="t('modbus.address')" />
 
-      <VTextField v-model="v.length.value" label="Length" :message="getError('length')" />
+      <VTextField v-model="length" v-bind="lengthAttrs" :label="t('modbus.length')" />
     </div>
 
     <div>
-      <h5 class="mb-2">Request</h5>
+      <h5 class="mb-2">{{ t('modbus.request') }}</h5>
 
       <div class="flex gap-4 items-center">
         <div class="flex flex-wrap">
@@ -26,13 +26,13 @@
         </div>
 
         <div class="self-start">
-          <v-button class="w-[100px]" block :disabled="invalid" @click="onSend">Send</v-button>
+          <VButton class="w-[100px]" block :disabled="!isValid" @click="onSend">{{ t('common.send') }}</VButton>
         </div>
       </div>
     </div>
 
     <div class="grid grid-cols-1">
-      <h5 class="mb-2">Response</h5>
+      <h5 class="mb-2">{{ t('modbus.response') }}</h5>
 
       <div class="flex flex-wrap">
         <div
@@ -45,60 +45,67 @@
         </div>
       </div>
     </div>
-
-    <!-- <VTextField class="col-span-3" hideMessage /> -->
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, defineProps, defineEmits, computed, watch, onMounted } from 'vue';
-import { required, maxNumber, minNumber } from '@/utils/validate.ts';
-import { useForm } from '@/composables/useForm.ts';
-import { CRC, getInt16Bytes, functionList, intToHex, getBytesInt16 } from './modbus.ts';
+import { computed, ref } from 'vue';
+import { useI18n } from 'vue-i18n';
+import { VButton, VSelect, VTextField } from 'vuesp-components/components';
+import { useForm } from 'vuesp-components/composables';
 
-const props = withDefaults(defineProps<{ data?: number[] }>(), { data: () => [] });
-const emit = defineEmits(['send']);
+import { CRC, getInt16Bytes, functionList, intToHex, type ModbusFunction } from './modbus.ts';
+import type { BlockModBusEmits, BlockModBusProps } from './BlockModBus.types.ts';
 
-const slaveID = ref(1);
-const address = ref(0);
-const length = ref(1);
-const code = ref({ ...functionList[3] });
+const { data = [] } = defineProps<BlockModBusProps>();
+const emit = defineEmits<BlockModBusEmits>();
+const { t } = useI18n();
 
-const data = ref<number[]>([]);
+const code = ref<ModbusFunction>({ ...functionList[3] });
+const functionOptions = computed(() => functionList.map(item => ({
+  ...item,
+  name: t(`modbus.functions.${item.key}`),
+})));
+const codeLabel = computed(() => t(`modbus.functions.${code.value.key}`));
 
-const packAddress = computed(() => getInt16Bytes(address.value));
-const packLength = computed(() => getInt16Bytes(length.value));
+const range = (min: number, max: number) => (value: unknown) => {
+  if (value === '' || value === null || value === undefined) return t('modbus.required');
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) return t('modbus.mustBeNumber');
+  if (numeric < min || numeric > max) return t('modbus.range', { min, max });
+  return true;
+};
 
-const pack = computed(() => [+slaveID.value, code.value.value, ...packAddress.value, ...packLength.value]);
+const validationSchema = {
+  slaveID: [range(0, 255)],
+  address: [range(0, 65535)],
+  length: [range(1, 255)],
+};
+
+const { defineField, isValid, validate } = useForm({
+  validationSchema,
+  initialValues: { slaveID: 1, address: 0, length: 1 },
+});
+const [slaveID, slaveIDAttrs] = defineField<number | string>('slaveID');
+const [address, addressAttrs] = defineField<number | string>('address');
+const [length, lengthAttrs] = defineField<number | string>('length');
+
+validate();
+
+const packAddress = computed(() => getInt16Bytes(Number(address.value)));
+const packLength = computed(() => getInt16Bytes(Number(length.value)));
+
+const pack = computed(() => [Number(slaveID.value), code.value.value, ...packAddress.value, ...packLength.value]);
 const dataPack = computed(() => [...pack.value, ...getInt16Bytes(CRC(pack.value), true)]);
 
-const form = { slaveID, address, length };
-
-const validators = {
-  slaveID: { required, min: minNumber(0), max: maxNumber(255) },
-  address: { required, min: minNumber(0), max: maxNumber(65535) },
-  length: { required, min: minNumber(1), max: maxNumber(255) },
-};
-
-const { v, invalid, getError } = useForm(validators, form);
-
-watch(
-  () => props.data,
-  (value) => {
-    data.value = value;
-  }
-);
-
-const getData = computed(() => props?.data || []);
-const getSize = computed(() => props?.data?.length || 0);
+const getSize = computed(() => data.length);
 
 const onSend = () => {
-   
   emit('send', dataPack.value);
 };
-const getDataByte = (i) => data?.value?.[i] || 0;
+const getDataByte = (i: number) => data[i] || 0;
 
-const onFunction = (item) => {
+const onFunction = (item: ModbusFunction): void => {
   code.value = item;
 };
 </script>

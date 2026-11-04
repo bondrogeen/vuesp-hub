@@ -1,3 +1,5 @@
+import { isRecordValue } from './device.ts';
+
 export type DeviceSocketAcknowledgement =
   | { status: 'success'; message?: string }
   | { status: 'failed' | 'error'; message?: string }
@@ -7,6 +9,9 @@ export type DeviceSocketAcknowledgement =
 export interface ServiceStatusPayload {
   running: boolean;
 }
+
+export const isServiceStatusPayload = (value: unknown): value is ServiceStatusPayload =>
+  isRecordValue(value) && typeof value.running === 'boolean';
 
 export type ServiceSocketAcknowledgement =
   | DeviceSocketAcknowledgement

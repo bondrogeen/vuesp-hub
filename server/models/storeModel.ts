@@ -1,6 +1,6 @@
 import Store from 'electron-store';
 
-interface StoreEntity {
+export interface StoreEntity {
     id: number;
     [key: string]: unknown;
 }

@@ -1,10 +1,10 @@
 <template>
   <div>
-    <VBreadcrumb :items="[{ name: 'Home', path: '/' }, { name: 'Video' }]" />
+    <VBreadcrumb :items="[{ name: t('common.home'), path: '/' }, { name: t('common.video') }]" />
 
     <div class="grid grid-cols-1 gap-5 sm:gap-6 xl:grid-cols-3">
       <CardVideo>
-        <video id="videoElement" controls autoplay muted width="800"></video>
+        <video ref="videoElement" controls autoplay muted width="800"></video>
       </CardVideo>
       <CardVideo />
       <CardVideo />
@@ -14,44 +14,37 @@
 </template>
 
 <script setup lang="ts">
+import { onBeforeUnmount, onMounted, useTemplateRef } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { BlockBreadcrumb as VBreadcrumb } from 'vuesp-components/components';
 import { io } from 'socket.io-client';
-import { onMounted, onUnmounted } from 'vue';
 
 import CardVideo from '@/components/cards/CardVideo.vue';
+import { getToken } from '@/utils/auth.ts';
 
-let socket = null;
-let clientsCount = 0;
-clientsCount++;
-console.log(23232);
+const { t } = useI18n();
+const videoElement = useTemplateRef<HTMLVideoElement>('videoElement');
 
-let mediaSource;
-let sourceBuffer;
+let socket: ReturnType<typeof io> | null = null;
+let sourceBuffer: SourceBuffer | null = null;
 
-function initMediaSource() {
-  const video = document.getElementById('videoElement') as HTMLVideoElement | null;
-  console.log(video);
-
-  mediaSource = new MediaSource();
+const initMediaSource = (): void => {
+  const video = videoElement.value;
+  const mediaSource = new MediaSource();
 
   mediaSource.addEventListener('sourceopen', () => {
     sourceBuffer = mediaSource.addSourceBuffer('video/mp2t; codecs="avc1.42E01E, mp4a.40.2"');
   });
+
   if (video) video.src = URL.createObjectURL(mediaSource);
-}
+};
 
-const init = () => {
-  socket = io({ transports: ['websocket'], path: '/ws/stream/' });
+const init = (): void => {
+  socket = io({ transports: ['websocket'], path: '/ws/stream/', auth: { token: getToken() } });
 
-  socket.on('connect', () => {
-    console.log('connect');
-  });
-
-  socket.on('stream', (data) => {
-    if (!sourceBuffer.updating) {
-      console.log(data);
-      const uint8Array = new Uint8Array(data);
-      sourceBuffer.appendBuffer(uint8Array);
+  socket.on('stream', (data: ArrayBuffer) => {
+    if (sourceBuffer && !sourceBuffer.updating) {
+      sourceBuffer.appendBuffer(new Uint8Array(data));
     }
   });
 };
@@ -61,7 +54,9 @@ onMounted(() => {
   init();
 });
 
-onUnmounted(() => {
-  socket.disconnect();
+onBeforeUnmount(() => {
+  socket?.disconnect();
+  socket = null;
+  sourceBuffer = null;
 });
 </script>

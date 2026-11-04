@@ -112,3 +112,12 @@
     }
   }
 }
+
+/* The shared AppAside comes from vuesp-components; its responsive `lg:static`
+   rule is emitted before the app's base `.fixed` rule and loses on order.
+   Keep the aside in flow on desktop so it shifts the main content. */
+@media (min-width: 64rem) {
+  .hub-shell > aside {
+    position: static;
+  }
+}

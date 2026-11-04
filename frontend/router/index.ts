@@ -1,29 +1,18 @@
 import { createRouter, createWebHistory } from 'vue-router';
-import { routes, handleHotUpdate } from "vue-router/auto-routes";
+import { routes, handleHotUpdate } from 'vue-router/auto-routes';
 
-console.log(routes);
+import { getToken } from '@/utils/auth.ts';
 
-const addMeta = (routeRecords: typeof routes) => {
+const addMeta = (routeRecords: typeof routes): void => {
   for (const route of routeRecords) {
-    route.meta ??= {}
-    console.log(route.path);
-
+    route.meta ??= {};
     const routeName = typeof route.name === 'string' ? route.name : route.path;
-    if (routeName.includes('/auth')) {
-      route.meta.layout = 'LayoutEmpty'
-    } else if (routeName.includes('/dashboard')) {
-      route.meta.layout = 'LayoutEmpty'
-    } else {
-      route.meta.layout = 'LayoutMain'
-    }
-    if (route.children) {
-      addMeta(route.children as typeof routes)
-    }
+    route.meta.layout = routeName.includes('/auth') ? 'LayoutEmpty' : 'LayoutMain';
+    if (route.children) addMeta(route.children as typeof routes);
   }
-}
+};
 
-addMeta(routes)
-
+addMeta(routes);
 
 const router = createRouter({
   linkActiveClass: 'text-primary',
@@ -31,9 +20,28 @@ const router = createRouter({
   history: createWebHistory('/'),
   routes,
   scrollBehavior() {
-    //to, from, savedPosition
     return { top: 0, behavior: 'smooth' };
   },
+});
+
+router.beforeEach(to => {
+  if (to.path.startsWith('/device/') && to.path !== '/device/' && !to.path.endsWith('/')) {
+    return { path: `${to.path}/`, query: to.query, hash: to.hash };
+  }
+
+  const token = getToken();
+  const isAuthRoute = to.path.startsWith('/auth');
+
+  if (isAuthRoute) {
+    if (token && to.path === '/auth/login') return { path: '/' };
+    return true;
+  }
+
+  if (!token) {
+    return { path: '/auth/login', query: { redirect: to.fullPath } };
+  }
+
+  return true;
 });
 
 if (import.meta.hot) {

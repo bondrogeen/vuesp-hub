@@ -1,12 +1,17 @@
 import { EventEmitter } from 'node:events';
 import Device from './vuespDevice.ts';
-import type { DeviceCommandPayload } from '../../shared/device.ts';
+import type { DeviceCommandPayload, DeviceConnectionRecord } from '../../shared/device.ts';
+
+interface DeviceEvent {
+  event: string;
+  [key: string]: unknown;
+}
 
 class VuespDevices extends EventEmitter {
-  #list;
-  #devices;
-  #isConnected;
-  constructor(list) {
+  #list: DeviceConnectionRecord[];
+  #devices: Device[];
+  #isConnected: boolean;
+  constructor(list: DeviceConnectionRecord[]) {
     super();
     this.#list = list;
     this.#devices = [];
@@ -14,8 +19,13 @@ class VuespDevices extends EventEmitter {
     this.init();
   }
 
-  #onEvent(payload) {
+  #onEvent(payload: DeviceEvent) {
     const { event } = payload;
+    if (event === 'error' && this.listenerCount('error') === 0) {
+      this.emit('*', payload);
+      console.error(payload);
+      return;
+    }
     this.emit(event, payload);
     if (event !== 'raw') this.emit('*', payload);
   }
@@ -24,7 +34,7 @@ class VuespDevices extends EventEmitter {
     try {
       this.#list.forEach((options, index) => {
         this.#devices[index] = new Device(options);
-        this.#devices[index].on('*', payload => this.#onEvent(payload));
+        this.#devices[index].on('*', (payload: DeviceEvent) => this.#onEvent(payload));
       });
       return true;
     } catch (error) {
@@ -34,7 +44,7 @@ class VuespDevices extends EventEmitter {
 
   async connection() {
     try {
-      this.#list.forEach((_, index) => {
+      this.#list.forEach((_device, index: number) => {
         this.#devices[index].connect();
       });
       this.#isConnected = true;
@@ -57,15 +67,21 @@ class VuespDevices extends EventEmitter {
   }
 
   getMenu() {
-    const menu = []
-    this.#devices.forEach(device => {
-      menu.push({ id: device.id, ip: device.ip, name: device.name, menu: device.menu })
+    const menu: Array<{ id: number; recordId?: number; ip: string; name: string; menu: unknown[] }> = [];
+    this.#devices.forEach((device, index) => {
+      menu.push({
+        id: device.id,
+        recordId: this.#list[index]?.id,
+        ip: device.ip,
+        name: device.name,
+        menu: device.menu,
+      });
     });
-    return menu
+    return menu;
   }
 
   getList() {
-    const list = []
+    const list: Array<{ id: number; ip: string; name: string; list: unknown[] }> = [];
     this.#devices.forEach(device => {
       list.push({ id: device.id, ip: device.ip, name: device.name, list: device.list })
     });

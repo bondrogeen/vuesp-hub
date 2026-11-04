@@ -1,21 +1,21 @@
-import { createApp } from 'vue';
+import { createApp, type App } from 'vue';
 import { createPinia } from 'pinia';
 
-import App from './App.vue';
-import router from './router/index';
+import AppView from './App.vue';
+import router from './router/index.ts';
+import { i18n } from './i18n/index.ts';
 
-import vuesp from 'vuesp-components';
 import 'vuesp-components/style.css';
 
 import './assets/style/index.css';
 
 const pinia = createPinia();
-const app = createApp(App);
+const app = createApp(AppView);
 
-export const useApp = () => {
-    app.use(vuesp);
-    app.use(pinia);
-    app.use(router);
-    app.mount('#app');
-    return app
-}
+export const useApp = (): App<Element> => {
+  app.use(pinia);
+  app.use(i18n);
+  app.use(router);
+  app.mount('#app');
+  return app;
+};

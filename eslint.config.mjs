@@ -4,7 +4,7 @@ import tseslint from 'typescript-eslint';
 
 export default tseslint.config(
   {
-    ignores: ['.vite/**', 'out/**', 'node_modules/**', 'frontend/assets/js/**'],
+    ignores: ['.vite/**', 'dist/**', 'release/**', 'out/**', 'node_modules/**', 'frontend/assets/js/**'],
   },
   ...tseslint.configs.recommended,
   ...pluginVue.configs['flat/recommended'],
@@ -28,7 +28,7 @@ export default tseslint.config(
     },
   },
   {
-    files: ['forge.config.js'],
+    files: ['forge.config.js', 'bin/**/*.js'],
     rules: {
       '@typescript-eslint/no-require-imports': 'off',
     },

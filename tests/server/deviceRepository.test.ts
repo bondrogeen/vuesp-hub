@@ -8,8 +8,8 @@ import { test } from 'node:test';
 import { createDeviceRepository } from '../../server/models/deviceRepository.ts';
 
 const secretProvider = {
-  encrypt: password => `encrypted:${password}`,
-  decrypt: password => password.replace('encrypted:', ''),
+  encrypt: (password: string) => `encrypted:${password}`,
+  decrypt: (password: string) => password.replace('encrypted:', ''),
 };
 const createRepository = (options = {}) => createDeviceRepository({
   databasePath: ':memory:',
@@ -34,7 +34,7 @@ test('persists device records and does not expose credentials in registry respon
   assert.deepEqual(device.firmware, [1, 2, 3]);
   assert.equal('password' in device, false);
   assert.equal('username' in device, false);
-  assert.equal(repository.getById(device.id, { includeCredentials: true }).password, 'secret');
+  assert.equal(repository.getById(device.id, { includeCredentials: true })!.password, 'secret');
   assert.equal(repository.getAll().length, 1);
   repository.close();
 });
@@ -50,8 +50,8 @@ test('imports existing registry entries once and supports deletion', async () =>
   assert.equal(device.id, 8);
   assert.equal(device.deviceId, 42);
   assert.equal(device.name, 'Legacy');
-  assert.equal(repository.getById(device.id, { includeCredentials: true }).password, 'legacy-secret');
-  assert.equal(repository.delete(device.id).uuid, device.uuid);
+  assert.equal(repository.getById(device.id, { includeCredentials: true })!.password, 'legacy-secret');
+  assert.equal(repository.delete(device.id)!.uuid, device.uuid);
   assert.deepEqual(repository.getAll(), []);
   repository.close();
 });
@@ -70,7 +70,7 @@ test('persists registry data across database reopen', async () => {
     first.close();
 
     const second = await createDeviceRepository({ databasePath, secretProvider });
-    assert.equal(second.getById(added.id).uuid, added.uuid);
+    assert.equal(second.getById(added.id)!.uuid, added.uuid);
     second.close();
   } finally {
     rmSync(databasePath, { force: true });
@@ -171,14 +171,14 @@ test('database schema migrations are atomic when secure credential import fails'
         }],
         secretProvider: {
           encrypt: () => { throw new Error('keyring unavailable'); },
-          decrypt: value => value,
+          decrypt: (value: string) => value,
         },
       }),
       /keyring unavailable/,
     );
 
     const database = new DatabaseSync(databasePath);
-    assert.equal(Number(database.prepare('PRAGMA user_version').get().user_version), 0);
+    assert.equal(Number(database.prepare('PRAGMA user_version').get()?.user_version), 0);
     assert.equal(database.prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'devices'").get(), undefined);
     database.close();
   } finally {
@@ -209,8 +209,8 @@ test('updates device details without decrypting an unchanged password', async ()
   let decryptCalls = 0;
   const repository = await createRepository({
     secretProvider: {
-      encrypt: value => `encrypted:${value}`,
-      decrypt: value => {
+      encrypt: (value: string) => `encrypted:${value}`,
+      decrypt: (value: string) => {
         decryptCalls += 1;
         return value.replace('encrypted:', '');
       },
@@ -225,7 +225,7 @@ test('updates device details without decrypting an unchanged password', async ()
 
   repository.update(device.id, { name: 'After' });
   assert.equal(decryptCalls, 0);
-  assert.equal(repository.getById(device.id, { includeCredentials: true }).password, 'secret');
+  assert.equal(repository.getById(device.id, { includeCredentials: true })!.password, 'secret');
   assert.equal(decryptCalls, 1);
   repository.close();
 });

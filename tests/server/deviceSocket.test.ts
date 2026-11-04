@@ -29,6 +29,19 @@ class FakeDeviceManager extends EventEmitter implements DeviceConnectionManager 
   }
 }
 
+class FakeSocketIO extends EventEmitter {
+  readonly sockets: EventEmitter[] = [];
+
+  emit(event: string, ...args: unknown[]): boolean {
+    if (event === 'connection') this.sockets.push(args[0] as EventEmitter);
+    const handled = super.emit(event, ...args);
+    if (event !== 'connection') {
+      for (const socket of this.sockets) socket.emit(event, ...args);
+    }
+    return handled;
+  }
+}
+
 test('validates socket command requests before dispatching to devices', async () => {
   const manager = new FakeDeviceManager();
   const runtime = new DeviceRuntime({
@@ -37,23 +50,26 @@ test('validates socket command requests before dispatching to devices', async ()
   });
   await runtime.start();
 
-  const io = new EventEmitter() as unknown as SocketIOServer;
-  const detach = socketDevice(io, runtime);
+  const io = new FakeSocketIO();
+  const detach = socketDevice(io as unknown as SocketIOServer, runtime);
   const socket = new EventEmitter();
   const receivedEvents: Array<{ event: string; id: number; key: string }> = [];
+  const statusEvents: unknown[] = [];
   socket.on('device:data', payload => receivedEvents.push(payload));
+  socket.on('service:status', payload => statusEvents.push(payload));
   manager.emit('*', { event: 'message', id: 22, key: 'INFO', data: { id: 22 } });
-  (io as unknown as EventEmitter).emit('connection', socket);
+  io.emit('connection', socket);
+  assert.deepEqual(statusEvents, [{ running: true }]);
   assert.deepEqual(receivedEvents, [{ event: 'message', id: 22, key: 'INFO', data: { id: 22 } }]);
 
   let response: { status: string; message?: string } | undefined;
-  socket.emit('device:send', { comm: 'INFO' }, (value) => {
+  socket.emit('device:send', { comm: 'INFO' }, (value: { status: string; message?: string }) => {
     response = value;
   });
   assert.equal(response?.status, 'failed');
   assert.equal(manager.sent.length, 0);
 
-  socket.emit('device:send', { ip: '192.0.2.50', comm: 'PORT', data: { command: 2 } }, (value) => {
+  socket.emit('device:send', { ip: '192.0.2.50', comm: 'PORT', data: { command: 2 } }, (value: { status: string; message?: string }) => {
     response = value;
   });
   assert.equal(response?.status, 'success');
@@ -65,12 +81,32 @@ test('validates socket command requests before dispatching to devices', async ()
     },
   ]);
 
-  socket.emit('device:sendAll', { comm: 'INFO', data: [] }, (value) => {
+  socket.emit('device:sendAll', { comm: 'INFO', data: [] }, (value: { status: string; message?: string }) => {
     response = value;
   });
   assert.equal(response?.status, 'failed');
   assert.equal(manager.sent.length, 1);
 
-  detach();
   await runtime.stop();
+  assert.deepEqual(statusEvents, [{ running: true }, { running: false }]);
+
+  detach();
+});
+
+test('reports the current stopped service status to a new socket', () => {
+  const runtime = new DeviceRuntime({
+    loadDevices: async () => [],
+    createConnections: () => new FakeDeviceManager(),
+  });
+
+  const io = new FakeSocketIO();
+  const detach = socketDevice(io as unknown as SocketIOServer, runtime);
+  const socket = new EventEmitter();
+  const statusEvents: unknown[] = [];
+  socket.on('service:status', payload => statusEvents.push(payload));
+
+  io.emit('connection', socket);
+
+  assert.deepEqual(statusEvents, [{ running: false }]);
+  detach();
 });

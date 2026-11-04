@@ -31,3 +31,24 @@ export const decodeDiscoveryMessage = (message: Buffer, address: string): Discov
   const firmware: [number, number, number] = [device.firmware[0], device.firmware[1], device.firmware[2]];
   return { ...device, firmware };
 };
+
+/**
+ * New Vuesp firmware announces itself with a 5-byte binary packet
+ * (packet type 0x01 + big-endian device id) on the same UDP port.
+ * Identity beyond the id is obtained over WebSocket after the device is added.
+ */
+export const decodeVuespAnnouncement = (message: Buffer, address: string): DiscoveredDevice | null => {
+  if (!Buffer.isBuffer(message) || message.length !== 5 || message[0] !== 0x01 || isIP(address) === 0) return null;
+
+  const deviceId = message.readUInt32BE(1);
+  if (deviceId === 0 || deviceId === 0xffffffff) return null;
+
+  return {
+    command: 98,
+    firmware: [0, 0, 0],
+    deviceId,
+    name: `vuesp-${deviceId.toString(16).toUpperCase().padStart(8, '0')}`,
+    ip: address,
+    source: 'announce',
+  };
+};

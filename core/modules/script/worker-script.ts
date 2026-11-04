@@ -1,6 +1,7 @@
 import { parentPort } from 'node:worker_threads';
 
-if (!parentPort) {
+const port = parentPort;
+if (!port) {
   throw new Error('Script worker requires a parent port');
 }
 
@@ -12,16 +13,16 @@ interface ScriptTask {
 // Безопасная среда выполнения
 const SAFE_GLOBALS = {
     console: {
-        log: (...args) => {
-            parentPort.postMessage({
+        log: (...args: unknown[]) => {
+            port.postMessage({
                 log: {
                     message: args.join(' '),
                     level: 'info'
                 }
             });
         },
-        error: (...args) => {
-            parentPort.postMessage({
+        error: (...args: unknown[]) => {
+            port.postMessage({
                 log: {
                     message: args.join(' '),
                     level: 'error'
@@ -49,7 +50,7 @@ const SAFE_GLOBALS = {
 };
 
 // Обработчик сообщений
-parentPort.on('message', async ({ code, context }: ScriptTask) => {
+port.on('message', async ({ code, context }: ScriptTask) => {
     try {
         // Создаем безопасный контекст
         const sandbox = Object.assign({}, SAFE_GLOBALS, context);
@@ -67,10 +68,10 @@ parentPort.on('message', async ({ code, context }: ScriptTask) => {
         // Выполняем функцию с безопасными аргументами
         const result = await fn(...Object.values(sandbox));
 
-        parentPort.postMessage({ result });
+        port.postMessage({ result });
     } catch (error) {
-        parentPort.postMessage({
-            error: `Script execution failed: ${error.message}`
+        port.postMessage({
+            error: `Script execution failed: ${error instanceof Error ? error.message : String(error)}`
         });
     }
 });

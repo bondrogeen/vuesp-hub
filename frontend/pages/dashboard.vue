@@ -1,16 +1,23 @@
 <template>
   <main class="flex-auto max-w-(--breakpoint-2xl) p-4 md:p-6">
+    <VBreadcrumb :items="[{ name: t('common.home'), path: '/' }, { name: t('common.dashboard') }]" class="mb-6" />
+
+    <div class="mb-6">
+      <h1 class="text-2xl font-semibold text-gray-900 dark:text-white">{{ t('dashboard.title') }}</h1>
+      <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">{{ t('dashboard.subtitle') }}</p>
+    </div>
+
     <div v-if="devices.length" class="grid grid-cols-1 gap-4">
-      <VCardGray v-for="device in devices" :key="device.id ?? device.ip" :title="device.name || device.ip">
+      <CardMain v-for="device in devices" :key="device.id ?? device.ip" :title="device.name || device.ip" :loading="false">
         <dl class="grid grid-cols-1 gap-x-6 gap-y-3 sm:grid-cols-2">
           <div>
-            <dt class="text-sm text-gray-500 dark:text-gray-400">IP address</dt>
+            <dt class="text-sm text-gray-500 dark:text-gray-400">{{ t('dashboard.ipAddress') }}</dt>
             <dd class="font-medium">{{ device.ip }}</dd>
           </div>
           <div>
-            <dt class="text-sm text-gray-500 dark:text-gray-400">Status</dt>
+            <dt class="text-sm text-gray-500 dark:text-gray-400">{{ t('dashboard.status') }}</dt>
             <dd class="font-medium">
-              {{ device.online === null ? 'Waiting for status' : device.online ? 'Online' : 'Offline' }}
+              {{ device.online === null ? t('common.waitingForStatus') : device.online ? t('common.online') : t('common.offline') }}
             </dd>
           </div>
           <template v-if="device.info">
@@ -20,21 +27,23 @@
             </div>
           </template>
         </dl>
-      </VCardGray>
+      </CardMain>
     </div>
-    <VCardGray v-else title="Devices">
-      <p class="text-gray-500 dark:text-gray-400">No devices are connected to the hub.</p>
-    </VCardGray>
+    <CardMain v-else :title="t('dashboard.devices')" :loading="false">
+      <p class="text-gray-500 dark:text-gray-400">{{ t('dashboard.empty') }}</p>
+    </CardMain>
   </main>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue';
 import { storeToRefs } from 'pinia';
+import { useI18n } from 'vue-i18n';
+import { BlockBreadcrumb as VBreadcrumb, CardMain } from 'vuesp-components/components';
 
-import VCardGray from '@/components/app/VCardGray.vue';
 import { useWebSocketStore } from '@/stores/WebSocketStore.ts';
 
+const { t } = useI18n();
 const webSocketStore = useWebSocketStore();
 const { devices: deviceStates, list } = storeToRefs(webSocketStore);
 

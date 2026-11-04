@@ -1,40 +1,77 @@
-export const useChromeSerial = (onSend: (data: any) => void) => {
-  let port;
-  let reader;
-  let writer;
+interface SerialOptions {
+  baudRate: number;
+  dataBits?: number;
+  stopBits?: number;
+  parity?: string;
+  bufferSize?: number;
+  flowControl?: string;
+}
 
-  const connectChrome = async (options) => {
-    try {
-      if (!navigator?.serial) return;
-      port = await navigator.serial.requestPort();
-      const { usbProductId, usbVendorId } = port.getInfo();
-      console.log(usbProductId, usbVendorId);
-      await port.open(options);
-      readData();
-    } catch (error) {
-      console.error(error);
-    }
+interface SerialPortInfo {
+  usbProductId?: number;
+  usbVendorId?: number;
+}
+
+interface ChromeSerialPort {
+  getInfo(): SerialPortInfo;
+  open(options: SerialOptions): Promise<void>;
+  close(): Promise<void>;
+  readable: ReadableStream<Uint8Array> | null;
+  writable: WritableStream<Uint8Array> | null;
+}
+
+interface SerialNavigator extends Navigator {
+  serial?: {
+    requestPort(): Promise<ChromeSerialPort>;
   };
+}
+
+export const useChromeSerial = (onSend: (data: Uint8Array) => void) => {
+  let port: ChromeSerialPort | null = null;
+  let reader: ReadableStreamDefaultReader<Uint8Array> | null = null;
+  let writer: WritableStreamDefaultWriter<Uint8Array> | null = null;
 
   const readData = async () => {
-    try {
-      reader = port.readable.getReader();
+    const readable = port?.readable;
+    if (!readable) return;
 
+    const currentReader = readable.getReader();
+    reader = currentReader;
+
+    try {
       while (true) {
-        const { value, done } = await reader.read();
+        const { value, done } = await currentReader.read();
         if (done) break;
-        onSend(value);
+        if (value) onSend(value);
       }
     } catch (error) {
       console.error(error);
     } finally {
-      reader?.releaseLock();
+      currentReader.releaseLock();
+      if (reader === currentReader) reader = null;
+    }
+  };
+
+  const connectChrome = async (options: SerialOptions) => {
+    try {
+      const serial = (navigator as SerialNavigator).serial;
+      if (!serial) return;
+
+      port = await serial.requestPort();
+      await port.open(options);
+      await readData();
+    } catch (error) {
+      console.error(error);
     }
   };
 
   const onWriteChrome = async (arr: number[]) => {
     try {
-      if (!writer) writer = port.writable.getWriter();
+      if (!writer) {
+        const writable = port?.writable;
+        if (!writable) return;
+        writer = writable.getWriter();
+      }
 
       const data = new Uint8Array(arr);
       await writer.write(data);
@@ -46,8 +83,11 @@ export const useChromeSerial = (onSend: (data: any) => void) => {
   const disconnectChrome = async () => {
     try {
       await reader?.cancel();
+      reader = null;
       await writer?.close();
+      writer = null;
       await port?.close();
+      port = null;
     } catch (error) {
       console.error(error);
     }

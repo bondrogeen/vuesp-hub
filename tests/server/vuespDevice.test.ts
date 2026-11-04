@@ -7,19 +7,19 @@ import VuespStruct from 'vuesp-struct';
 import Device from '../../server/devices/vuespDevice.ts';
 import type { DeviceEventPayload } from '../../shared/device.ts';
 
-const devices = [];
+const devices: Device[] = [];
 
 class FakeWebSocket extends EventEmitter {
   static CONNECTING = 0;
   static OPEN = 1;
   static CLOSING = 2;
   static CLOSED = 3;
-  static instances = [];
+  static instances: FakeWebSocket[] = [];
 
   address: string;
   options: WebSocket.ClientOptions | undefined;
   readyState: number;
-  binaryType: string;
+  binaryType = 'arraybuffer';
   sent: WebSocket.RawData[] = [];
 
   constructor(address: string, options?: WebSocket.ClientOptions) {
@@ -45,7 +45,7 @@ class FakeWebSocket extends EventEmitter {
   }
 }
 
-const delay = milliseconds => new Promise(resolve => setTimeout(resolve, milliseconds));
+const delay = (milliseconds: number) => new Promise(resolve => setTimeout(resolve, milliseconds));
 
 afterEach(() => {
   for (const device of devices.splice(0)) device.disconnect();
@@ -58,7 +58,7 @@ test('connect is idempotent and retries a closed connection with backoff', async
     { WebSocketClass: FakeWebSocket },
   );
   devices.push(device);
-  const reconnectEvents = [];
+  const reconnectEvents: number[] = [];
   device.on('*', payload => {
     if (payload.event === 'reconnect') reconnectEvents.push(payload.delay);
   });
@@ -206,7 +206,7 @@ test('device transport retries after a socket error and ignores later events fro
   staleSocket.emit('open', {});
   staleSocket.emit('message', new ArrayBuffer(4));
   assert.equal(fetchCalls, 0);
-  assert.deepEqual(messages, []);
+  assert.equal(messages.length, 0);
 
   currentSocket.emit('open', {});
   await delay(5);

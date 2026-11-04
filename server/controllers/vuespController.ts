@@ -1,6 +1,6 @@
 import dgram from 'node:dgram';
 import type { DiscoveredDevice } from '../../shared/device.ts';
-import { createDiscoveryQuery, decodeDiscoveryMessage } from '../devices/protocols/vuespDiscovery.ts';
+import { createDiscoveryQuery, decodeDiscoveryMessage, decodeVuespAnnouncement } from '../devices/protocols/vuespDiscovery.ts';
 
 const BROADCAST_PORT = 12345;
 const BROADCAST_ADDR = '255.255.255.255';
@@ -10,8 +10,8 @@ export const scanDevices = ({ duration = 9000, interval = 3000 }: { duration?: n
   new Promise<DiscoveredDevice[]>((resolve, reject) => {
     const socket = dgram.createSocket({ type: 'udp4', reuseAddr: true });
     const devices = new Map<string, DiscoveredDevice>();
-    let sendTimer;
-    let scanTimer;
+    let sendTimer: ReturnType<typeof setInterval> | undefined;
+    let scanTimer: ReturnType<typeof setTimeout> | undefined;
     let finished = false;
 
     const finish = (error?: Error) => {
@@ -35,10 +35,10 @@ export const scanDevices = ({ duration = 9000, interval = 3000 }: { duration?: n
     socket.on('error', finish);
     socket.on('message', (message, remote) => {
       try {
-        const device = decodeDiscoveryMessage(message, remote.address);
+        const device = decodeDiscoveryMessage(message, remote.address) ?? decodeVuespAnnouncement(message, remote.address);
         if (device) devices.set(device.ip, device);
       } catch (error) {
-        finish(error);
+        finish(error instanceof Error ? error : new Error(String(error)));
       }
     });
 
@@ -54,7 +54,7 @@ export const scanDevices = ({ duration = 9000, interval = 3000 }: { duration?: n
         sendTimer = setInterval(send, interval);
         scanTimer = setTimeout(() => finish(), duration);
       } catch (error) {
-        finish(error);
+        finish(error instanceof Error ? error : new Error(String(error)));
       }
     });
   });

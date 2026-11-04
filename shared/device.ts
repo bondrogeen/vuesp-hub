@@ -13,12 +13,18 @@ export interface DeviceConnectionRecord extends DeviceRecord {
   password: string;
 }
 
+export interface DeviceUiSession {
+  origin: string;
+  authorization: string;
+}
+
 export interface DiscoveredDevice {
   command: 98;
   firmware: [number, number, number];
   deviceId: number;
   name: string;
   ip: string;
+  source?: 'legacy' | 'announce';
 }
 
 export interface DeviceCreateInput {

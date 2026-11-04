@@ -1,50 +1,56 @@
 <template>
   <div class="pt-4">
     <form class="flex flex-col" action="#" @submit.prevent="">
-      <VTextField v-model="v.name.value" label="Name" :message="getError('name')" @blur="v.name.blur" />
+      <VTextField v-model="name" v-bind="nameAttrs" :label="t('devices.form.name')" />
 
-      <VTextField v-model="v.ip.value" label="IP" :message="getError('ip')" @blur="v.ip.blur" />
+      <VTextField v-model="ip" v-bind="ipAttrs" :label="t('devices.form.ip')" />
 
-      <VTextField v-model="v.username.value" label="Login" :message="getError('username')" @blur="v.username.blur" />
+      <VTextField v-model="username" v-bind="usernameAttrs" :label="t('devices.form.login')" />
 
-      <VTextField v-model="v.password.value" label="Password" :message="getError('password')" @blur="v.password.blur" />
+      <VTextField v-model="password" v-bind="passwordAttrs" :label="t('devices.form.password')" />
 
-      <VTextField v-model="v.deviceId.value" label="DeviceId" disabled />
+      <VTextField v-model="deviceId" :label="t('devices.form.deviceId')" disabled />
 
-      <VButton color="blue" :disabled="invalid" @click="onAdd">Add</VButton>
+      <VButton color="blue" :disabled="!isValid" @click="onAdd">{{ t('devices.form.add') }}</VButton>
     </form>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, defineEmits, defineProps } from 'vue';
+import { useI18n } from 'vue-i18n';
+import { VButton, VTextField } from 'vuesp-components/components';
+import { useForm } from 'vuesp-components/composables';
+import { required } from 'vuesp-components/validate';
 
-import { useForm } from '@/composables/useForm.ts';
+import type { DeviceFormInput } from '@/types';
+import type { DialogAddDeviceEmits, DialogAddDeviceProps } from './DialogAddDevice.types.ts';
 
-import { required } from '@/utils/validate.ts';
-import type { DeviceFormInput } from '@/types.ts';
+const { device = {} } = defineProps<DialogAddDeviceProps>();
 
-interface Props {
-  device?: Partial<DeviceFormInput>;
-}
+const emit = defineEmits<DialogAddDeviceEmits>();
+const { t } = useI18n();
 
-const { device = {} } = defineProps<Props>();
+const initialValues: Record<string, unknown> = { id: 0, name: '', username: 'admin', password: 'admin', ip: '', deviceId: 0 };
+Object.assign(initialValues, device);
 
-const emit = defineEmits<{
-  (e: 'add', value: DeviceFormInput): void;
-}>();
+const validationSchema = {
+  name: [required],
+  ip: [required],
+  username: [],
+  password: [],
+  deviceId: [],
+};
 
-const isLoading = ref(false);
+const { values, defineField, isValid, validate } = useForm({ validationSchema, initialValues });
+const [name, nameAttrs] = defineField<string>('name');
+const [ip, ipAttrs] = defineField<string>('ip');
+const [username, usernameAttrs] = defineField<string>('username');
+const [password, passwordAttrs] = defineField<string>('password');
+const [deviceId] = defineField<string | number>('deviceId');
 
-const form: DeviceFormInput = { id: 0, name: '', username: 'admin', password: 'admin', ip: '', deviceId: 0 };
-
-const validators = { name: { required }, ip: { required }, username: {}, password: {}, deviceId: 0 };
-
-Object.assign(form, device);
-
-const { v, invalid, getError, data } = useForm(validators, form);
+validate();
 
 const onAdd = () => {
-  emit('add', data.value);
+  emit('add', { ...values } as unknown as DeviceFormInput);
 };
 </script>

@@ -2,12 +2,30 @@
   <div class="h-[100dvh] min-h-full flex flex-col">
     <AppDialog v-if="dialog.value" v-bind="dialog" @close="dialog = { value: false }" />
 
-    <div class="flex h-screen overflow-hidden">
-      <AppAside :menu="getMenu" :sidebarToggle="sidebarToggle" @sidebar="sidebarToggle = $event" />
+    <div class="hub-shell flex h-screen overflow-hidden">
+      <AppAside :isSidebar="sidebarToggle" @sidebar="sidebarToggle = $event">
+        <div v-for="group in getMenu" :key="group.title" class="mb-4">
+          <h3 class="mb-4 text-xs leading-[20px] text-gray-400 uppercase" :class="sidebarToggle ? 'lg:hidden' : ''">
+            {{ group.title }}
+          </h3>
 
-      <div class="relative flex flex-1 flex-col overflow-y-auto overflow-x-hidden">
-        <AppHeader
-          :change-theme="appStore.changeTheme"
+          <AppNav :menu="getGroupItems(group.items)" :isSidebar="sidebarToggle" :fullPath="route.path" @sidebar="sidebarToggle = $event">
+            <template #icon="{ item }">
+              <component :is="getComponent(item.icon)" class="size-5" />
+            </template>
+
+            <template #icon-children="{ item }">
+              <component :is="getComponent(item.icon)" class="size-5" />
+            </template>
+          </AppNav>
+        </div>
+        <div class="mt-auto pt-4 text-xs text-gray-400 dark:text-gray-500" :class="sidebarToggle ? 'lg:hidden' : ''">
+          {{ t('common.appName') }}
+        </div>
+      </AppAside>
+
+      <div class="relative flex flex-1 flex-col overflow-y-auto overflow-x-hidden scrollbar">
+        <HubHeader
           :notifications="headerNotifications"
           @sidebar="sidebarToggle = !sidebarToggle"
           @notif="isNotificationsOpen = !isNotificationsOpen"
@@ -22,14 +40,14 @@
         >
           <template #header="{ isNew }">
             <div class="sticky top-0 z-20 flex items-center justify-between bg-gray-50 px-2 py-4 dark:bg-gray-900">
-              <h2 class="font-medium">Notifications</h2>
+              <h2 class="font-medium">{{ t('notifications.title') }}</h2>
               <VButton size="sm" color="gray" :disabled="!isNew" @click="appStore.readAllNotification">
-                Mark all as read
+                {{ t('notifications.markAllRead') }}
               </VButton>
             </div>
           </template>
           <template #empty>
-            <p class="py-10 text-center">No notifications</p>
+            <p class="py-10 text-center">{{ t('notifications.empty') }}</p>
           </template>
         </AppNotification>
 
@@ -42,23 +60,66 @@
 <script setup lang="ts">
 import { ref, provide, computed } from 'vue';
 import { storeToRefs } from 'pinia';
+import { useRoute } from 'vue-router';
+import { useI18n } from 'vue-i18n';
 import { useAppStore } from '@/stores/AppStore';
 import { useWebSocketStore } from '@/stores/WebSocketStore';
 
 import { createDeviceMenu } from '@/utils/deviceMenu.ts';
+import legacyIcons from '@/components/app/legacyIcons.ts';
 
-import AppAside from '@/components/app/AppAside.vue';
 import AppDialog from '@/components/app/AppDialog.vue';
-import { AppHeader, AppNotification, VButton } from 'vuesp-components/components';
+import HubHeader from '@/components/app/HubHeader.vue';
+import { AppAside, AppNav, AppNotification, VButton } from 'vuesp-components/components';
+import type { MenuChildType, MenuItemType } from '@/types';
+import type { IMenuItem, INotification } from 'vuesp-components/types';
+
+const route = useRoute();
+const { t } = useI18n();
 
 const webSocketStore = useWebSocketStore();
 const appStore = useAppStore();
 
+const {
+  IconDashboard,
+  IconDevice,
+  IconVideo,
+  IconList,
+  IconHome,
+  IconScript,
+  IconSettings,
+  IconStorage,
+  IconGpio,
+} = legacyIcons;
+
+const iconComponents = {
+  IconDashboard,
+  IconDevice,
+  IconVideo,
+  IconList,
+  IconHome,
+  IconScript,
+  IconSettings,
+  IconStorage,
+  IconGpio,
+};
+
+const getComponent = (name?: string) => iconComponents[name as keyof typeof iconComponents] ?? IconDashboard;
+
+const toNavigationItem = (item: MenuItemType | MenuChildType): IMenuItem => ({
+  name: item.name,
+  icon: item.icon ?? 'IconDevice',
+  path: item.path ?? '',
+  children: item.children?.map(toNavigationItem),
+});
+
+const getGroupItems = (items: MenuItemType[]): IMenuItem[] => items.map(toNavigationItem);
+
 const { menus } = storeToRefs(webSocketStore);
 const { dialog, notifications } = storeToRefs(appStore);
 
-const getMenu = computed(() => createDeviceMenu(menus.value));
-const headerNotifications = computed(() => notifications.value.map(notification => ({
+const getMenu = computed(() => createDeviceMenu(menus.value, t));
+const headerNotifications = computed<INotification[]>(() => notifications.value.map(notification => ({
   key: typeof notification.id === 'number'
     ? notification.id
     : Number.isFinite(Number(notification.id))

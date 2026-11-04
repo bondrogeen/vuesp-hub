@@ -87,13 +87,6 @@ declare module 'vue-router/auto-routes' {
       { path: ParamValue<false> },
       | never
     >,
-    '/device/connect': RouteRecordInfo<
-      '/device/connect',
-      '/device/connect',
-      Record<never, never>,
-      Record<never, never>,
-      | never
-    >,
     '/device/list/': RouteRecordInfo<
       '/device/list/',
       '/device/list',
@@ -115,9 +108,23 @@ declare module 'vue-router/auto-routes' {
       Record<never, never>,
       | never
     >,
+    '/device/raw': RouteRecordInfo<
+      '/device/raw',
+      '/device/raw',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
     '/modbus': RouteRecordInfo<
       '/modbus',
       '/modbus',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
+    '/profile': RouteRecordInfo<
+      '/profile',
+      '/profile',
       Record<never, never>,
       Record<never, never>,
       | never
@@ -206,14 +213,6 @@ declare module 'vue-router/auto-routes' {
       pathParamNames:
         | 'path'
     }
-    'frontend/pages/device/connect.vue': {
-      routes:
-        | '/device/connect'
-      views:
-        | never
-      pathParamNames:
-        | never
-    }
     'frontend/pages/device/list/index.vue': {
       routes:
         | '/device/list/'
@@ -238,9 +237,25 @@ declare module 'vue-router/auto-routes' {
       pathParamNames:
         | never
     }
+    'frontend/pages/device/raw.vue': {
+      routes:
+        | '/device/raw'
+      views:
+        | never
+      pathParamNames:
+        | never
+    }
     'frontend/pages/modbus.vue': {
       routes:
         | '/modbus'
+      views:
+        | never
+      pathParamNames:
+        | never
+    }
+    'frontend/pages/profile.vue': {
+      routes:
+        | '/profile'
       views:
         | never
       pathParamNames:

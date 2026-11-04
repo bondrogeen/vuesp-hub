@@ -1,7 +1,7 @@
 import type Core from '../../core.ts';
 
 interface MqttClient {
-  on(event: string, listener: (...args: any[]) => void): this;
+  on(event: string, listener: (...args: unknown[]) => void): this;
   subscribe(topic: string): void;
   publish(topic: string, message: string): void;
   end(): void;
@@ -48,10 +48,10 @@ export default class MqttModule {
       this.client?.subscribe('smart-home/+/control');
     });
     this.client.on('message', (topic, message) => {
-      this.handleMessage(topic, String(message));
+      this.handleMessage(String(topic), String(message));
     });
     this.client.on('error', error => {
-      this.core.log(`MQTT error: ${error.message}`, 'error');
+      this.core.log(`MQTT error: ${error instanceof Error ? error.message : String(error)}`, 'error');
     });
 
     this.core.registerService('mqtt', this);

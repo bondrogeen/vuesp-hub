@@ -1,97 +1,154 @@
 <template>
-  <main class="flex-auto max-w-(--breakpoint-2xl) p-4 md:p-6">
-    <VBreadcrumb :items="[{ name: 'Home', path: '/' }, { name: 'List' }]" class="mb-6" />
+  <main class="flex-auto w-full max-w-(--breakpoint-2xl) p-4 md:p-6">
+    <VBreadcrumb :items="[{ name: t('common.home'), path: '/' }, { name: t('common.devices') }]" class="mb-6" />
 
-    <VCardGray title="Devices" :loading="isLoading">
+    <div class="mb-6 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+      <div>
+        <h1 class="text-2xl font-semibold text-gray-900 dark:text-white">{{ t('devices.title') }}</h1>
+        <p class="mt-2 max-w-2xl text-sm text-gray-500 dark:text-gray-400">{{ t('devices.subtitle') }}</p>
+      </div>
+
+      <div class="flex flex-wrap items-center gap-2">
+        <span class="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-3 py-2 text-xs font-medium text-gray-600 dark:border-gray-800 dark:bg-white/[0.03] dark:text-gray-300">
+          <span class="h-2 w-2 rounded-full" :class="serviceRunning ? 'bg-emerald-500' : 'bg-red-500'"></span>
+          {{ serviceRunning ? t('common.serviceRunning') : t('common.serviceStopped') }}
+        </span>
+
+        <VButton color="blue" :disabled="isScanning" @click="scanDevices">
+          <IconSearch class="mr-2 size-4" />
+          {{ isScanning ? t('devices.scanning') : t('devices.scanNetwork') }}
+        </VButton>
+
+        <VButton color="gray" :disabled="!serviceRunning" @click="restartService">
+          <IconUpdate class="mr-2 size-4" />
+          {{ t('devices.restartService') }}
+        </VButton>
+      </div>
+    </div>
+
+    <div v-if="errorMessage" role="alert" class="mb-4 rounded-xl border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-800 dark:border-red-900 dark:bg-red-950/40 dark:text-red-200">
+      {{ errorMessage }}
+    </div>
+    <div v-if="successMessage" role="status" class="mb-4 rounded-xl border border-emerald-300 bg-emerald-50 px-4 py-3 text-sm text-emerald-800 dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-200">
+      {{ successMessage }}
+    </div>
+
+    <CardMain v-if="hasScanned" :title="t('devices.discovered')" :loading="isScanning" class="mb-6">
+      <div v-if="!foundDevices.length" class="py-8 text-center text-sm text-gray-500 dark:text-gray-400">
+        {{ t('devices.noNewDevices') }}
+      </div>
+
+      <ul v-else class="divide-y divide-gray-200 dark:divide-gray-800">
+        <li v-for="found in foundDevices" :key="found.ip" class="flex flex-col gap-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+          <div class="min-w-0">
+            <p class="truncate font-medium text-gray-900 dark:text-white">{{ found.name }}</p>
+            <p class="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-gray-500 dark:text-gray-400">
+              <span>{{ found.ip }}</span>
+              <span class="text-gray-300 dark:text-gray-700">·</span>
+              <span>{{ t('devices.deviceId', { id: found.deviceId }) }}</span>
+              <span class="text-gray-300 dark:text-gray-700">·</span>
+              <span>{{ t('devices.firmware', { version: formatFirmware(found.firmware) }) }}</span>
+            </p>
+            <p v-if="isLegacyIdRegistered(found)" class="mt-1 text-xs text-amber-700 dark:text-amber-300">
+              {{ t('devices.legacyWarning') }}
+            </p>
+          </div>
+
+          <VButton color="blue" class="shrink-0" @click="openAddDialog(found)">{{ t('devices.addToHub') }}</VButton>
+        </li>
+      </ul>
+    </CardMain>
+
+    <CardMain :title="t('devices.registered')" :loading="isLoading">
       <template #header>
-        <div class="flex gap-3">
-          <VButton type="icon" title="Find device" @click="onScan">
-            <IconSearch class="h-5 w-5"></IconSearch>
-          </VButton>
-
-          <VButton type="icon" :disabled="!isChange" @click="rebootService">
-            <IconUpdate class="h-5 w-5"></IconUpdate>
-          </VButton>
-        </div>
+        <span class="text-xs text-gray-500 dark:text-gray-400">{{ t('devices.total', { count: registeredDevices.length }) }}</span>
       </template>
 
-      <VTable :headers="headers" :items="items">
-        <template #status="{ item }">
-          <div class="w-1 h-5 rounded-full" :class="getStatus(item, devices)"></div>
-        </template>
+      <div v-if="!registeredDevices.length" class="py-10 text-center">
+        <p class="text-sm font-medium text-gray-900 dark:text-white">{{ t('devices.emptyTitle') }}</p>
+        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ t('devices.emptyHint') }}</p>
+      </div>
 
-        <template #ip="{ item }">
-          <router-link :to="`/device/${item.ip}`" @click.stop="">{{ item.ip }}</router-link>
-        </template>
+      <template v-else>
+        <div class="hidden md:block">
+          <VTable :headers="headers" :items="registeredDevices">
+            <template #status="{ item }">
+              <div class="h-5 w-1 rounded-full" :class="getStatus(item, devices)"></div>
+            </template>
 
-        <template #action="{ item }">
-          <div class="flex-auto flex justify-end">
-            <v-dropdown left="unset" right="0" top="0">
-              <template #activator="{ on }">
-                <v-button type="icon" color="gray" class="flex" @click.stop="on.click()">
-                  <icon-dots />
-                </v-button>
-              </template>
+            <template #name="{ item }">
+              <span class="font-medium text-gray-900 dark:text-white">{{ item.name }}</span>
+            </template>
 
-              <v-list :list="getListMenu(item)" @click="onMenu($event, item)" />
-            </v-dropdown>
-          </div>
-        </template>
-      </VTable>
-    </VCardGray>
+            <template #ip="{ item }">
+              <router-link :to="`/device/${item.ip}`" class="text-primary hover:underline" @click.stop="">{{ item.ip }}</router-link>
+            </template>
 
-    <AppDialog v-if="showDialog" title="Add device" size="sm" @close="onClose">
-      <DialogAddDevice :device="device" :scan="onScan" @add="onAddDevice" />
+            <template #action="{ item }">
+              <div class="flex justify-end">
+                <VDropdown left="unset" right="0" top="0">
+                  <template #activator="{ on }">
+                    <VButton type="icon" color="gray" class="flex" @click.stop="on.click($event)">
+                      <IconDots class="size-5" />
+                    </VButton>
+                  </template>
+
+                  <VList :list="getListMenu()" @click="onMenu($event, item)" />
+                </VDropdown>
+              </div>
+            </template>
+          </VTable>
+        </div>
+
+        <ul class="divide-y divide-gray-200 md:hidden dark:divide-gray-800">
+          <li v-for="item in registeredDevices" :key="item.id" class="flex items-center gap-3 py-4">
+            <span class="h-8 w-1 shrink-0 rounded-full" :class="getStatus(item, devices)"></span>
+
+            <div class="min-w-0 flex-1">
+              <p class="truncate font-medium text-gray-900 dark:text-white">{{ item.name }}</p>
+              <p class="mt-1 truncate text-sm text-gray-500 dark:text-gray-400">{{ item.ip }} · {{ t('devices.shortId', { id: item.deviceId }) }}</p>
+            </div>
+
+            <router-link :to="`/device/${item.ip}`" class="rounded-lg px-2 py-1 text-sm font-medium text-primary hover:bg-blue-50 dark:hover:bg-blue-950/40">{{ t('common.open') }}</router-link>
+            <button type="button" :disabled="removingId === item.id" class="rounded-lg px-2 py-1 text-sm font-medium text-red-600 hover:bg-red-50 disabled:opacity-40 dark:text-red-400 dark:hover:bg-red-950/40" @click="confirmRemove(item)">
+              {{ removingId === item.id ? t('common.removing') : t('common.remove') }}
+            </button>
+          </li>
+        </ul>
+      </template>
+    </CardMain>
+
+    <AppDialog v-if="selectedDevice" :title="t('devices.addDialogTitle')" size="sm" @close="selectedDevice = null">
+      <DialogAddDevice :device="selectedDevice" @add="addDevice" />
     </AppDialog>
   </main>
 </template>
 
 <script setup lang="ts">
-import type { Ref } from 'vue';
 import { onMounted, ref } from 'vue';
 import { storeToRefs } from 'pinia';
-import { BlockBreadcrumb as VBreadcrumb, VTable } from 'vuesp-components/components';
-
-import { api } from '@/utils/helpers.ts';
+import { useRouter } from 'vue-router';
+import { useI18n } from 'vue-i18n';
+import { BlockBreadcrumb as VBreadcrumb, CardMain, VButton, VDropdown, VList, VTable } from 'vuesp-components/components';
 
 import AppDialog from '@/components/app/AppDialog.vue';
-import VCardGray from '@/components/app/VCardGray.vue';
 import DialogAddDevice from '@/components/device/DialogAddDevice.vue';
 import legacyIcons from '@/components/app/legacyIcons.ts';
-
+import { useAppStore } from '@/stores/AppStore';
 import { useWebSocketStore } from '@/stores/WebSocketStore';
-import type { DeviceFormInput } from '@/types.ts';
+import { api } from '@/utils/helpers.ts';
+import type { DeviceFormInput, DeviceRecord, DiscoveredDevice } from '@/types';
+import type { DeviceListMenu, DeviceTableHeader } from './types.ts';
+import { DeviceListAction } from './types.ts';
 
 const webSocketStore = useWebSocketStore();
-const { IconSearch, IconUpdate } = legacyIcons;
+const appStore = useAppStore();
+const router = useRouter();
+const { t } = useI18n();
+const { IconDots, IconSearch, IconUpdate } = legacyIcons;
+const { devices, serviceRunning } = storeToRefs(webSocketStore);
 
-const { devices } = storeToRefs(webSocketStore);
-
-interface TypeDevice {
-  id?: number;
-  uuid?: string;
-  deviceId: number;
-  name: string;
-  ip: string;
-  firmware?: number[];
-  username?: string;
-  password?: string;
-  isNew?: boolean;
-}
-
-interface TypeMenu {
-  name: string;
-  icon?: string;
-  type: number;
-}
-
-const enum EnumMenu {
-  REMOVE = 1,
-  VIEW = 2,
-  ADD = 3,
-}
-
-const headers = [
+const headers: DeviceTableHeader[] = [
   { key: 'status', name: '', className: 'w-8' },
   { key: 'name', name: 'Name', className: '' },
   { key: 'ip', name: 'IP', className: '' },
@@ -99,117 +156,128 @@ const headers = [
   { key: 'action', name: '', className: '' },
 ];
 
-const isChange = ref(false);
+const registeredDevices = ref<DeviceRecord[]>([]);
+const foundDevices = ref<DiscoveredDevice[]>([]);
+const selectedDevice = ref<DiscoveredDevice | null>(null);
 const isLoading = ref(false);
+const isScanning = ref(false);
+const hasScanned = ref(false);
+const removingId = ref<number | null>(null);
+const errorMessage = ref('');
+const successMessage = ref('');
 
-const device: Ref<TypeDevice> = ref({
-  id: 0,
-  deviceId: 0,
-  name: '',
-  ip: '',
-  firmware: [],
-});
+const formatFirmware = (version: number[]): string =>
+  version.length && version.some(value => value !== 0) ? version.join('.') : t('common.unknown');
 
-const items: Ref<TypeDevice[]> = ref([]);
+const isLegacyIdRegistered = (device: DiscoveredDevice): boolean =>
+  registeredDevices.value.some(saved => saved.deviceId === device.deviceId);
 
-const getListMenu = ({ isNew }: TypeDevice): TypeMenu[] => {
-  const menu: TypeMenu[] = [];
-  if (isNew) {
-    menu.push({ name: 'Add', type: EnumMenu.ADD });
-  } else {
-    menu.push({ name: 'Delete', type: EnumMenu.REMOVE }, { name: 'View', type: EnumMenu.VIEW });
-  }
-  return menu;
+const getStatus = (device: DeviceRecord, states: Record<string, unknown>): string => {
+  const ping = (states[String(device.deviceId)] as { PING?: { delta?: number } } | undefined)?.PING;
+  const delta = typeof ping?.delta === 'number' ? ping.delta : Number.POSITIVE_INFINITY;
+  return delta > 5000 ? 'bg-red-500' : 'bg-emerald-500';
 };
 
-const showDialog = ref(false);
+const getListMenu = (): DeviceListMenu[] => [
+  { name: t('common.remove'), type: DeviceListAction.REMOVE },
+  { name: t('common.view'), type: DeviceListAction.VIEW },
+];
 
-const getStatus = ({ deviceId, isNew }: TypeDevice, devices: Record<string, Record<string, unknown>>) => {
-  if (isNew) {
-    return 'bg-gray-500';
-  }
-  if (!devices?.[deviceId]) return 'bg-red-500';
-
-  const ping = devices[String(deviceId)]?.PING;
-  const delta = typeof ping === 'object' && ping !== null && 'delta' in ping ? Number(ping.delta) : 0;
-  if (delta > 5000) {
-    return 'bg-red-500';
-  } else {
-    return 'bg-green-500';
-  }
-};
-
-const addDevice = (item: TypeDevice) => {
-  device.value = item;
-  showDialog.value = true;
-};
-
-const onClose = () => {
-  showDialog.value = false;
-};
-
-const onScan = async () => {
+const loadRegistry = async (): Promise<void> => {
   isLoading.value = true;
-  const res = await api.get<TypeDevice[]>('/device/scan/');
-  const devices = items.value.map((i) => i.deviceId);
-  const newDevice = res.filter((i: TypeDevice) => !devices.includes(i.deviceId)).map((i: TypeDevice) => ({ ...i, isNew: true }));
-  items.value = [...newDevice, ...items.value];
-  isLoading.value = false;
-};
-
-const onRemoveDevice = async ({ id }: TypeDevice) => {
-  if (id == null) return;
+  errorMessage.value = '';
   try {
-    let res = await api.delete(`/device/${id}/`);
-    items.value = items.value.filter((i) => i.id !== id);
-    return res;
+    registeredDevices.value = await api.get<DeviceRecord[]>('/device/');
   } catch (error) {
-    console.error(error);
+    errorMessage.value = error instanceof Error ? error.message : t('devices.errors.load');
+  } finally {
+    isLoading.value = false;
   }
 };
 
-const onAddDevice = async (device: DeviceFormInput) => {
+const scanDevices = async (): Promise<void> => {
+  isScanning.value = true;
+  hasScanned.value = true;
+  errorMessage.value = '';
+  successMessage.value = '';
   try {
-    isChange.value = true;
-    items.value = items.value.map((i: TypeDevice) => (device.deviceId === i.deviceId ? { ...i, isNew: false } : i));
-    await api.post('/device/', { body: JSON.stringify(device) });
-    await getAllDevices();
-    onClose();
+    const scanned = await api.get<DiscoveredDevice[]>('/device/scan/');
+    const registeredIps = new Set(registeredDevices.value.map(device => device.ip));
+    foundDevices.value = scanned.filter(device => !registeredIps.has(device.ip));
   } catch (error) {
-    console.error(error);
+    errorMessage.value = error instanceof Error ? error.message : t('devices.errors.scan');
+  } finally {
+    isScanning.value = false;
   }
 };
 
-const getAllDevices = async () => {
+const openAddDialog = (device: DiscoveredDevice): void => {
+  selectedDevice.value = { ...device };
+  errorMessage.value = '';
+};
+
+const restartService = async (): Promise<void> => {
   try {
-    const res = await api.get<TypeDevice[]>('/device/');
-
-    items.value = items.value.filter((i) => i.isNew);
-    items.value = [...items.value, ...res];
+    if (serviceRunning.value) await webSocketStore.stopService();
+    await webSocketStore.startService();
   } catch (error) {
-    console.error(error);
+    errorMessage.value = t('devices.errors.restart', { error: error instanceof Error ? error.message : String(error) });
   }
 };
 
-const onMenu = (e: TypeMenu, device: TypeDevice) => {
-  if (e.type === EnumMenu.ADD) {
-    addDevice(device);
-  }
-  if (e.type === EnumMenu.REMOVE) {
-    onRemoveDevice(device);
-    isChange.value = true;
+const addDevice = async (device: DeviceFormInput): Promise<void> => {
+  errorMessage.value = '';
+  successMessage.value = '';
+  try {
+    const added = await api.post<DeviceRecord>('/device/', { body: JSON.stringify(device) });
+    registeredDevices.value = [...registeredDevices.value, added];
+    foundDevices.value = foundDevices.value.filter(found => found.ip !== added.ip);
+    selectedDevice.value = null;
+    successMessage.value = t('devices.messages.added', { name: added.name });
+    await restartService();
+  } catch (error) {
+    errorMessage.value = error instanceof Error ? error.message : t('devices.errors.add');
   }
 };
 
-const rebootService = async () => {
-  isChange.value = false;
-  await webSocketStore.stopService();
-  await webSocketStore.startService();
+const removeDevice = async (device: DeviceRecord): Promise<void> => {
+  removingId.value = device.id;
+  errorMessage.value = '';
+  successMessage.value = '';
+  try {
+    await api.delete(`/device/${device.id}/`);
+    registeredDevices.value = registeredDevices.value.filter(item => item.id !== device.id);
+    successMessage.value = t('devices.messages.removed', { name: device.name });
+    await restartService();
+  } catch (error) {
+    errorMessage.value = error instanceof Error ? error.message : t('devices.errors.remove');
+  } finally {
+    removingId.value = null;
+  }
+};
+
+const confirmRemove = (device: DeviceRecord): void => {
+  appStore.setDialog({
+    value: true,
+    title: t('devices.removeDialog.title'),
+    message: t('devices.removeDialog.message', { name: device.name }),
+    button: t('common.remove'),
+    callback: () => void removeDevice(device),
+  });
+};
+
+const onMenu = (event: DeviceListMenu, device: DeviceRecord): void => {
+  if (event.type === DeviceListAction.REMOVE) {
+    if (removingId.value === null) confirmRemove(device);
+    return;
+  }
+  if (event.type === DeviceListAction.VIEW) {
+    void router.push(`/device/${device.ip}`);
+  }
 };
 
 onMounted(async () => {
-  await getAllDevices();
-
+  await loadRegistry();
   webSocketStore.sendDeviceAll({ comm: 'INFO' });
 });
 </script>

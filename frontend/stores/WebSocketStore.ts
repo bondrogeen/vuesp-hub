@@ -1,24 +1,54 @@
 import { defineStore } from 'pinia';
 import { markRaw } from 'vue';
 import { io } from 'socket.io-client';
-import type { DeviceListItem, DeviceMenu } from '@/types.ts';
-import {
-  isDeviceEventPayload,
-  isRecordValue,
-  type DeviceCommand,
-  type TargetedDeviceCommand,
-} from '../../shared/device.ts';
+import type { IMessageDevice, IMessageInfo } from 'vuesp-components/types';
+import type {
+  DeviceCommand,
+  DeviceEventPayload,
+  DeviceListItem,
+  DeviceMenu,
+  TargetedDeviceCommand,
+} from '@/types';
+import { isDeviceEventPayload, isRecordValue } from '../../shared/device.ts';
+import { isServiceStatusPayload } from '../../shared/socket.ts';
+import { clearToken, getToken } from '@/utils/auth.ts';
+import { translate } from '@/i18n/index.ts';
 
-type DeviceState = Record<string, Record<string, unknown>>;
+type DeviceTelemetry = {
+  INFO?: IMessageInfo;
+  DEVICE?: IMessageDevice;
+  [key: string]: unknown;
+};
+type DeviceState = Record<string, DeviceTelemetry>;
+type RawDeviceEvent = DeviceEventPayload & { at: number };
+
+interface StatusAck {
+  status?: string;
+  message?: string;
+}
+
+interface MenusAck extends StatusAck {
+  menus?: DeviceMenu[];
+}
+
+interface ListAck extends StatusAck {
+  list?: DeviceListItem[];
+}
+
+interface RunningAck {
+  running?: boolean;
+}
 
 export const useWebSocketStore = defineStore('websocketstore', {
   state: () => ({
     socket: null as ReturnType<typeof io> | null,
     isInitializing: false,
     connectionError: '',
+    serviceRunning: false,
     info: {} as Record<string, unknown>,
     main: {} as Record<string, unknown>,
     devices: {} as DeviceState,
+    events: [] as RawDeviceEvent[],
     menus: [] as DeviceMenu[],
     list: [] as DeviceListItem[],
   }),
@@ -26,28 +56,41 @@ export const useWebSocketStore = defineStore('websocketstore', {
     connect() {
       if (this.socket) return this.socket;
 
-      const socket = markRaw(io({ transports: ['websocket'], path: '/ws/device' }));
-      this.socket = socket;
-      socket.on('connect', () => this.initializeConnection());
-      socket.on('broadcast', msg => console.log(msg));
-      socket.on('service:status', data => console.log(data));
-      socket.on('device:data', data => this.onData(data));
-      socket.on('service:error', error => console.error(error));
+      const socket = markRaw(io({ transports: ['websocket'], path: '/ws/device', auth: { token: getToken() } }));
+      this.bindSocket(socket);
       return socket;
     },
 
-    disconnect() {
+    bindSocket(socket: ReturnType<typeof io>): void {
+      this.socket = socket;
+      socket.on('connect', () => this.initializeConnection());
+      socket.on('service:status', (data: unknown) => {
+        if (isServiceStatusPayload(data)) this.serviceRunning = data.running;
+      });
+      socket.on('device:data', (data: unknown) => this.onData(data));
+      socket.on('service:error', (error: unknown) => console.error(error));
+      socket.on('connect_error', (error: Error) => {
+        if (/unauthorized|jwt|token/i.test(error.message)) {
+          clearToken();
+          if (typeof window !== 'undefined' && window.location.pathname !== '/auth/login') {
+            window.location.assign('/auth/login');
+          }
+        }
+      });
+    },
+
+    disconnect(): void {
       this.socket?.disconnect();
       this.socket = null;
     },
 
-    async initializeConnection() {
+    async initializeConnection(): Promise<void> {
       if (this.isInitializing) return;
       this.isInitializing = true;
       this.connectionError = '';
       try {
         if (!(await this.statusService())) await this.startService();
-        await Promise.all([this.getMenus(), this.getList()]);
+        await Promise.all([this.loadMenusWithRetry(), this.getList()]);
       } catch (error) {
         this.connectionError = error instanceof Error ? error.message : String(error);
       } finally {
@@ -55,8 +98,11 @@ export const useWebSocketStore = defineStore('websocketstore', {
       }
     },
 
-    onData(payload: unknown) {
+    onData(payload: unknown): void {
       if (!isDeviceEventPayload(payload)) return;
+      this.events.push({ ...payload, at: Date.now() });
+      if (this.events.length > 200) this.events.splice(0, this.events.length - 200);
+
       const { event, data, id, key } = payload;
       if (event === 'message' && key === 'INFO' && isRecordValue(data)) {
         this.main = data;
@@ -68,48 +114,70 @@ export const useWebSocketStore = defineStore('websocketstore', {
       this.devices[id][key] = data
     },
 
-    sendDevice({ ip, name, comm, data }: TargetedDeviceCommand) {
-      // console.log(ip, name, comm, data);
-
-      this.socket.emit('device:send', { ip, name, comm, data }, (response) => {
-        console.log('sendDevice:', response);
-      });
+    clearEvents(): void {
+      this.events = [];
     },
 
-    sendDeviceAll({ comm, data }: DeviceCommand) {
-      this.socket.emit('device:sendAll', { comm, data }, (response) => {
-        console.log('sendDevice:', response);
-      });
+    sendDevice({ ip, name, comm, data }: TargetedDeviceCommand): void {
+      const socket = this.socket;
+      if (!socket?.connected) return;
+
+      socket.emit('device:send', { ip, name, comm, data });
     },
-    onSend(comm: string, data?: DeviceCommand['data']) {
+
+    sendDeviceAll({ comm, data }: DeviceCommand): void {
+      const socket = this.socket;
+      if (!socket?.connected) return;
+
+      socket.emit('device:sendAll', { comm, data });
+    },
+    onSend(comm: string, data?: DeviceCommand['data']): void {
       this.sendDeviceAll({ comm, data });
+    },
+    async loadMenusWithRetry(attempts = 10, delay = 500): Promise<DeviceMenu[]> {
+      let result: DeviceMenu[] = [];
+
+      for (let attempt = 0; attempt < attempts; attempt += 1) {
+        try {
+          result = await this.getMenus();
+          if (result.length && result.some(device => (device.menu?.length ?? 0) > 0)) return result;
+        } catch (error) {
+          if (attempt === attempts - 1) throw error;
+        }
+
+        if (attempt < attempts - 1) {
+          await new Promise(resolve => setTimeout(resolve, delay));
+        }
+      }
+
+      return result;
     },
     getMenus() {
       return new Promise<DeviceMenu[]>((resolve, reject) => {
-        if (!this.socket?.connected) return reject(new Error('Device service is not connected.'));
-        this.socket.timeout(5000).emit('device:menus', {}, (error, response) => {
+        if (!this.socket?.connected) return reject(new Error(translate('errors.deviceServiceNotConnected')));
+        this.socket.timeout(5000).emit('device:menus', {}, (error: Error | null, response?: MenusAck) => {
           if (error) return reject(error);
           const { status, menus, message } = response ?? {};
-          if (status === 'success') {
-            this.menus = menus
+          if (status === 'success' && menus) {
+            this.menus = menus;
             resolve(menus);
           } else {
-            reject(new Error(message || 'Could not load device menus.'));
+            reject(new Error(message || translate('errors.loadMenus')));
           }
         });
       });
     },
     getList() {
       return new Promise<DeviceListItem[]>((resolve, reject) => {
-        if (!this.socket?.connected) return reject(new Error('Device service is not connected.'));
-        this.socket.timeout(5000).emit('device:list', {}, (error, response) => {
+        if (!this.socket?.connected) return reject(new Error(translate('errors.deviceServiceNotConnected')));
+        this.socket.timeout(5000).emit('device:list', {}, (error: Error | null, response?: ListAck) => {
           if (error) return reject(error);
           const { status, list, message } = response ?? {};
-          if (status === 'success') {
-            this.list = list
+          if (status === 'success' && list) {
+            this.list = list;
             resolve(list);
           } else {
-            reject(new Error(message || 'Could not load the device list.'));
+            reject(new Error(message || translate('errors.loadList')));
           }
         });
       });
@@ -117,33 +185,41 @@ export const useWebSocketStore = defineStore('websocketstore', {
 
     startService() {
       return new Promise<{ status: string }>((resolve, reject) => {
-        if (!this.socket?.connected) return reject(new Error('Device service is not connected.'));
-        this.socket.timeout(5000).emit('service:start', {}, (error, response) => {
+        if (!this.socket?.connected) return reject(new Error(translate('errors.deviceServiceNotConnected')));
+        this.socket.timeout(5000).emit('service:start', {}, (error: Error | null, response?: StatusAck) => {
           if (error) return reject(error);
-          if (response?.status === 'success') resolve(response);
-          else reject(new Error(response?.message || 'Could not start the device service.'));
+          if (response?.status === 'success') {
+            this.serviceRunning = true;
+            void this.loadMenusWithRetry().catch(() => undefined);
+            void this.getList().catch(() => undefined);
+            resolve({ status: 'success' });
+          } else reject(new Error(response?.message || translate('errors.startService')));
         });
       });
     },
 
     stopService() {
       return new Promise<{ status: string }>((resolve, reject) => {
-        if (!this.socket?.connected) return reject(new Error('Device service is not connected.'));
-        this.socket.timeout(5000).emit('service:stop', {}, (error, response) => {
+        if (!this.socket?.connected) return reject(new Error(translate('errors.deviceServiceNotConnected')));
+        this.socket.timeout(5000).emit('service:stop', {}, (error: Error | null, response?: StatusAck) => {
           if (error) return reject(error);
-          if (response?.status === 'success') resolve(response);
-          else reject(new Error(response?.message || 'Could not stop the device service.'));
+          if (response?.status === 'success') {
+            this.serviceRunning = false;
+            resolve({ status: 'success' });
+          } else reject(new Error(response?.message || translate('errors.stopService')));
         });
       });
     },
 
     statusService() {
       return new Promise<boolean>((resolve, reject) => {
-        if (!this.socket?.connected) return reject(new Error('Device service is not connected.'));
-        this.socket.timeout(5000).emit('service:get-status', {}, (error, response) => {
+        if (!this.socket?.connected) return reject(new Error(translate('errors.deviceServiceNotConnected')));
+        this.socket.timeout(5000).emit('service:get-status', {}, (error: Error | null, response?: RunningAck) => {
           if (error) return reject(error);
-          if (typeof response?.running === 'boolean') resolve(response.running);
-          else reject(new Error('Could not read the device service status.'));
+          if (typeof response?.running === 'boolean') {
+            this.serviceRunning = response.running;
+            resolve(response.running);
+          } else reject(new Error(translate('errors.readServiceStatus')));
         });
       });
     },

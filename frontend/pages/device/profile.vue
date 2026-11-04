@@ -1,22 +1,22 @@
 <template>
   <div class="">
-    <VBreadcrumb :items="[{ name: 'Home', path: '/' }, { name: 'Video' }]" />
+    <VBreadcrumb :items="[{ name: t('common.home'), path: '/' }, { name: t('demo.title') }]" />
 
     <div class="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03] lg:p-6">
-      <h3 class="mb-5 text-lg font-semibold text-gray-800 dark:text-white/90 lg:mb-7">Profile</h3>
+      <h3 class="mb-5 text-lg font-semibold text-gray-800 dark:text-white/90 lg:mb-7">{{ t('demo.title') }}</h3>
 
       <div class="p-5 mb-6 border border-gray-200 rounded-2xl dark:border-gray-800 lg:p-6">
         <div class="flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between">
           <div class="flex flex-col items-center w-full gap-6 xl:flex-row">
             <div class="w-20 h-20 overflow-hidden border border-gray-200 rounded-full dark:border-gray-800">
-              <img src="@/assets/images/product-01.jpg" alt="user" />
+              <img src="@/assets/images/product-01.jpg" :alt="t('demo.userAlt')" />
             </div>
             <div class="order-3 xl:order-2">
-              <h4 class="mb-2 text-lg font-semibold text-center text-gray-800 dark:text-white/90 xl:text-left">Musharof Chowdhury</h4>
+              <h4 class="mb-2 text-lg font-semibold text-center text-gray-800 dark:text-white/90 xl:text-left">{{ t('demo.fullName') }}</h4>
               <div class="flex flex-col items-center gap-1 text-center xl:flex-row xl:gap-3 xl:text-left">
-                <p class="text-sm text-gray-500 dark:text-gray-400">Team Manager</p>
+                <p class="text-sm text-gray-500 dark:text-gray-400">{{ t('demo.teamManager') }}</p>
                 <div class="hidden h-3.5 w-px bg-gray-300 dark:bg-gray-700 xl:block"></div>
-                <p class="text-sm text-gray-500 dark:text-gray-400">Arizona, United States.</p>
+                <p class="text-sm text-gray-500 dark:text-gray-400">{{ t('demo.location') }}</p>
               </div>
             </div>
             <div class="flex items-center order-2 gap-2 grow xl:order-3 xl:justify-end">
@@ -78,7 +78,7 @@
                 fill=""
               ></path>
             </svg>
-            Edit
+            {{ t('demo.edit') }}
           </button>
         </div>
       </div>
@@ -86,32 +86,32 @@
       <div class="p-5 mb-6 border border-gray-200 rounded-2xl dark:border-gray-800 lg:p-6">
         <div class="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
           <div>
-            <h4 class="text-lg font-semibold text-gray-800 dark:text-white/90 lg:mb-6">Personal Information</h4>
+            <h4 class="text-lg font-semibold text-gray-800 dark:text-white/90 lg:mb-6">{{ t('demo.personalInformation') }}</h4>
 
             <div class="grid grid-cols-1 gap-4 lg:grid-cols-2 lg:gap-7 2xl:gap-x-32">
               <div>
-                <p class="mb-2 text-xs leading-normal text-gray-500 dark:text-gray-400">First Name</p>
-                <p class="text-sm font-medium text-gray-800 dark:text-white/90">Chowdury</p>
+                <p class="mb-2 text-xs leading-normal text-gray-500 dark:text-gray-400">{{ t('demo.firstName') }}</p>
+                <p class="text-sm font-medium text-gray-800 dark:text-white/90">{{ t('demo.firstNameValue') }}</p>
               </div>
 
               <div>
-                <p class="mb-2 text-xs leading-normal text-gray-500 dark:text-gray-400">Last Name</p>
-                <p class="text-sm font-medium text-gray-800 dark:text-white/90">Musharof</p>
+                <p class="mb-2 text-xs leading-normal text-gray-500 dark:text-gray-400">{{ t('demo.lastName') }}</p>
+                <p class="text-sm font-medium text-gray-800 dark:text-white/90">{{ t('demo.lastNameValue') }}</p>
               </div>
 
               <div>
-                <p class="mb-2 text-xs leading-normal text-gray-500 dark:text-gray-400">Email address</p>
-                <p class="text-sm font-medium text-gray-800 dark:text-white/90">randomuser@pimjo.com</p>
+                <p class="mb-2 text-xs leading-normal text-gray-500 dark:text-gray-400">{{ t('demo.emailAddress') }}</p>
+                <p class="text-sm font-medium text-gray-800 dark:text-white/90">{{ t('demo.emailValue') }}</p>
               </div>
 
               <div>
-                <p class="mb-2 text-xs leading-normal text-gray-500 dark:text-gray-400">Phone</p>
+                <p class="mb-2 text-xs leading-normal text-gray-500 dark:text-gray-400">{{ t('demo.phone') }}</p>
                 <p class="text-sm font-medium text-gray-800 dark:text-white/90">+09 363 398 46</p>
               </div>
 
               <div>
-                <p class="mb-2 text-xs leading-normal text-gray-500 dark:text-gray-400">Bio</p>
-                <p class="text-sm font-medium text-gray-800 dark:text-white/90">Team Manager</p>
+                <p class="mb-2 text-xs leading-normal text-gray-500 dark:text-gray-400">{{ t('demo.bio') }}</p>
+                <p class="text-sm font-medium text-gray-800 dark:text-white/90">{{ t('demo.teamManager') }}</p>
               </div>
             </div>
           </div>
@@ -128,7 +128,7 @@
                 fill=""
               ></path>
             </svg>
-            Edit
+            {{ t('demo.edit') }}
           </button>
         </div>
       </div>
@@ -136,27 +136,27 @@
       <div class="p-5 border border-gray-200 rounded-2xl dark:border-gray-800 lg:p-6">
         <div class="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
           <div>
-            <h4 class="text-lg font-semibold text-gray-800 dark:text-white/90 lg:mb-6">Address</h4>
+            <h4 class="text-lg font-semibold text-gray-800 dark:text-white/90 lg:mb-6">{{ t('demo.address') }}</h4>
 
             <div class="grid grid-cols-1 gap-4 lg:grid-cols-2 lg:gap-7 2xl:gap-x-32">
               <div>
-                <p class="mb-2 text-xs leading-normal text-gray-500 dark:text-gray-400">Country</p>
-                <p class="text-sm font-medium text-gray-800 dark:text-white/90">United States</p>
+                <p class="mb-2 text-xs leading-normal text-gray-500 dark:text-gray-400">{{ t('demo.country') }}</p>
+                <p class="text-sm font-medium text-gray-800 dark:text-white/90">{{ t('demo.countryValue') }}</p>
               </div>
 
               <div>
-                <p class="mb-2 text-xs leading-normal text-gray-500 dark:text-gray-400">City/State</p>
-                <p class="text-sm font-medium text-gray-800 dark:text-white/90">Arizona, United States.</p>
+                <p class="mb-2 text-xs leading-normal text-gray-500 dark:text-gray-400">{{ t('demo.cityState') }}</p>
+                <p class="text-sm font-medium text-gray-800 dark:text-white/90">{{ t('demo.location') }}</p>
               </div>
 
               <div>
-                <p class="mb-2 text-xs leading-normal text-gray-500 dark:text-gray-400">Postal Code</p>
-                <p class="text-sm font-medium text-gray-800 dark:text-white/90">ERT 2489</p>
+                <p class="mb-2 text-xs leading-normal text-gray-500 dark:text-gray-400">{{ t('demo.postalCode') }}</p>
+                <p class="text-sm font-medium text-gray-800 dark:text-white/90">{{ t('demo.postalCodeValue') }}</p>
               </div>
 
               <div>
-                <p class="mb-2 text-xs leading-normal text-gray-500 dark:text-gray-400">TAX ID</p>
-                <p class="text-sm font-medium text-gray-800 dark:text-white/90">AS4568384</p>
+                <p class="mb-2 text-xs leading-normal text-gray-500 dark:text-gray-400">{{ t('demo.taxId') }}</p>
+                <p class="text-sm font-medium text-gray-800 dark:text-white/90">{{ t('demo.taxIdValue') }}</p>
               </div>
             </div>
           </div>
@@ -173,7 +173,7 @@
                 fill=""
               ></path>
             </svg>
-            Edit
+            {{ t('demo.edit') }}
           </button>
         </div>
       </div>
@@ -183,8 +183,10 @@
 
 <script setup lang="ts">
 import { ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { BlockBreadcrumb as VBreadcrumb } from 'vuesp-components/components';
 
+const { t } = useI18n();
 const isProfileInfoModal = ref(false);
 const isProfileAddressModal = ref(false);
 </script>

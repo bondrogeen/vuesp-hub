@@ -1,46 +1,61 @@
-import type { MenuItemType } from '@/types.ts';
+import { changeTheme as applyTheme, jsonParse, jsonString } from 'vuesp-components/helpers';
+import { clearToken, getToken } from './auth.ts';
+import { translate } from '@/i18n/index.ts';
 
-export const jsonParse = (data: string | undefined | null): any => {
-  try {
-    return data ? JSON.parse(data) : null;
-  } catch (error) {
-    return data;
-  }
+export const localGet = (name: string, isJSON = false) => {
+  const value = typeof localStorage === 'undefined' ? null : localStorage.getItem(name);
+  return isJSON ? jsonParse(value) : value;
 };
 
-const jsonString = (data: object) => (typeof data === 'object' ? JSON.stringify(data) : data);
-
-export const localGet = (name: string) => jsonParse(localStorage.getItem(name));
-export const localSet = (name: string, data: any) => {
-  if (localStorage) localStorage.setItem(name, jsonString(data));
+export const localSet = (name: string, data: unknown) => {
+  if (typeof localStorage === 'undefined') return;
+  localStorage.setItem(name, typeof data === 'string' ? data : jsonString(data));
 };
 
-export const sessionGet = (name: string) => jsonParse(sessionStorage.getItem(name));
-export const sessionSet = (name: string, data: any) => {
-  if (sessionStorage) sessionStorage.setItem(name, jsonString(data));
+export const sendFrameMessage = (data: unknown, targetOrigin: string = '*') => {
+  const iframe = document.querySelector<HTMLIFrameElement>('iframe');
+  iframe?.contentWindow?.postMessage(data, targetOrigin);
 };
 
-export const sendFrameMessage = (data: any, targetOrigin: string = '*') => {
-  const iframe: any = document.querySelector('iframe');
-  if (iframe) {
-    iframe.contentWindow.postMessage(data, targetOrigin);
-  }
+export const changeTheme = (value: string) => {
+  sendFrameMessage({ type: 'theme', value });
+  applyTheme(value);
+};
+
+const apiErrorKeys: Record<string, string> = {
+  'A device at this IP address is already registered': 'errors.deviceAlreadyRegistered',
+  'Device not found': 'errors.deviceNotFound',
+  'Name must contain 1 to 64 characters': 'errors.deviceNameLength',
 };
 
 const basePath = '/api/v1';
 const headers = { 'Content-Type': 'application/json;charset=utf-8' };
 
 export const apiFetch = async <T>(path: string, init?: RequestInit): Promise<T> => {
-  const response = await fetch(`${basePath}${path}`, init);
+  const requestHeaders = new Headers(headers);
+  new Headers(init?.headers).forEach((value, key) => requestHeaders.set(key, value));
+  const token = getToken();
+  if (token) requestHeaders.set('Authorization', `Bearer ${token}`);
+
+  const response = await fetch(`${basePath}${path}`, { ...init, headers: requestHeaders });
+  if (response.status === 401 && path !== '/auth/login') {
+    clearToken();
+    if (typeof window !== 'undefined' && window.location.pathname !== '/auth/login') {
+      window.location.assign('/auth/login');
+    }
+  }
   if (!response.ok) {
     let message = response.statusText;
     try {
       const body = await response.json();
-      if (typeof body?.error === 'string') message = body.error;
+      if (typeof body?.error === 'string') {
+        const knownKey = apiErrorKeys[body.error];
+        message = knownKey ? translate(knownKey) : body.error;
+      }
     } catch {
       // The response may not contain JSON.
     }
-    throw new Error(message || `Request failed with status ${response.status}`);
+    throw new Error(message || translate('errors.requestFailed', { status: response.status }));
   }
   return (await response.json()) as T;
 };
@@ -52,58 +67,9 @@ export const api = {
   put: <T = unknown>(path: string, init?: RequestInit) => apiFetch<T>(path, { method: 'PUT', headers, ...init }),
 };
 
-export const sendFrameRoute = (src: string) => {
-  const iframe: any = document.querySelector('iframe');
-  if (iframe) {
-    iframe.src = src; //`http://${route.params.id}/device/settings/`;
-  }
-};
-
-export const changeTheme = (value: string) => {
-  sendFrameMessage({ type: 'theme', value });
-  localSet('theme', value);
-  document.documentElement.classList.remove('dark');
-  document.documentElement.classList.remove('light');
-  document.documentElement.classList.add(value);
-};
-
-export const findMenuTitle = (items: any, path: string) => items.reduce((acc: any, i: any) => (i.path === path ? i : i.children ? findMenuTitle(i.children, path) : acc), null);
-
-export const getPageTitle = (menu: MenuItemType[], path: string) => findMenuTitle(menu, path);
-
-export const toByte = (value: number) => {
-  const sizes = ['B', 'KB', 'MB'];
-  if (value == 0) return '0 B';
-  let i = Math.floor(Math.log(value) / Math.log(1024));
-  if (i > 1) i = 1;
-  return Math.round(value / Math.pow(1024, i)) + ' ' + sizes[i];
-};
-
-export const dateUtcToString = (unixTime: number, options: Intl.DateTimeFormatOptions = { year: 'numeric', month: 'numeric', day: 'numeric' }, location = []) => {
-  const localDate = new Date(unixTime);
-  return localDate.toLocaleDateString(location, options);
-};
-
-export const timeUtcToString = (unixTime: number, options: Intl.DateTimeFormatOptions = { second: '2-digit', minute: '2-digit', hour: '2-digit', timeZone: 'UTC' }, location = []) => {
-  const localDate = new Date(unixTime);
-  return localDate.toLocaleTimeString(location, options);
-};
-
-const addZero = (value: number) => (value >= 10 ? value : `0${value}`);
-
-export const secToTime = (seconds: number) => {
-  // let y = Math.floor(seconds / 31536000);
-  // let mo = Math.floor((seconds % 31536000) / 2628000);
-  let d = Math.floor(((seconds % 31536000) % 2628000) / 86400);
-  let h = Math.floor((seconds % (3600 * 24)) / 3600);
-  let m = Math.floor((seconds % 3600) / 60);
-  let s = Math.floor(seconds % 60);
-  return `${d ? d + ' days ' : ''} ${addZero(h)}:${addZero(m)}:${addZero(s)}`;
-};
-
-export const debounce = (fn: Function, ms = 300) => {
+export const debounce = <T extends (...args: never[]) => unknown>(fn: T, ms = 300) => {
   let timeoutId: ReturnType<typeof setTimeout>;
-  return function (this: any, ...args: any[]) {
+  return function (this: unknown, ...args: Parameters<T>) {
     clearTimeout(timeoutId);
     timeoutId = setTimeout(() => fn.apply(this, args), ms);
   };
