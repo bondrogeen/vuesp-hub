@@ -23,7 +23,8 @@ class VuespDevices extends EventEmitter {
     const { event } = payload;
     if (event === 'error' && this.listenerCount('error') === 0) {
       this.emit('*', payload);
-      console.error(payload);
+      const error = (payload as { error?: unknown }).error;
+      console.error(error instanceof Error ? error.message : error ?? payload);
       return;
     }
     this.emit(event, payload);

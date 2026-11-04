@@ -150,11 +150,27 @@ export const createDeviceRepository = async ({
     throw error;
   }
 
-  const withCredentials = (row: Record<string, SqliteOutputValue>): DeviceConnectionRecord => ({
-    ...toDevice(row),
-    username: String(row.username),
-    password: row.password ? secretProvider.decrypt(String(row.password)) : '',
-  });
+  const withCredentials = (row: Record<string, SqliteOutputValue>): DeviceConnectionRecord => {
+    let password = '';
+
+    if (row.password) {
+      try {
+        password = secretProvider.decrypt(String(row.password));
+      } catch (error) {
+        // A credential encrypted by another OS keyring/profile must not prevent
+        // the whole hub from starting. The device will simply require the user
+        // to enter its password again.
+        const message = error instanceof Error ? error.message : String(error);
+        console.warn(`Could not decrypt credentials for device ${String(row.id)}: ${message}`);
+      }
+    }
+
+    return {
+      ...toDevice(row),
+      username: String(row.username),
+      password,
+    };
+  };
 
   function getAll(): DeviceRecord[];
   function getAll(options: { includeCredentials: true }): DeviceConnectionRecord[];

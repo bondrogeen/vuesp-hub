@@ -45,6 +45,8 @@ const basicAuthHeader = (username: string, password: string) =>
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
 
+const errorMessage = (error: unknown): string => error instanceof Error ? error.message : String(error);
+
 const createHttpClient = (username: string, password: string): HttpClient => {
   const hasCredentials = Boolean(username || password);
   const headers = hasCredentials ? { Authorization: basicAuthHeader(username, password) } : undefined;
@@ -207,7 +209,7 @@ class VuespDevice extends EventEmitter {
       this.send('INFO');
     } catch (error) {
       this.#onEvent('error', error);
-      console.warn(error);
+      console.warn(errorMessage(error));
     }
   }
 
@@ -250,7 +252,7 @@ class VuespDevice extends EventEmitter {
       if (Array.isArray(config?.menu)) this.#menu = config.menu;
     } catch (error) {
       this.#onEvent('error', error);
-      console.warn(error);
+      console.warn(errorMessage(error));
     }
   }
 
@@ -270,7 +272,7 @@ class VuespDevice extends EventEmitter {
     const payload = { event, ...details, id: this.id };
     if (event === 'error' && this.listenerCount('error') === 0) {
       this.emit('*', payload);
-      console.error(data);
+      console.error(data instanceof Error ? data.message : data);
       return;
     }
     this.emit(event, payload);

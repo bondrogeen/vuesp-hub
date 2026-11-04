@@ -1,0 +1,44 @@
+[Unit]
+Description=Vuesp Hub (local-first device hub)
+Documentation=file:__PREFIX__/README.md
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=__USER__
+Group=__USER__
+WorkingDirectory=__PREFIX__
+EnvironmentFile=__CONFIG_DIR__/hub.env
+ExecStart=__NODE__ __PREFIX__/bin/vuesp-hub.js
+Restart=on-failure
+RestartSec=3
+TimeoutStopSec=15
+KillSignal=SIGTERM
+UMask=0077
+
+# Writable data directory. It must match VUESP_DATA_DIR from the environment
+# file and already exist with mode 0700 (install-hub.sh creates it).
+ReadWritePaths=__DATA_DIR__
+
+# Hardening. The hub only needs loopback TCP, unix sockets (worker/npm) and
+# serial devices; everything else stays read-only or hidden.
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+ProtectClock=true
+ProtectHostname=true
+RestrictSUIDSGID=true
+RestrictNamespaces=true
+LockPersonality=true
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6 AF_NETLINK
+
+# Serial adapters (/dev/ttyUSB*, /dev/ttyACM*) need the dialout group.
+# __SUPPLEMENTARY_GROUPS__
+
+[Install]
+WantedBy=multi-user.target
