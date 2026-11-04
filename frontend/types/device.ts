@@ -1,3 +1,5 @@
+import type { DashboardItem } from 'vuesp-dashboard-core';
+
 import type { DeviceCreateInput, DeviceRecord } from '../../shared/device.ts';
 
 export type {
@@ -34,15 +36,9 @@ export interface DeviceListItem {
   list?: DeviceListEntry[];
 }
 
-export interface DeviceListEntry {
-  id: string;
-  name: string;
-  keyValue: string;
-  type?: string;
-  icon?: string;
+export interface DeviceListEntry extends DashboardItem {
   value?: unknown;
-  min?: number;
-  max?: number;
+  valueTo?: unknown;
 }
 
 export type DeviceFormInput = DeviceCreateInput & {

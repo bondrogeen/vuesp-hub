@@ -177,6 +177,7 @@ export default {
     status: 'Status',
     empty: 'No devices are connected to the hub.',
     devices: 'Devices',
+    noTiles: 'This device does not expose dashboard tiles.',
   },
   profile: {
     title: 'Profile',

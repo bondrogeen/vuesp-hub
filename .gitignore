@@ -92,3 +92,11 @@ typings/
 out/
 dist/
 release/
+
+# Local architecture/plan notes — tracked later, on purpose for now
+docs/architecture/device-api-contracts-ru.md
+docs/architecture/headless-hub-ru.md
+docs/architecture/headless-install-ru.md
+docs/architecture/prompt-vuesp-app-ru.md
+docs/architecture/prompt-vuesp-app.md
+docs/architecture/refactoring-roadmap-ru.md

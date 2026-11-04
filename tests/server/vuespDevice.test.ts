@@ -257,3 +257,56 @@ test('device transport does not send INFO when the device protocol definition is
   assert.equal(errors.length, 1);
   assert.match(String(errors[0]), /Legacy protocol struct fields are invalid/);
 });
+
+test('loads the device dashboard into tile list and tags events with ip and name', async () => {
+  const definition = {
+    keys: ['INFO'],
+    structs: {
+      Info: [
+        { type: 'uint8_t', name: 'key' },
+        { type: 'uint32_t', name: 'id' },
+        { type: 'uint8_t', name: 'firmware', length: 3 },
+      ],
+    },
+  };
+  const dashboard = [
+    {
+      id: 'device.output.1',
+      name: 'output.1',
+      type: 'button',
+      icon: 'bulb',
+      args: ['device.output', 'device'],
+      get: '(v & 1 ? 0 : 1)',
+      set: '({...a, output: v, command: 2 })',
+    },
+  ];
+  const device = new Device(
+    { ip: '192.0.2.30', name: 'lamp', reconnectDelay: 10, maxReconnectDelay: 20 },
+    {
+      WebSocketClass: FakeWebSocket,
+      fetchClient: {
+        get: async ({ url }) => {
+          if (url.endsWith('/struct.json')) return { data: definition };
+          if (url.includes('/fs?file=/tmp/dashboard.json')) throw new Error('not found');
+          if (url.endsWith('/default.json')) return { data: { struct: definition, dashboard, menu: [] } };
+          if (url.endsWith('/menu.json')) return { data: [] };
+          return { data: [] };
+        },
+      },
+    },
+  );
+  devices.push(device);
+  const events: DeviceEventPayload[] = [];
+  device.on('*', payload => events.push(payload));
+
+  device.connect();
+  FakeWebSocket.instances[0].emit('open', {});
+  await delay(10);
+
+  assert.equal(device.list.length, 1);
+  assert.equal((device.list[0] as { id: string }).id, 'device.output.1');
+
+  const init = events.find(payload => payload.event === 'init');
+  assert.equal(init?.ip, '192.0.2.30');
+  assert.equal(init?.name, 'lamp');
+});

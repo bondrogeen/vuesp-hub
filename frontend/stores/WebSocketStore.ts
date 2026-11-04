@@ -11,6 +11,7 @@ import type {
 } from '@/types';
 import { isDeviceEventPayload, isRecordValue } from '../../shared/device.ts';
 import { isServiceStatusPayload } from '../../shared/socket.ts';
+import type { DeviceSocketAcknowledgement } from '../../shared/socket.ts';
 import { clearToken, getToken } from '@/utils/auth.ts';
 import { translate } from '@/i18n/index.ts';
 
@@ -21,6 +22,21 @@ type DeviceTelemetry = {
 };
 type DeviceState = Record<string, DeviceTelemetry>;
 type RawDeviceEvent = DeviceEventPayload & { at: number };
+
+export type DeviceMain = {
+  ports: Record<string, Record<string, unknown>>;
+  dallas: Record<string, Record<string, unknown>>;
+  slots: Record<string, Record<string, unknown>>;
+  [key: string]: unknown;
+};
+
+const emptyMain = (): DeviceMain => ({ ports: {}, dallas: {}, slots: {} });
+
+const dallasAddress = (data: Record<string, unknown>): string => {
+  const { address } = data;
+  if (!Array.isArray(address)) return String(address ?? '');
+  return address.map(value => (typeof value === 'number' && value < 16 ? `0${value.toString(16)}` : Number(value).toString(16))).join('');
+};
 
 interface StatusAck {
   status?: string;
@@ -46,8 +62,8 @@ export const useWebSocketStore = defineStore('websocketstore', {
     connectionError: '',
     serviceRunning: false,
     info: {} as Record<string, unknown>,
-    main: {} as Record<string, unknown>,
     devices: {} as DeviceState,
+    mains: {} as Record<string, DeviceMain>,
     events: [] as RawDeviceEvent[],
     menus: [] as DeviceMenu[],
     list: [] as DeviceListItem[],
@@ -65,7 +81,9 @@ export const useWebSocketStore = defineStore('websocketstore', {
       this.socket = socket;
       socket.on('connect', () => this.initializeConnection());
       socket.on('service:status', (data: unknown) => {
-        if (isServiceStatusPayload(data)) this.serviceRunning = data.running;
+        if (!isServiceStatusPayload(data)) return;
+        this.serviceRunning = data.running;
+        if (!data.running) this.mains = {};
       });
       socket.on('device:data', (data: unknown) => this.onData(data));
       socket.on('service:error', (error: unknown) => console.error(error));
@@ -104,9 +122,21 @@ export const useWebSocketStore = defineStore('websocketstore', {
       if (this.events.length > 200) this.events.splice(0, this.events.length - 200);
 
       const { event, data, id, key } = payload;
-      if (event === 'message' && key === 'INFO' && isRecordValue(data)) {
-        this.main = data;
+      const stateKey = payload.ip || String(id);
+      const main = (this.mains[stateKey] ??= emptyMain());
+
+      if (event === 'message' && key) {
+        const name = key.toLowerCase();
+        if (isRecordValue(data)) {
+          if (name === 'port') main.ports[String(data.gpio)] = data;
+          else if (name === 'dallas') main.dallas[dallasAddress(data)] = data;
+          else if (name === 'message') main.slots[String(data.index ?? 0)] = data;
+          else main[name] = data;
+        } else {
+          main[name] = data;
+        }
       }
+
       if (!key) return;
       if (!Object.hasOwn(this.devices, id)) {
         this.devices[id] = {}
@@ -118,11 +148,14 @@ export const useWebSocketStore = defineStore('websocketstore', {
       this.events = [];
     },
 
-    sendDevice({ ip, name, comm, data }: TargetedDeviceCommand): void {
+    sendDevice({ ip, name, comm, data }: TargetedDeviceCommand, done?: (ack: DeviceSocketAcknowledgement) => void): void {
       const socket = this.socket;
-      if (!socket?.connected) return;
+      if (!socket?.connected) {
+        done?.({ status: 'error', message: 'Device service is not connected' });
+        return;
+      }
 
-      socket.emit('device:send', { ip, name, comm, data });
+      socket.emit('device:send', { ip, name, comm, data }, (ack: DeviceSocketAcknowledgement) => done?.(ack));
     },
 
     sendDeviceAll({ comm, data }: DeviceCommand): void {

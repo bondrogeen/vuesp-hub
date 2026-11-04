@@ -269,7 +269,7 @@ class VuespDevice extends EventEmitter {
     const device = this.getInfo();
     const id = device?.id || 0;
     const details = data instanceof Error ? { error: data } : data && typeof data === 'object' ? data : { data };
-    const payload = { event, ...details, id: this.id };
+    const payload = { event, ...details, id: this.id, ip: this.#ip, name: this.#name };
     if (event === 'error' && this.listenerCount('error') === 0) {
       this.emit('*', payload);
       console.error(data instanceof Error ? data.message : data);
