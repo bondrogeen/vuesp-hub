@@ -3,8 +3,8 @@ import { createServer } from 'node:http';
 import express from 'express';
 import { test } from 'node:test';
 
-import { createUserRouter } from '../../server/routes/userRoutes.ts';
-import type { StoreModel } from '../../server/models/storeModel.ts';
+import { createUserRouter } from '../../server/modules/users/api/userRoutes.ts';
+import type { StoreModel } from '../../server/modules/users/infrastructure/storeModel.ts';
 
 interface TestUser {
   id: number;

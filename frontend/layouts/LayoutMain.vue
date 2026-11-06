@@ -39,9 +39,9 @@
           @read="appStore.readNotification"
         >
           <template #header="{ isNew }">
-            <div class="sticky top-0 z-20 flex items-center justify-between bg-gray-50 px-2 py-4 dark:bg-gray-900">
+            <div class="sticky top-0 z-20 flex flex-wrap items-center justify-between gap-2 border-b border-gray-200/70 bg-white/75 px-3 py-3 backdrop-blur-xl dark:border-white/10 dark:bg-[#07112c]/80">
               <h2 class="font-medium">{{ t('notifications.title') }}</h2>
-              <VButton size="sm" color="gray" :disabled="!isNew" @click="appStore.readAllNotification">
+              <VButton size="sm" color="gray" class="whitespace-nowrap text-xs" :disabled="!isNew" @click="appStore.readAllNotification">
                 {{ t('notifications.markAllRead') }}
               </VButton>
             </div>
@@ -58,20 +58,21 @@
 </template>
 
 <script setup lang="ts">
-import { ref, provide, computed } from 'vue';
+import { ref, provide, computed, onMounted, watch } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { useAppStore } from '@/stores/AppStore';
 import { useWebSocketStore } from '@/stores/WebSocketStore';
 
+import { api } from '@/utils/helpers.ts';
 import { createDeviceMenu } from '@/utils/deviceMenu.ts';
 import legacyIcons from '@/components/app/legacyIcons.ts';
 
 import AppDialog from '@/components/app/AppDialog.vue';
 import HubHeader from '@/components/app/HubHeader.vue';
 import { AppAside, AppNav, AppNotification, VButton } from 'vuesp-components/components';
-import type { MenuChildType, MenuItemType } from '@/types';
+import type { DeviceRecord, MenuChildType, MenuItemType } from '@/types';
 import type { IMenuItem, INotification } from 'vuesp-components/types';
 
 const route = useRoute();
@@ -118,7 +119,17 @@ const getGroupItems = (items: MenuItemType[]): IMenuItem[] => items.map(toNaviga
 const { menus } = storeToRefs(webSocketStore);
 const { dialog, notifications } = storeToRefs(appStore);
 
-const getMenu = computed(() => createDeviceMenu(menus.value, t));
+const registry = ref<DeviceRecord[]>([]);
+
+const loadRegistry = async (): Promise<void> => {
+  try {
+    registry.value = await api.get<DeviceRecord[]>('/device/');
+  } catch {
+    registry.value = [];
+  }
+};
+
+const getMenu = computed(() => createDeviceMenu(menus.value, t, registry.value));
 const headerNotifications = computed<INotification[]>(() => notifications.value.map(notification => ({
   key: typeof notification.id === 'number'
     ? notification.id
@@ -131,6 +142,14 @@ const headerNotifications = computed<INotification[]>(() => notifications.value.
   date: notification.date ?? Date.now(),
   text: notification.text ?? notification.message ?? notification.title ?? '',
 })));
+
+onMounted(() => {
+  void loadRegistry();
+});
+
+watch(menus, () => {
+  void loadRegistry();
+});
 
 const sidebarToggle = ref(false);
 const isNotificationsOpen = ref(false);

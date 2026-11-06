@@ -65,6 +65,7 @@ export const api = {
   post: <T = unknown>(path: string, init?: RequestInit) => apiFetch<T>(path, { method: 'POST', headers, ...init }),
   delete: <T = unknown>(path: string, init?: RequestInit) => apiFetch<T>(path, { method: 'DELETE', headers, ...init }),
   put: <T = unknown>(path: string, init?: RequestInit) => apiFetch<T>(path, { method: 'PUT', headers, ...init }),
+  patch: <T = unknown>(path: string, init?: RequestInit) => apiFetch<T>(path, { method: 'PATCH', headers, ...init }),
 };
 
 export const debounce = <T extends (...args: never[]) => unknown>(fn: T, ms = 300) => {

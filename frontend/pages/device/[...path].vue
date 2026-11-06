@@ -2,10 +2,10 @@
   <main class="flex-auto max-w-(--breakpoint-2xl) p-4 md:p-6">
     <VBreadcrumb :items="breadcrumbs" class="mb-6" />
 
-    <div class="relative flex h-[calc(100dvh-11rem)] min-h-[480px] flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
+    <div class="glass-panel relative flex h-[calc(100dvh-11rem)] min-h-[480px] flex-col overflow-hidden rounded-[10px]">
       <div
         v-if="isLoading"
-        class="absolute inset-0 z-10 flex items-center justify-center bg-white/80 dark:bg-gray-950/80"
+        class="absolute inset-0 z-10 flex items-center justify-center bg-white/65 backdrop-blur-sm dark:bg-[#060b28]/80"
       >
         <VLoader />
       </div>
@@ -40,13 +40,15 @@ import { BlockBreadcrumb as VBreadcrumb, VLoader } from 'vuesp-components/compon
 
 import { useAppStore } from '@/stores/AppStore';
 import { useWebSocketStore } from '@/stores/WebSocketStore';
+import { SUPPORTED_LOCALES, getLocale as getHubLocale, setLocale as setHubLocale } from '@/i18n/index.ts';
+import type { SupportedLocale } from '@/i18n/index.ts';
 import { api } from '@/utils/helpers.ts';
 import { getDeviceMenuLabel, normalizeDeviceMenuPath } from '@/utils/deviceMenu.ts';
 import type { BreadcrumbType, DeviceRecord, DeviceUiSession } from '@/types';
 
 const route = useRoute();
 const router = useRouter();
-const { t } = useI18n();
+const { t, locale } = useI18n();
 const appStore = useAppStore();
 const webSocketStore = useWebSocketStore();
 const { menus } = storeToRefs(webSocketStore);
@@ -112,6 +114,17 @@ const sendTheme = (): void => {
   postToFrame({ type: 'theme', value: appStore.theme });
 };
 
+const sendLocale = (): void => {
+  if (!frameReady.value) return;
+  postToFrame({ type: 'locale', value: getHubLocale() });
+};
+
+const withLocale = (path: string): string => {
+  const url = new URL(path, 'http://device.local');
+  url.searchParams.set('locale', getHubLocale());
+  return `${url.pathname}${url.search}${url.hash}`;
+};
+
 const onFrameLoad = (): void => {
   isLoading.value = false;
   frameReady.value = true;
@@ -119,6 +132,7 @@ const onFrameLoad = (): void => {
   window.setTimeout(() => {
     sendRoute();
     sendTheme();
+    sendLocale();
   }, 0);
   window.setTimeout(sendRoute, 700);
 };
@@ -164,7 +178,7 @@ const prepareFrame = async (): Promise<void> => {
     if (requestId !== sessionRequest) return;
 
     frameOrigin.value = session.origin;
-    frameSrc.value = `${session.origin}${deviceFullPath.value}`;
+    frameSrc.value = `${session.origin}${withLocale(deviceFullPath.value)}`;
   } catch (error) {
     if (requestId !== sessionRequest) return;
     isLoading.value = false;
@@ -177,20 +191,34 @@ const onMessage = (event: MessageEvent): void => {
   if (!frame || event.source !== frame.contentWindow) return;
   if (frameOrigin.value && event.origin !== frameOrigin.value) return;
 
-  const payload = event.data as { type?: unknown; data?: { path?: unknown } } | null;
+  const payload = event.data as { type?: unknown; data?: { path?: unknown }; value?: unknown } | null;
 
   if (payload?.type === 'vuesp:ready') {
     sendRoute();
     sendTheme();
+    sendLocale();
+    return;
+  }
+  if (payload?.type === 'locale') {
+    const value = payload.value;
+    if (typeof value === 'string' && value !== locale.value && (SUPPORTED_LOCALES as readonly string[]).includes(value)) {
+      setHubLocale(value as SupportedLocale);
+    }
     return;
   }
   if (payload?.type !== 'route') return;
 
   const path = payload.data?.path;
   if (typeof path !== 'string' || !path.startsWith('/') || path.startsWith('//')) return;
-  if (path === deviceFullPath.value) return;
 
-  void router.replace(`/device/${encodeURIComponent(deviceIp.value)}${path}`);
+  // The iframe URL carries ?locale for the initial device UI render; keep it
+  // out of the hub address bar.
+  const url = new URL(path, 'http://device.local');
+  url.searchParams.delete('locale');
+  const nextPath = `${url.pathname}${url.search}${url.hash}`;
+  if (nextPath === deviceFullPath.value) return;
+
+  void router.replace(`/device/${encodeURIComponent(deviceIp.value)}${nextPath}`);
 };
 
 const loadRegistry = async (): Promise<void> => {
@@ -207,6 +235,7 @@ watch(deviceId, id => {
 
 watch(deviceFullPath, () => sendRoute());
 watch(() => appStore.theme, () => sendTheme());
+watch(locale, () => sendLocale());
 
 onMounted(async () => {
   window.addEventListener('message', onMessage);

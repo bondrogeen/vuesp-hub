@@ -1,14 +1,10 @@
 @import 'tailwindcss';
+@import 'vuesp-components/theme.css';
 
 @custom-variant dark (&:where(.dark, .dark *));
 
+@source '../../**/*.{vue,ts}';
 @source inline("dark:{flex,hidden} dark:border-gray-700/50 dark:border-gray-700 dark:hover:bg-gray-700");
-
-@theme {
-  --color-primary: #24c0eb;
-  --color-secondary: #66d3f1;
-  --color-bermuda: #78dcca;
-}
 
 @layer base {
   html {
@@ -19,7 +15,7 @@
     /* @apply overflow-y-auto [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:bg-gray-800 [&::-webkit-scrollbar-thumb]:bg-gray-600 dark:[&::-webkit-scrollbar-track]:bg-blue-700 dark:[&::-webkit-scrollbar-thumb]:bg-blue-500; */
   }
   body {
-    @apply min-h-screen min-w-[320px] text-gray-900 bg-gray-50 dark:bg-gray-900 dark:text-white;
+    @apply min-h-screen min-w-[320px] text-gray-900 dark:text-white;
   }
   input {
     outline: none;

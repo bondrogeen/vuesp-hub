@@ -1,10 +1,10 @@
 <template>
-  <main class="flex min-h-screen items-center justify-center bg-gray-50 px-4 dark:bg-gray-900">
-    <div class="w-full max-w-md rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-white/[0.03]">
+  <main class="relative flex min-h-screen items-center justify-center px-4 py-10">
+    <div class="glass-panel w-full max-w-md p-6">
       <h1 class="mb-2 text-2xl font-semibold text-gray-900 dark:text-white">{{ t('auth.signIn') }}</h1>
       <p class="mb-6 text-sm text-gray-500 dark:text-gray-400">{{ t('auth.subtitle') }}</p>
 
-      <div v-if="errorMessage" role="alert" class="mb-4 rounded-lg border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-800 dark:border-red-900 dark:bg-red-950 dark:text-red-200">
+      <div v-if="errorMessage" role="alert" class="mb-4 rounded-md border border-red-400/50 bg-red-50/80 px-4 py-3 text-sm text-red-700 dark:border-red-500/40 dark:bg-red-950/30 dark:text-red-200">
         {{ errorMessage }}
       </div>
 

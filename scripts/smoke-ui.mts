@@ -1,6 +1,6 @@
 import { spawn } from 'node:child_process';
 import { EventEmitter } from 'node:events';
-import { existsSync, mkdtempSync } from 'node:fs';
+import { existsSync, mkdtempSync, writeFileSync } from 'node:fs';
 import { createServer } from 'node:net';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
@@ -8,8 +8,9 @@ import { setTimeout as delay } from 'node:timers/promises';
 import WebSocket from 'ws';
 
 import { DeviceRuntime } from '../core/application/deviceRuntime.ts';
-import { createAuthService } from '../server/auth/authService.ts';
-import { server } from '../server/server.ts';
+import { createAuthService } from '../server/modules/auth/application/authService.ts';
+import { createCameraStore } from '../server/modules/cameras/application/cameraStore.ts';
+import { server } from '../server/app/server.ts';
 
 /**
  * UI smoke test: serves the built web UI with a stub device runtime, opens the
@@ -38,7 +39,18 @@ const tiles = [
 class FakeManager extends EventEmitter {
   connection() {}
   disconnection() {}
-  getMenu() { return []; }
+  getMenu() {
+    return [{
+      id: 1,
+      recordId: 1,
+      ip: '192.0.2.5',
+      name: 'Lamp',
+      menu: [
+        { name: 'menu.dashboard', path: '/dashboard' },
+        { name: 'menu.settings', path: '/settings' },
+      ],
+    }];
+  }
   getList() { return [{ id: 1, ip: '192.0.2.5', name: 'Lamp', list: tiles }]; }
   onSend(target: string, comm: string, data?: unknown) { sends.push({ target, comm, data }); return true; }
   onSendAll() { return true; }
@@ -64,9 +76,13 @@ const appPort = await freePort();
 const app = server({
   staticDirectory: path.resolve('dist/web'),
   deviceRuntime: runtime as never,
-  getDeviceModel: async () => ({ getAll: () => [] }) as never,
+  getDeviceModel: async () => ({
+    getAll: () => [{ id: 1, uuid: 'smoke', deviceId: 1, name: 'Lamp', ip: '192.0.2.5', firmware: [], addedAt: new Date(0).toISOString() }],
+    getById: () => ({ id: 1, uuid: 'smoke', deviceId: 1, name: 'Lamp', ip: '192.0.2.5', firmware: [], addedAt: new Date(0).toISOString(), username: '', password: '' }),
+  }) as never,
   storeModel: () => ({}) as never,
   serialSettingsStore: { get: () => undefined, set: () => {} },
+  cameraStore: createCameraStore({ dataDirectory: temp }),
   auth: createAuthService({ dataDirectory: temp }),
   host: '127.0.0.1',
   port: appPort,
@@ -137,6 +153,8 @@ let nextId = 1;
 const pending = new Map<number, { resolve: (value: unknown) => void; reject: (error: Error) => void }>();
 const logs: string[] = [];
 
+socket.on('close', (code, reason) => console.log('CDP closed:', code, String(reason)));
+socket.on('error', error => console.log('CDP error:', error.message));
 socket.on('message', raw => {
   const message = JSON.parse(String(raw)) as { id?: number; result?: unknown; error?: { message: string }; method?: string; params?: { args?: Array<{ value?: unknown }> } };
   if (message.id && pending.has(message.id)) {
@@ -164,12 +182,18 @@ const send = (method: string, params: Record<string, unknown> = {}) =>
   });
 
 const evaluate = async (expression: string) => {
-  const result = (await send('Runtime.evaluate', { expression, awaitPromise: true, returnByValue: true })) as { result?: { value?: unknown } };
+  const result = (await Promise.race([
+    send('Runtime.evaluate', { expression, awaitPromise: true, returnByValue: true }),
+    new Promise((_, reject) => setTimeout(() => reject(new Error(`evaluate timeout: ${expression.slice(0, 80)}`)), 5000)),
+  ])) as { result?: { value?: unknown } };
   return result.result?.value;
 };
 
 await send('Page.enable');
 await send('Runtime.enable');
+const viewportWidth = Number(process.env.UI_WIDTH ?? 1440);
+const viewportHeight = Number(process.env.UI_HEIGHT ?? 900);
+await send('Emulation.setDeviceMetricsOverride', { width: viewportWidth, height: viewportHeight, deviceScaleFactor: 1, mobile: viewportWidth < 768 });
 await waitFor(async () => (await evaluate('document.readyState')) === 'complete', 'login page');
 await evaluate(`localStorage.setItem('vuesp-auth-token', ${JSON.stringify(token)})`);
 await send('Page.navigate', { url: `${base}/dashboard` });
@@ -178,16 +202,45 @@ await waitFor(async () => await evaluate('Boolean(document.querySelector("sectio
 
 const buttonCount = await evaluate('document.querySelectorAll("section .grid button").length');
 console.log(`tile buttons: ${buttonCount}`);
+
+if (process.env.UI_SHOT) {
+  await evaluate('document.querySelector("section .grid > div").click()');
+  await delay(600);
+  const metrics = await evaluate('JSON.stringify({ viewport: [innerWidth, innerHeight], dialog: (() => { const el = [...document.querySelectorAll("body > div")].map(e => e.querySelector("h4")?.closest("div")?.parentElement).find(Boolean); const r = el?.getBoundingClientRect(); return r ? { top: r.top, height: r.height } : null; })() })');
+  console.log('metrics:', metrics);
+  const shot = (await send('Page.captureScreenshot', { format: 'png' })) as { data: string };
+  writeFileSync('/tmp/opencode/dashboard-modal.png', Buffer.from(shot.data, 'base64'));
+  console.log('screenshot: /tmp/opencode/dashboard-modal.png');
+  await evaluate('document.querySelector("h4")?.parentElement?.parentElement?.querySelector("button")?.click()');
+}
 await evaluate('document.querySelector("section .grid button").click()');
 await delay(800);
 
 console.log('sends:', JSON.stringify(sends));
 console.log('console:', JSON.stringify(logs.slice(-10)));
 
+// --- menu nesting -----------------------------------------------------------
+await evaluate('document.querySelector("aside nav ul > li button")?.click(); true');
+await delay(400);
+const deviceLinks = JSON.parse(
+  (await evaluate('JSON.stringify([...document.querySelectorAll("aside nav ul > li:first-child ul a")].map((a) => a.getAttribute("href")))')) as string,
+) as string[];
+console.log('device menu links:', JSON.stringify(deviceLinks));
+
+await send('Page.navigate', { url: `${base}/device/192.0.2.5/dashboard` });
+await waitFor(async () => await evaluate('Boolean(document.querySelector(\'aside a[href="/device/192.0.2.5/dashboard/"]\'))'), 'device submenu');
+const nestedLinks = JSON.parse(
+  (await evaluate('JSON.stringify([...document.querySelectorAll(\'aside a[href^="/device/192.0.2.5"]\')].map((a) => a.getAttribute("href")))')) as string,
+) as string[];
+console.log('nested links:', JSON.stringify(nestedLinks));
+
 socket.close();
 chrome.kill('SIGKILL');
 await app.closeExpress();
 
-const ok = sends.length > 0 && sends[0].comm === 'DEVICE' && sends[0].target === '192.0.2.5';
+const commandsOk = sends.length > 0 && sends[0].comm === 'DEVICE' && sends[0].target === '192.0.2.5';
+const menuOk = deviceLinks.includes('/device/192.0.2.5/') && nestedLinks.includes('/device/192.0.2.5/dashboard/');
+
+const ok = commandsOk && menuOk;
 console.log(ok ? 'E2E OK' : 'E2E FAILED');
 process.exit(ok ? 0 : 1);

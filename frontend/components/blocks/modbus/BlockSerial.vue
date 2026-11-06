@@ -8,7 +8,7 @@
 
     <VSelect :model-value="stopBits" :disabled="isConnect" :label="t('modbus.stopBits')" :items="listStopBits" @change="onStopBits" />
 
-    <VButton block :disabled="!path" @click="onConnect">{{ isConnect ? t('common.disconnect') : t('common.connect') }}</VButton>
+    <VButton color="blue" block :disabled="!path" @click="onConnect">{{ isConnect ? t('common.disconnect') : t('common.connect') }}</VButton>
   </div>
 </template>
 

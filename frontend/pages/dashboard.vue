@@ -17,7 +17,7 @@
           <div class="flex min-w-0 items-center gap-3">
             <h2 class="truncate text-lg font-semibold text-gray-900 dark:text-white">{{ device.name || device.ip }}</h2>
 
-            <span class="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-gray-200 px-2.5 py-1 text-xs font-medium text-gray-600 dark:border-gray-800 dark:text-gray-300">
+            <span class="glass-inset inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium text-gray-600 dark:text-gray-300">
               <span class="h-2 w-2 rounded-full" :class="statusColor(device.online)"></span>
               {{ statusLabel(device.online) }}
             </span>

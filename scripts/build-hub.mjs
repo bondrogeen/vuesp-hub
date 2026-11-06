@@ -67,6 +67,7 @@ const hubPackage = {
     '@mhoc/axios-digest-auth': rootPackage.dependencies['@mhoc/axios-digest-auth'],
     'c-struct-to-json': rootPackage.dependencies['c-struct-to-json'],
     express: rootPackage.dependencies.express,
+    'ffmpeg-static': rootPackage.dependencies['ffmpeg-static'],
     serialport: rootPackage.dependencies.serialport,
     'socket.io': rootPackage.dependencies['socket.io'],
     'vuesp-struct': rootPackage.dependencies['vuesp-struct'],

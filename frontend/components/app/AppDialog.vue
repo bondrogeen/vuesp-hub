@@ -4,7 +4,7 @@
 
     <div v-if="$slots.footer || callback" class="flex justify-end pt-4">
       <slot name="footer">
-        <VButton color="blue" @click="confirm">{{ dialogButton }}</VButton>
+        <VButton :color="color" @click="confirm">{{ dialogButton }}</VButton>
       </slot>
     </div>
   </VDialog>
@@ -17,7 +17,7 @@ import { VButton, VDialog } from 'vuesp-components/components';
 
 import type { AppDialogEmits, AppDialogProps } from './AppDialog.types.ts';
 
-const { title, message = '', callback, button, size = 'sm' } = defineProps<AppDialogProps>();
+const { title, message = '', callback, button, color = 'blue', size = 'sm' } = defineProps<AppDialogProps>();
 const emit = defineEmits<AppDialogEmits>();
 const { t } = useI18n();
 

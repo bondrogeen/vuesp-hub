@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import VuespStruct from 'vuesp-struct';
 
-import { LegacyDeviceProtocol } from '../../server/devices/protocols/legacyDeviceProtocol.ts';
+import { LegacyDeviceProtocol } from '../../server/modules/devices/domain/protocols/legacyDeviceProtocol.ts';
 
 const definition = {
   keys: ['INFO', 'CUSTOM'],

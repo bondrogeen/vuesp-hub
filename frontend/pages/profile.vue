@@ -10,7 +10,7 @@
     <div class="grid grid-cols-1 gap-6 xl:grid-cols-3">
       <CardMain :title="t('profile.account')" :loading="false" class="xl:col-span-1">
         <div class="flex items-center gap-4">
-          <div class="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-blue-500 text-lg font-semibold uppercase text-white shadow-sm">
+          <div class="flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-primary to-[var(--accent-blue)] text-lg font-semibold uppercase text-white shadow-sm">
             {{ initials }}
           </div>
 
@@ -37,7 +37,7 @@
       </CardMain>
 
       <CardMain :title="t('profile.changePassword')" :loading="false" class="xl:col-span-2">
-        <div class="mb-5 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-800 dark:border-blue-900 dark:bg-blue-950/40 dark:text-blue-200">
+        <div class="mb-5 rounded-md border border-blue-400/40 bg-blue-50/80 px-4 py-3 text-sm text-blue-800 dark:border-blue-500/30 dark:bg-blue-950/30 dark:text-blue-200">
           {{ t('profile.passwordNotConnected') }}
         </div>
 

@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
 import { DeviceRuntime } from '../../core/application/deviceRuntime.ts';
-import { server } from '../../server/server.ts';
+import { server } from '../../server/app/server.ts';
 
 test('creates the server runtime from injected platform adapters', () => {
   const runtime = server({
@@ -21,6 +21,15 @@ test('creates the server runtime from injected platform adapters', () => {
     serialSettingsStore: {
       get: () => undefined,
       set: () => {},
+    },
+    cameraStore: {
+      list: () => [],
+      get: () => undefined,
+      create: () => { throw new Error('not used'); },
+      update: () => { throw new Error('not used'); },
+      remove: () => false,
+      reorder: () => [],
+      close: () => {},
     },
   });
 

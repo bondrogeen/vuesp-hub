@@ -26,7 +26,7 @@
         </div>
 
         <div class="self-start">
-          <VButton class="w-[100px]" block :disabled="!isValid" @click="onSend">{{ t('common.send') }}</VButton>
+          <VButton color="blue" class="w-[100px]" block :disabled="!isValid" @click="onSend">{{ t('common.send') }}</VButton>
         </div>
       </div>
     </div>

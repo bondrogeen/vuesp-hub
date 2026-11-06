@@ -9,7 +9,7 @@
       </div>
 
       <div class="flex flex-wrap items-center gap-2">
-        <span class="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-3 py-2 text-xs font-medium text-gray-600 dark:border-gray-800 dark:bg-white/[0.03] dark:text-gray-300">
+        <span class="glass-inset inline-flex items-center gap-2 rounded-full px-3 py-2 text-xs font-medium text-gray-600 dark:text-gray-300">
           <span class="h-2 w-2 rounded-full" :class="serviceRunning ? 'bg-emerald-500' : 'bg-red-500'"></span>
           {{ serviceRunning ? t('common.serviceRunning') : t('common.serviceStopped') }}
         </span>
@@ -26,10 +26,10 @@
       </div>
     </div>
 
-    <div v-if="errorMessage" role="alert" class="mb-4 rounded-xl border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-800 dark:border-red-900 dark:bg-red-950/40 dark:text-red-200">
+    <div v-if="errorMessage" role="alert" class="mb-4 rounded-md border border-red-400/50 bg-red-50/80 px-4 py-3 text-sm text-red-700 dark:border-red-500/40 dark:bg-red-950/30 dark:text-red-200">
       {{ errorMessage }}
     </div>
-    <div v-if="successMessage" role="status" class="mb-4 rounded-xl border border-emerald-300 bg-emerald-50 px-4 py-3 text-sm text-emerald-800 dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-200">
+    <div v-if="successMessage" role="status" class="mb-4 rounded-md border border-emerald-400/50 bg-emerald-50/80 px-4 py-3 text-sm text-emerald-700 dark:border-emerald-500/40 dark:bg-emerald-950/30 dark:text-emerald-200">
       {{ successMessage }}
     </div>
 
@@ -109,8 +109,8 @@
               <p class="mt-1 truncate text-sm text-gray-500 dark:text-gray-400">{{ item.ip }} · {{ t('devices.shortId', { id: item.deviceId }) }}</p>
             </div>
 
-            <router-link :to="`/device/${item.ip}`" class="rounded-lg px-2 py-1 text-sm font-medium text-primary hover:bg-blue-50 dark:hover:bg-blue-950/40">{{ t('common.open') }}</router-link>
-            <button type="button" :disabled="removingId === item.id" class="rounded-lg px-2 py-1 text-sm font-medium text-red-600 hover:bg-red-50 disabled:opacity-40 dark:text-red-400 dark:hover:bg-red-950/40" @click="confirmRemove(item)">
+            <router-link :to="`/device/${item.ip}`" class="rounded-md px-2 py-1 text-sm font-medium text-primary hover:bg-blue-50 dark:hover:bg-blue-950/40">{{ t('common.open') }}</router-link>
+            <button type="button" :disabled="removingId === item.id" class="rounded-md px-2 py-1 text-sm font-medium text-red-600 hover:bg-red-50 disabled:opacity-40 dark:text-red-400 dark:hover:bg-red-950/40" @click="confirmRemove(item)">
               {{ removingId === item.id ? t('common.removing') : t('common.remove') }}
             </button>
           </li>
@@ -150,9 +150,9 @@ const { devices, serviceRunning } = storeToRefs(webSocketStore);
 
 const headers: DeviceTableHeader[] = [
   { key: 'status', name: '', className: 'w-8' },
-  { key: 'name', name: 'Name', className: '' },
-  { key: 'ip', name: 'IP', className: '' },
-  { key: 'deviceId', name: 'ID', className: '' },
+  { key: 'name', name: t('devices.tableName'), className: '' },
+  { key: 'ip', name: t('devices.tableIp'), className: '' },
+  { key: 'deviceId', name: t('devices.tableId'), className: '' },
   { key: 'action', name: '', className: '' },
 ];
 

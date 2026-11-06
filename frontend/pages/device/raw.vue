@@ -22,7 +22,7 @@
       </div>
     </div>
 
-    <div v-if="errorMessage" role="alert" class="mb-4 rounded-lg border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-800 dark:border-red-900 dark:bg-red-950 dark:text-red-200">
+    <div v-if="errorMessage" role="alert" class="mb-4 rounded-md border border-red-400/50 bg-red-50/80 px-4 py-3 text-sm text-red-700 dark:border-red-500/40 dark:bg-red-950/30 dark:text-red-200">
       {{ errorMessage }}
     </div>
 
@@ -60,7 +60,7 @@
           </div>
         </dl>
 
-        <pre class="scrollbar mt-4 max-h-[32rem] overflow-auto rounded-xl bg-gray-950 p-4 text-xs leading-5 text-gray-100">{{ pretty(row.state) }}</pre>
+        <pre class="scrollbar mt-4 max-h-[32rem] overflow-auto rounded-md border border-white/10 bg-[#060b28] p-4 text-xs leading-5 text-gray-100">{{ pretty(row.state) }}</pre>
 
         <div class="mt-5 flex items-center justify-between gap-3">
           <h3 class="text-sm font-semibold text-gray-800 dark:text-white/90">{{ t('raw.messages') }}</h3>
@@ -71,9 +71,9 @@
         </div>
 
         <p v-if="!eventsFor(row.id).length" class="py-4 text-sm text-gray-500 dark:text-gray-400">{{ t('raw.noMessages') }}</p>
-        <div v-else class="scrollbar mt-2 max-h-80 overflow-auto rounded-xl border border-gray-200 dark:border-gray-800">
+        <div v-else class="glass-inset scrollbar mt-2 max-h-80 overflow-auto rounded-md">
           <table class="w-full text-left text-xs">
-            <thead class="sticky top-0 bg-gray-50 text-gray-500 dark:bg-gray-900 dark:text-gray-400">
+            <thead class="sticky top-0 bg-white/60 text-gray-500 backdrop-blur-sm dark:bg-white/[0.06] dark:text-gray-400">
               <tr>
                 <th class="px-3 py-2 font-medium">{{ t('raw.time') }}</th>
                 <th class="px-3 py-2 font-medium">{{ t('raw.event') }}</th>

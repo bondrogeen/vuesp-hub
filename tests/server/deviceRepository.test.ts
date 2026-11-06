@@ -5,7 +5,7 @@ import { join } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 import { test } from 'node:test';
 
-import { createDeviceRepository } from '../../server/models/deviceRepository.ts';
+import { createDeviceRepository } from '../../server/modules/devices/infrastructure/deviceRepository.ts';
 
 const secretProvider = {
   encrypt: (password: string) => `encrypted:${password}`,
