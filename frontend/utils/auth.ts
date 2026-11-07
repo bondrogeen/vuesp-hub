@@ -2,8 +2,13 @@ import { translate } from '@/i18n/index.ts';
 
 export const AUTH_TOKEN_KEY = 'vuesp-auth-token';
 
+export type UserRole = 'admin' | 'user' | 'viewer';
+
 export interface AuthUser {
+  id: number;
   username: string;
+  role: UserRole;
+  mustChangePassword: boolean;
 }
 
 export interface AuthSession {
@@ -28,19 +33,51 @@ export const clearToken = (): void => {
 
 export const isAuthenticated = (): boolean => Boolean(getToken());
 
-export const getUsername = (): string => {
+interface AuthTokenPayload {
+  sub?: unknown;
+  role?: unknown;
+  uid?: unknown;
+  mustChange?: unknown;
+}
+
+const decodeToken = (): AuthTokenPayload | null => {
   const token = getToken();
-  if (!token) return '';
+  if (!token) return null;
   try {
     const payload = token.split('.')[1];
-    if (!payload || typeof atob === 'undefined') return '';
+    if (!payload || typeof atob === 'undefined') return null;
     const normalized = payload.replace(/-/g, '+').replace(/_/g, '/');
-    const parsed = JSON.parse(atob(normalized)) as { sub?: unknown };
-    return typeof parsed.sub === 'string' ? parsed.sub : '';
+    return JSON.parse(atob(normalized)) as AuthTokenPayload;
   } catch {
-    return '';
+    return null;
   }
 };
+
+const isRole = (value: unknown): value is UserRole => value === 'admin' || value === 'user' || value === 'viewer';
+
+export const getUsername = (): string => {
+  const parsed = decodeToken();
+  return parsed && typeof parsed.sub === 'string' ? parsed.sub : '';
+};
+
+export const getRole = (): UserRole => {
+  const parsed = decodeToken();
+  // Legacy tokens issued before roles existed belong to the local administrator.
+  if (!parsed) return 'viewer';
+  return isRole(parsed.role) ? parsed.role : 'admin';
+};
+
+export const getUserId = (): number | null => {
+  const parsed = decodeToken();
+  return parsed && typeof parsed.uid === 'number' ? parsed.uid : null;
+};
+
+export const getMustChangePassword = (): boolean => {
+  const parsed = decodeToken();
+  return parsed?.mustChange === true;
+};
+
+export const isAdmin = (): boolean => getRole() === 'admin';
 
 export const login = async (username: string, password: string): Promise<AuthSession> => {
   const response = await fetch('/api/v1/auth/login', {

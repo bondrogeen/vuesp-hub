@@ -22,14 +22,16 @@ test('nests all known devices under the devices item', () => {
     ],
   );
 
-  const devices = menu[0].items[0];
+  const devicesGroup = menu.find(group => group.items.some(item => item.path === '/device/list/'))!;
+  const devices = devicesGroup.items[0];
   assert.equal(devices.path, '/device/list/');
   assert.deepEqual(devices.children?.map(child => child.path), ['/device/192.0.2.5/', '/device/192.0.2.6/']);
   assert.equal(devices.children?.[0].children?.[0].path, '/device/192.0.2.5/dashboard/');
   assert.equal(devices.children?.[1].children, undefined);
 
   // Devices are no longer separate top-level entries.
-  assert.deepEqual(menu[0].items.map(item => item.path), ['/device/list/', '/device/raw/']);
+  assert.deepEqual(devicesGroup.items.map(item => item.path), ['/device/list/', '/device/raw/']);
+  assert.ok(menu.some(group => group.items.some(item => item.path === '/')));
 });
 
 test('does not duplicate devices present both in runtime and registry', () => {
@@ -39,7 +41,8 @@ test('does not duplicate devices present both in runtime and registry', () => {
     [{ ip: '192.0.2.5', name: 'Lamp from registry' }],
   );
 
-  const devices = menu[0].items[0];
+  const devicesGroup = menu.find(group => group.items.some(item => item.path === '/device/list/'))!;
+  const devices = devicesGroup.items[0];
   assert.equal(devices.children?.length, 1);
   assert.equal(devices.children?.[0].name, 'Lamp');
 });

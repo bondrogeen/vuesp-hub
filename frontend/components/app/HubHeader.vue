@@ -65,7 +65,7 @@
 
             <span class="hidden min-w-0 sm:block">
               <span class="block truncate text-sm font-medium text-gray-900 dark:text-white">{{ username }}</span>
-              <span class="block text-xs text-gray-500 dark:text-gray-400">{{ t('header.administrator') }}</span>
+              <span class="block text-xs text-gray-500 dark:text-gray-400">{{ roleLabel }}</span>
             </span>
 
             <IconChevron class="hidden size-4 rotate-90 text-gray-400 sm:block" />
@@ -76,7 +76,7 @@
           <div class="glass-popover w-[min(28rem,calc(100vw-2rem))] overflow-hidden rounded-[10px] lg:w-64">
             <div class="border-b border-gray-200/70 px-4 py-3 dark:border-white/10">
               <p class="truncate text-sm font-semibold text-gray-900 dark:text-white">{{ username }}</p>
-              <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">{{ t('header.localAdministrator') }}</p>
+              <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">{{ roleLabel }}</p>
             </div>
 
             <div class="p-1.5">
@@ -114,7 +114,7 @@ import { VDropdown } from 'vuesp-components/components';
 import type { INotification } from 'vuesp-components/types';
 
 import { useAppStore } from '@/stores/AppStore';
-import { getUsername, logout } from '@/utils/auth.ts';
+import { getRole, getUsername, logout } from '@/utils/auth.ts';
 import legacyIcons from '@/components/app/legacyIcons.ts';
 import { setLocale } from '@/i18n/index.ts';
 import type { HubHeaderEmits, HubHeaderProps } from './HubHeader.types.ts';
@@ -131,6 +131,7 @@ const { theme } = storeToRefs(appStore);
 const { IconBell, IconChevron, IconLogout, IconLogoMini, IconMenu, IconMoon, IconSun, IconUser } = legacyIcons;
 
 const username = computed(() => getUsername() || 'admin');
+const roleLabel = computed(() => t(`admin.roles.${getRole()}`));
 const initials = computed(() => username.value.slice(0, 2).toUpperCase());
 const hasUnread = computed(() => notifications.some(notification => notification.isNew));
 

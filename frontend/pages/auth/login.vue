@@ -17,18 +17,19 @@
         </VButton>
       </form>
 
-      <p class="mt-4 text-xs text-gray-500 dark:text-gray-400">{{ t('auth.defaultCredentials') }}</p>
+      <p v-if="showDefaultCredentials" class="mt-4 text-xs text-gray-500 dark:text-gray-400">{{ t('auth.defaultCredentials') }}</p>
     </div>
   </main>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { onMounted, ref } from 'vue';
 import { useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { VButton, VTextField } from 'vuesp-components/components';
 
 import { login } from '@/utils/auth.ts';
+import { api } from '@/utils/helpers.ts';
 
 const route = useRoute();
 const { t } = useI18n();
@@ -37,6 +38,16 @@ const username = ref('admin');
 const password = ref('admin');
 const isLoading = ref(false);
 const errorMessage = ref('');
+const showDefaultCredentials = ref(false);
+
+onMounted(async () => {
+  try {
+    const status = await api.get<{ defaultCredentials: boolean }>('/auth/status');
+    showDefaultCredentials.value = Boolean(status.defaultCredentials);
+  } catch {
+    showDefaultCredentials.value = false;
+  }
+});
 
 const onSubmit = async (): Promise<void> => {
   if (isLoading.value) return;
@@ -44,9 +55,9 @@ const onSubmit = async (): Promise<void> => {
   errorMessage.value = '';
 
   try {
-    await login(username.value, password.value);
+    const session = await login(username.value, password.value);
     const redirect = typeof route.query.redirect === 'string' ? route.query.redirect : '/';
-    window.location.assign(redirect);
+    window.location.assign(session.user.mustChangePassword ? '/auth/change-password' : redirect);
   } catch (error) {
     errorMessage.value = error instanceof Error ? error.message : t('auth.loginFailed');
   } finally {

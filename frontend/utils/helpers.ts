@@ -44,6 +44,13 @@ export const apiFetch = async <T>(path: string, init?: RequestInit): Promise<T> 
       window.location.assign('/auth/login');
     }
   }
+
+  if (response.status === 403) {
+    const body = (await response.clone().json().catch(() => null)) as { code?: unknown } | null;
+    if (body?.code === 'PASSWORD_CHANGE_REQUIRED' && typeof window !== 'undefined' && window.location.pathname !== '/auth/change-password') {
+      window.location.assign('/auth/change-password');
+    }
+  }
   if (!response.ok) {
     let message = response.statusText;
     try {

@@ -3,6 +3,7 @@ import Core from '../../core/core.ts';
 import type { CameraStore } from '../modules/cameras/application/cameraStore.ts';
 import type { DeviceConnectionRecord } from '../../shared/device.ts';
 import type { AuthService } from '../modules/auth/application/authService.ts';
+import type { AccessRepository } from '../modules/access/infrastructure/jsonAccessRepository.ts';
 import { VuespDevices } from '../modules/devices/application/vuespDevices.ts';
 import type { DeviceRepository } from '../modules/devices/infrastructure/deviceRepository.ts';
 import type { StoreModelFactory } from '../shared/stores/types.ts';
@@ -30,6 +31,7 @@ export interface HubOptions {
   workerScriptPath: string;
   staticDirectory?: string;
   auth?: AuthService;
+  access?: AccessRepository;
   host?: string;
   port?: number;
   /** Opt-in cloud telemetry; disabled when omitted. */
@@ -57,6 +59,7 @@ export const createHub = ({
   workerScriptPath,
   staticDirectory,
   auth,
+  access,
   host,
   port,
   telemetry,
@@ -86,6 +89,7 @@ export const createHub = ({
     serialSettingsStore,
     cameraStore,
     auth,
+    access,
     host,
     port,
   });

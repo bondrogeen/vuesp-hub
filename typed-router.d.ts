@@ -38,9 +38,37 @@ declare module 'vue-router/auto-routes' {
       Record<never, never>,
       | never
     >,
+    '/403': RouteRecordInfo<
+      '/403',
+      '/403',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
     '/404': RouteRecordInfo<
       '/404',
       '/404',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
+    '/admin/access': RouteRecordInfo<
+      '/admin/access',
+      '/admin/access',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
+    '/admin/users': RouteRecordInfo<
+      '/admin/users',
+      '/admin/users',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
+    '/auth/change-password': RouteRecordInfo<
+      '/auth/change-password',
+      '/auth/change-password',
       Record<never, never>,
       Record<never, never>,
       | never
@@ -157,9 +185,41 @@ declare module 'vue-router/auto-routes' {
       pathParamNames:
         | never
     }
+    'frontend/pages/403.vue': {
+      routes:
+        | '/403'
+      views:
+        | never
+      pathParamNames:
+        | never
+    }
     'frontend/pages/404.vue': {
       routes:
         | '/404'
+      views:
+        | never
+      pathParamNames:
+        | never
+    }
+    'frontend/pages/admin/access.vue': {
+      routes:
+        | '/admin/access'
+      views:
+        | never
+      pathParamNames:
+        | never
+    }
+    'frontend/pages/admin/users.vue': {
+      routes:
+        | '/admin/users'
+      views:
+        | never
+      pathParamNames:
+        | never
+    }
+    'frontend/pages/auth/change-password.vue': {
+      routes:
+        | '/auth/change-password'
       views:
         | never
       pathParamNames:

@@ -4,8 +4,6 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 @source '../../**/*.{vue,ts}';
-@source inline("dark:{flex,hidden} dark:border-gray-700/50 dark:border-gray-700 dark:hover:bg-gray-700");
-
 @layer base {
   html {
     font-family: 'Roboto', sans-serif;

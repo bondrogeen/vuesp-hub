@@ -1,8 +1,8 @@
 import Store from 'electron-store';
 
-import type { StoreEntity } from '../../../shared/stores/types.ts';
+import type { StoreEntity } from '../../server/shared/stores/types.ts';
 
-export type { StoreEntity, StoreModel, StoreModelFactory } from '../../../shared/stores/types.ts';
+export type { StoreEntity, StoreModel, StoreModelFactory } from '../../server/shared/stores/types.ts';
 
 const store = new Store<Record<string, StoreEntity[]>>();
 

@@ -6,6 +6,7 @@ import { parseArgs } from 'node:util';
 import { createCameraStore } from '../server/modules/cameras/application/cameraStore.ts';
 import { createHub } from '../server/app/host.ts';
 import { createAuthService } from '../server/modules/auth/application/authService.ts';
+import { createJsonAccessRepository } from '../server/modules/access/infrastructure/jsonAccessRepository.ts';
 import { createDeviceRepository } from '../server/modules/devices/infrastructure/deviceRepository.ts';
 import { createJsonSettingsStore, createJsonStoreModel } from '../server/shared/stores/jsonStore.ts';
 import type { DeviceRepository } from '../server/modules/devices/infrastructure/deviceRepository.ts';
@@ -101,6 +102,7 @@ export const main = async () => {
     cameraStore: createCameraStore({ dataDirectory }),
     workerScriptPath,
     auth: createAuthService({ dataDirectory }),
+    access: createJsonAccessRepository({ dataDirectory }),
     host,
     port,
     telemetry: cloudUrl && cloudToken

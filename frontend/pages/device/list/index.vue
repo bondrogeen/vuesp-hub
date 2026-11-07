@@ -14,14 +14,27 @@
           {{ serviceRunning ? t('common.serviceRunning') : t('common.serviceStopped') }}
         </span>
 
-        <VButton color="blue" :disabled="isScanning" @click="scanDevices">
-          <IconSearch class="mr-2 size-4" />
-          {{ isScanning ? t('devices.scanning') : t('devices.scanNetwork') }}
+        <VButton
+          type="icon"
+          color="blue"
+          :loading="isScanning"
+          :disabled="isScanning"
+          :title="isScanning ? t('devices.scanning') : t('devices.scanNetwork')"
+          :aria-label="isScanning ? t('devices.scanning') : t('devices.scanNetwork')"
+          @click="scanDevices"
+        >
+          <IconSearch class="size-4" />
         </VButton>
 
-        <VButton color="gray" :disabled="!serviceRunning" @click="restartService">
-          <IconUpdate class="mr-2 size-4" />
-          {{ t('devices.restartService') }}
+        <VButton
+          type="icon"
+          color="gray"
+          :disabled="!serviceRunning"
+          :title="t('devices.restartService')"
+          :aria-label="t('devices.restartService')"
+          @click="restartService"
+        >
+          <IconUpdate class="size-4" />
         </VButton>
       </div>
     </div>

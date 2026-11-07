@@ -2,6 +2,8 @@ import { createHmac, timingSafeEqual } from 'node:crypto';
 
 export interface JwtPayload {
   sub: string;
+  role?: string;
+  uid?: number;
   iat: number;
   exp: number;
 }
@@ -16,10 +18,15 @@ const decode = <T>(value: string): T | null => {
   }
 };
 
-export const signJwt = (subject: string, secret: Buffer, ttlSeconds: number): string => {
+export const signJwt = (
+  subject: string,
+  secret: Buffer,
+  ttlSeconds: number,
+  extra: Record<string, unknown> = {},
+): string => {
   const now = Math.floor(Date.now() / 1000);
   const header = encode({ alg: 'HS256', typ: 'JWT' });
-  const payload = encode({ sub: subject, iat: now, exp: now + ttlSeconds });
+  const payload = encode({ ...extra, sub: subject, iat: now, exp: now + ttlSeconds });
   const signature = createHmac('sha256', secret).update(`${header}.${payload}`).digest('base64url');
   return `${header}.${payload}.${signature}`;
 };

@@ -16,14 +16,14 @@
 
           <div class="min-w-0">
             <p class="truncate text-base font-semibold text-gray-900 dark:text-white">{{ username }}</p>
-            <p class="text-sm text-gray-500 dark:text-gray-400">{{ t('profile.localAdministrator') }}</p>
+            <p class="text-sm text-gray-500 dark:text-gray-400">{{ roleLabel }}</p>
           </div>
         </div>
 
         <dl class="mt-6 space-y-4 text-sm">
           <div class="flex items-center justify-between gap-4">
             <dt class="text-gray-500 dark:text-gray-400">{{ t('profile.role') }}</dt>
-            <dd class="font-medium text-gray-900 dark:text-white">{{ t('profile.administrator') }}</dd>
+            <dd class="font-medium text-gray-900 dark:text-white">{{ roleLabel }}</dd>
           </div>
           <div class="flex items-center justify-between gap-4">
             <dt class="text-gray-500 dark:text-gray-400">{{ t('profile.scope') }}</dt>
@@ -62,10 +62,11 @@ import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { BlockBreadcrumb as VBreadcrumb, CardMain, VButton, VTextField } from 'vuesp-components/components';
 
-import { getUsername } from '@/utils/auth.ts';
+import { getRole, getUsername } from '@/utils/auth.ts';
 
 const { t } = useI18n();
 const username = computed(() => getUsername() || 'admin');
+const roleLabel = computed(() => t(`admin.roles.${getRole()}`));
 const initials = computed(() => username.value.slice(0, 2).toUpperCase());
 
 const currentPassword = ref('');

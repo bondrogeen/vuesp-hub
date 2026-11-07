@@ -1,11 +1,18 @@
-import { randomBytes, scryptSync, timingSafeEqual } from 'node:crypto';
-import { chmodSync, existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
+import { randomBytes } from 'node:crypto';
+import { chmodSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 
 import { signJwt, verifyJwt } from '../domain/jwt.ts';
+import { hashPassword, verifyPassword } from '../../users/domain/password.ts';
+import type { UserRepository } from '../../users/domain/user.repository.ts';
+import type { UserRole } from '../../users/domain/user.ts';
+import { createJsonUserRepository } from '../../users/infrastructure/jsonUserRepository.ts';
 
 export interface AuthUser {
+  id: number;
   username: string;
+  role: UserRole;
+  mustChangePassword: boolean;
 }
 
 export interface AuthSession {
@@ -16,53 +23,12 @@ export interface AuthSession {
 export interface AuthService {
   login(username: string, password: string): AuthSession | null;
   verify(token: string | undefined): AuthUser | null;
-  getUser(): AuthUser;
+  changePassword(id: number, currentPassword: string, newPassword: string): AuthSession | null;
+  isDefaultAdminPassword(): boolean;
+  users: UserRepository;
 }
 
-interface AuthRecord {
-  username: string;
-  passwordHash: string;
-}
-
-const DEFAULT_USERNAME = 'admin';
-const DEFAULT_PASSWORD = 'admin';
 const DEFAULT_TTL_SECONDS = 7 * 24 * 60 * 60;
-
-const writeJson = (filePath: string, value: unknown) => {
-  mkdirSync(path.dirname(filePath), { recursive: true, mode: 0o700 });
-  const temporary = `${filePath}.tmp`;
-  writeFileSync(temporary, `${JSON.stringify(value, null, 2)}\n`, { mode: 0o600 });
-  renameSync(temporary, filePath);
-  chmodSync(filePath, 0o600);
-};
-
-const readAuthRecord = (filePath: string): AuthRecord | null => {
-  if (!existsSync(filePath)) return null;
-  const parsed: unknown = JSON.parse(readFileSync(filePath, 'utf8'));
-  if (
-    typeof parsed !== 'object' ||
-    parsed === null ||
-    typeof (parsed as AuthRecord).username !== 'string' ||
-    typeof (parsed as AuthRecord).passwordHash !== 'string'
-  ) {
-    throw new Error(`Invalid auth file: ${filePath}`);
-  }
-  return parsed as AuthRecord;
-};
-
-const hashPassword = (password: string): string => {
-  const salt = randomBytes(16);
-  const hash = scryptSync(password, salt, 64);
-  return `scrypt$${salt.toString('base64')}$${hash.toString('base64')}`;
-};
-
-const verifyPassword = (password: string, encoded: string): boolean => {
-  const [algorithm, saltBase64, hashBase64] = encoded.split('$');
-  if (algorithm !== 'scrypt' || !saltBase64 || !hashBase64) return false;
-  const expected = Buffer.from(hashBase64, 'base64');
-  const actual = scryptSync(password, Buffer.from(saltBase64, 'base64'), expected.length);
-  return actual.length === expected.length && timingSafeEqual(actual, expected);
-};
 
 const loadSecret = (dataDirectory: string): Buffer => {
   if (process.env.VUESP_JWT_SECRET) return Buffer.from(process.env.VUESP_JWT_SECRET, 'utf8');
@@ -80,9 +46,16 @@ const loadSecret = (dataDirectory: string): Buffer => {
   return Buffer.from(secret, 'utf8');
 };
 
+const toAuthUser = (user: { id: number; username: string; role: UserRole; mustChangePassword: boolean }): AuthUser => ({
+  id: user.id,
+  username: user.username,
+  role: user.role,
+  mustChangePassword: user.mustChangePassword,
+});
+
 /**
- * Minimal local auth service: one admin account, scrypt password hash, JWT
- * sessions. The default admin/admin account is created only on first run.
+ * Local auth service backed by a users repository. The first run creates
+ * admin/admin (or imports the legacy single-user auth.json) as an administrator.
  */
 export const createAuthService = ({
   dataDirectory,
@@ -93,36 +66,50 @@ export const createAuthService = ({
 }): AuthService => {
   mkdirSync(dataDirectory, { recursive: true, mode: 0o700 });
 
-  const authPath = path.join(dataDirectory, 'auth.json');
-  let record = readAuthRecord(authPath);
-  if (!record) {
-    record = { username: DEFAULT_USERNAME, passwordHash: hashPassword(DEFAULT_PASSWORD) };
-    writeJson(authPath, record);
-  }
-
+  const users = createJsonUserRepository({ dataDirectory });
   const secret = loadSecret(dataDirectory);
-  let current = record;
+
+  const sessionFor = (user: { id: number; username: string; role: UserRole; mustChangePassword: boolean }): AuthSession => ({
+    token: signJwt(user.username, secret, ttlSeconds, {
+      role: user.role,
+      uid: user.id,
+      mustChange: user.mustChangePassword,
+    }),
+    user: toAuthUser(user),
+  });
 
   return {
+    users,
+
     login(username, password) {
-      const candidate = typeof password === 'string' ? password : '';
-      const validUser = username === current.username;
-      const validPassword = verifyPassword(candidate, current.passwordHash);
-      if (!validUser || !validPassword) return null;
-      return {
-        token: signJwt(current.username, secret, ttlSeconds),
-        user: { username: current.username },
-      };
+      const user = users.findWithPassword(username);
+      if (!user) return null;
+      if (!verifyPassword(typeof password === 'string' ? password : '', user.passwordHash)) return null;
+      return sessionFor(user);
     },
 
     verify(token) {
       const payload = verifyJwt(token, secret);
-      if (!payload || payload.sub !== current.username) return null;
-      return { username: payload.sub };
+      if (!payload) return null;
+      // `uid` survives a username change; fall back to the subject for legacy tokens.
+      const user = (typeof payload.uid === 'number' ? users.findById(payload.uid) : null) ?? users.findByUsername(payload.sub);
+      return user ? toAuthUser(user) : null;
     },
 
-    getUser() {
-      return { username: current.username };
+    changePassword(id, currentPassword, newPassword) {
+      const current = users.findById(id);
+      if (!current) return null;
+      const withPassword = users.findWithPassword(current.username);
+      if (!withPassword || !verifyPassword(currentPassword, withPassword.passwordHash)) return null;
+      const updated = users.update(id, { passwordHash: hashPassword(newPassword), mustChangePassword: false });
+      return updated ? sessionFor(updated) : null;
+    },
+
+    isDefaultAdminPassword() {
+      const admin = users.findByUsername('admin');
+      if (!admin?.mustChangePassword) return false;
+      const withPassword = users.findWithPassword('admin');
+      return Boolean(withPassword && verifyPassword('admin', withPassword.passwordHash));
     },
   };
 };

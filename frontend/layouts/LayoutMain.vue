@@ -66,6 +66,8 @@ import { useAppStore } from '@/stores/AppStore';
 import { useWebSocketStore } from '@/stores/WebSocketStore';
 
 import { api } from '@/utils/helpers.ts';
+import { isAdmin } from '@/utils/auth.ts';
+import { useAccessStore } from '@/stores/AccessStore.ts';
 import { createDeviceMenu } from '@/utils/deviceMenu.ts';
 import legacyIcons from '@/components/app/legacyIcons.ts';
 
@@ -80,6 +82,7 @@ const { t } = useI18n();
 
 const webSocketStore = useWebSocketStore();
 const appStore = useAppStore();
+const accessStore = useAccessStore();
 
 const {
   IconDashboard,
@@ -129,7 +132,30 @@ const loadRegistry = async (): Promise<void> => {
   }
 };
 
-const getMenu = computed(() => createDeviceMenu(menus.value, t, registry.value));
+const getMenu = computed(() => {
+  const groups = createDeviceMenu(menus.value, t, registry.value);
+  if (isAdmin()) {
+    groups.push({
+      title: t('admin.title'),
+      items: [
+        { name: t('admin.users'), icon: 'IconSettings', path: '/admin/users/' },
+        { name: t('admin.access'), icon: 'IconSettings', path: '/admin/access/' },
+      ],
+    });
+  }
+
+  return groups
+    .map(group => ({
+      ...group,
+      items: group.items
+        .filter(item => !item.path || accessStore.can(item.path))
+        .map(item => ({
+          ...item,
+          children: item.children?.filter(child => !child.path || accessStore.can(child.path)),
+        })),
+    }))
+    .filter(group => group.items.length > 0);
+});
 const headerNotifications = computed<INotification[]>(() => notifications.value.map(notification => ({
   key: typeof notification.id === 'number'
     ? notification.id
@@ -145,6 +171,7 @@ const headerNotifications = computed<INotification[]>(() => notifications.value.
 
 onMounted(() => {
   void loadRegistry();
+  void accessStore.load(true);
 });
 
 watch(menus, () => {

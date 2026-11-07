@@ -5,13 +5,15 @@ import { Server } from 'socket.io';
 
 import type { DeviceRuntime } from '../../core/application/deviceRuntime.ts';
 import type { AuthService } from '../modules/auth/application/authService.ts';
-import { requireAuth, socketAuth } from '../modules/auth/api/middleware.ts';
+import { requireAuth, requirePasswordChanged, socketAuth } from '../modules/auth/api/middleware.ts';
 import { createAuthRouter } from '../modules/auth/api/authRoutes.ts';
 import { createRouter } from './router.ts';
 import proxy from '../modules/proxy/proxy.ts';
 import type { CameraStore } from '../modules/cameras/application/cameraStore.ts';
 import type { DeviceRepository } from '../modules/devices/infrastructure/deviceRepository.ts';
 import type { StoreModelFactory } from '../shared/stores/types.ts';
+import type { AccessRepository } from '../modules/access/infrastructure/jsonAccessRepository.ts';
+import { createAccessRouter } from '../modules/access/api/accessRoutes.ts';
 import { socketDevice } from '../modules/devices/sockets/device.ts';
 import { socketSerial } from '../modules/serial/sockets/serial.ts';
 import { createCameraStreamManager, socketStream } from '../modules/cameras/sockets/stream.ts';
@@ -32,6 +34,7 @@ interface ServerOptions {
   serialSettingsStore: SettingsStore;
   cameraStore: CameraStore;
   auth?: AuthService;
+  access?: AccessRepository;
   host?: string;
   port?: number;
 }
@@ -44,6 +47,7 @@ export const server = ({
   serialSettingsStore,
   cameraStore,
   auth,
+  access,
   host = defaultHost,
   port = defaultPort,
 }: ServerOptions) => {
@@ -72,11 +76,12 @@ export const server = ({
       ioSerial.use(socketAuth(auth));
     }
 
-    const apiRouter = createRouter({ getDeviceModel, storeModel, cameraStore, streamManager });
+    const apiRouter = createRouter({ getDeviceModel, storeModel, cameraStore, streamManager, auth });
     if (auth) {
       app.use('/api/v1/auth', createAuthRouter(auth));
-      app.use('/api/v1', requireAuth(auth), apiRouter);
-      app.use('/proxy', requireAuth(auth), proxy);
+      if (access) app.use('/api/v1/access', requireAuth(auth), requirePasswordChanged, createAccessRouter(access));
+      app.use('/api/v1', requireAuth(auth), requirePasswordChanged, apiRouter);
+      app.use('/proxy', requireAuth(auth), requirePasswordChanged, proxy);
     } else {
       app.use('/api/v1', apiRouter);
       app.use('/proxy', proxy);

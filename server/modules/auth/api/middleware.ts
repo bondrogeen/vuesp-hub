@@ -2,6 +2,7 @@ import type { NextFunction, Request, RequestHandler, Response } from 'express';
 import type { Socket } from 'socket.io';
 
 import type { AuthService, AuthUser } from '../application/authService.ts';
+import type { UserRole } from '../../users/domain/user.ts';
 
 export interface AuthenticatedRequest extends Request {
   auth?: AuthUser;
@@ -28,8 +29,29 @@ export const socketAuth = (auth: AuthService) => (socket: Socket, next: (error?:
     bearerToken(socket.handshake.headers.authorization) ??
     (typeof socket.handshake.auth?.token === 'string' ? socket.handshake.auth.token : undefined);
 
-  if (!auth.verify(token)) {
+  const user = auth.verify(token);
+  if (!user) {
     next(new Error('Unauthorized'));
+    return;
+  }
+  if (user.mustChangePassword) {
+    next(new Error('Password change required'));
+    return;
+  }
+  next();
+};
+
+export const requirePasswordChanged: RequestHandler = (request: AuthenticatedRequest, response: Response, next: NextFunction) => {
+  if (request.auth?.mustChangePassword) {
+    response.status(403).json({ error: 'Password change required', code: 'PASSWORD_CHANGE_REQUIRED' });
+    return;
+  }
+  next();
+};
+
+export const requireRole = (...roles: UserRole[]): RequestHandler => (request: AuthenticatedRequest, response: Response, next: NextFunction) => {
+  if (!request.auth || !roles.includes(request.auth.role)) {
+    response.status(403).json({ error: 'Forbidden' });
     return;
   }
   next();

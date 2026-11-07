@@ -5,8 +5,6 @@ import AppView from './App.vue';
 import router from './router/index.ts';
 import { i18n } from './i18n/index.ts';
 
-import 'vuesp-components/style.css';
-
 import './assets/style/index.css';
 
 const pinia = createPinia();

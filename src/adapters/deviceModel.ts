@@ -3,8 +3,8 @@ import Store from 'electron-store';
 import { mkdirSync } from 'node:fs';
 import path from 'node:path';
 
-import { createDeviceRepository } from './deviceRepository.ts';
-import type { SecretProvider } from '../../../shared/secrets/secretProvider.ts';
+import { createDeviceRepository } from '../../server/modules/devices/infrastructure/deviceRepository.ts';
+import type { SecretProvider } from '../../server/shared/secrets/secretProvider.ts';
 
 interface LegacyDevice {
   id?: number;

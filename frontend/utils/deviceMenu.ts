@@ -70,6 +70,16 @@ export const createDeviceMenu = (menus: DeviceMenu[], t: Translate, devices: Arr
 
   return [
     {
+      title: t('common.home'),
+      items: [
+        {
+          name: t('common.home'),
+          icon: 'IconHome',
+          path: '/',
+        },
+      ],
+    },
+    {
       title: t('common.devices'),
       items: [
         {
