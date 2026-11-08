@@ -1,9 +1,9 @@
-# Общий код `vuesp` и `vuesp-app`
+# Общий код `vuesp` и `vuesp-hub`
 
 Документ фиксирует, что уже переиспользуется, что дублируется и в каком порядке
 переносить общее в модули. Главное правило: UI-код и dashboard-логику держим в
 `vuesp-components` / `vuesp-dashboard-core`, протокол — в `vuesp-struct`, а
-server/Electron-часть hub остаётся в `vuesp-app`.
+server/Electron-часть hub остаётся в репозитории `vuesp-hub`.
 
 ## Общие пакеты
 
@@ -14,7 +14,7 @@ server/Electron-часть hub остаётся в `vuesp-app`.
 | `vuesp-struct` | бинарный codec по `struct`-описанию |
 | `c-struct-to-json` | низкоуровневый struct codec (через `vuesp-struct` и discovery hub) |
 
-## Что уже можно переиспользовать в `vuesp-app`
+## Что уже можно переиспользовать в `vuesp-hub`
 
 - `vuesp-components/components`: `VButton`, `VTable`, `VSelect`, `VTextField`,
   `VList`, `VDropdown`, `BlockBreadcrumb`, `AppHeader`, `AppNotification`,
@@ -33,7 +33,7 @@ server/Electron-часть hub остаётся в `vuesp-app`.
 ## P0 — сделано
 
 - Удалён мёртвый код hub:
-  - `frontend/legacy-data/*` (не использовался);
+  - локальная legacy-копия слоя данных (не использовалась);
   - `frontend/composables/usePorts.ts`, `frontend/utils/fs.ts`,
     `frontend/utils/gpio.ts`, `frontend/utils/const.ts`;
   - `frontend/utils/directives/*`;
@@ -95,10 +95,10 @@ server/Electron-часть hub остаётся в `vuesp-app`.
 - Не переносить в `vuesp-components` серверный код: SQLite, `safeStorage`,
   UDP discovery, modbus, runtime, repository.
 - Общие модули не должны зависеть от Vue Router/Pinia: у `vuesp` router 4/pinia 3,
-  у `vuesp-app` router 5/pinia 4.
+  у `vuesp-hub` router 5/pinia 4.
 - `vuesp-components/dashboard` использует `new Function`. Hub не должен
   исполнять код из конфигурации устройства; нужен safe evaluator.
-- `legacy-data` использует `eval` — в hub не использовать.
+- Legacy-слой данных использовал `eval` — в hub такой подход не применять.
 
 ## Сборка `vuesp`
 

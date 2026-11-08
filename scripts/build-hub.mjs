@@ -53,7 +53,7 @@ const hubPackage = {
   author: rootPackage.author,
   repository: {
     type: 'git',
-    url: 'https://github.com/bondrogeen/vuesp-app.git',
+    url: 'https://github.com/bondrogeen/vuesp-hub.git',
   },
   main: 'index.cjs',
   bin: {
