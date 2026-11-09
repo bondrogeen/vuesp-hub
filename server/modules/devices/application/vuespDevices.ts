@@ -1,6 +1,6 @@
 import { EventEmitter } from 'node:events';
 import Device from './vuespDevice.ts';
-import type { DeviceCommandPayload, DeviceConnectionRecord } from '../../../../shared/device.ts';
+import type { DeviceCommandPayload, DeviceConnectionRecord } from '@root/shared/device.ts';
 
 interface DeviceEvent {
   event: string;

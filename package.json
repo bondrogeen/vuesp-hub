@@ -14,6 +14,8 @@
     "lint": "eslint .",
     "build:hub": "node scripts/build-hub.mjs",
     "hub": "node --env-file-if-exists=.env bin/vuesp-hub.js",
+    "patch:alisa": "node scripts/patch-alisa-npm.mjs",
+    "postinstall": "node scripts/patch-alisa-npm.mjs",
     "pack:hub": "npm run build:hub && npm pack ./dist --pack-destination ./release",
     "smoke:hub": "node scripts/smoke-hub.mjs",
     "smoke:ui": "npm run build:hub && tsx scripts/smoke-ui.mts"
@@ -53,6 +55,7 @@
   "dependencies": {
     "@mhoc/axios-digest-auth": "^0.8.0",
     "@tailwindcss/vite": "^4.3.3",
+    "alisa-npm": "^1.2.0",
     "bufferutil": "^4.1.0",
     "c-struct-to-json": "^1.2.2",
     "electron-squirrel-startup": "^1.0.1",

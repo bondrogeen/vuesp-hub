@@ -1,8 +1,8 @@
 import { Router } from 'express';
 import { scanDevices } from './vuespController.ts';
-import type { DeviceUiSession, DiscoveredDevice } from '../../../../shared/device.ts';
-import type { DeviceRepository } from '../infrastructure/deviceRepository.ts';
-import { sendApiError, sendApiFailure } from '../../../shared/http/apiResponse.ts';
+import type { DeviceUiSession, DiscoveredDevice } from '@root/shared/device.ts';
+import type { DeviceRepository } from '@server/modules/devices/infrastructure/deviceRepository.ts';
+import { sendApiError, sendApiFailure } from '@shared/http/apiResponse.ts';
 
 const parseDeviceRecordId = (value: string): number => {
   if (!/^[1-9]\d*$/.test(value)) throw new TypeError('Device ID must be a positive integer');

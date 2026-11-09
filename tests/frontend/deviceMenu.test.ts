@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
-import { createDeviceMenu } from '../../frontend/utils/deviceMenu.ts';
+import { createDeviceMenu } from '@/utils/deviceMenu.ts';
 
 const t = (key: string) => key;
 

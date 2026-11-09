@@ -1,13 +1,15 @@
-import { DeviceRuntime } from '../../core/application/deviceRuntime.ts';
-import Core from '../../core/core.ts';
-import type { CameraStore } from '../modules/cameras/application/cameraStore.ts';
-import type { DeviceConnectionRecord } from '../../shared/device.ts';
-import type { AuthService } from '../modules/auth/application/authService.ts';
-import type { AccessRepository } from '../modules/access/infrastructure/jsonAccessRepository.ts';
-import { VuespDevices } from '../modules/devices/application/vuespDevices.ts';
-import type { DeviceRepository } from '../modules/devices/infrastructure/deviceRepository.ts';
-import type { StoreModelFactory } from '../shared/stores/types.ts';
-import { TelemetrySender } from '../modules/telemetry/application/telemetrySender.ts';
+import { DeviceRuntime } from '@core/application/deviceRuntime.ts';
+import Core from '@core/core.ts';
+import type { CameraStore } from '@server/modules/cameras/application/cameraStore.ts';
+import type { DeviceConnectionRecord } from '@root/shared/device.ts';
+import type { AuthService } from '@server/modules/auth/application/authService.ts';
+import type { AccessRepository } from '@server/modules/access/infrastructure/jsonAccessRepository.ts';
+import { VuespDevices } from '@server/modules/devices/application/vuespDevices.ts';
+import type { DeviceRepository } from '@server/modules/devices/infrastructure/deviceRepository.ts';
+import type { StoreModelFactory } from '@shared/stores/types.ts';
+import type { SecretProvider } from '@shared/secrets/secretProvider.ts';
+import { createAlisaService } from '@server/modules/alisa/application/alisaService.ts';
+import { createCloudService, type CloudService } from '@server/modules/cloud/application/cloudService.ts';
 import { server } from './server.ts';
 
 export interface SettingsStore {
@@ -32,15 +34,18 @@ export interface HubOptions {
   staticDirectory?: string;
   auth?: AuthService;
   access?: AccessRepository;
+  dataDirectory?: string;
+  secretProvider?: SecretProvider;
   host?: string;
   port?: number;
-  /** Opt-in cloud telemetry; disabled when omitted. */
+  /** Optional bootstrap credentials for headless installs; the UI pairing flow is preferred. */
   telemetry?: HubTelemetryOptions;
 }
 
 export interface Hub {
   runtime: DeviceRuntime<DeviceConnectionRecord>;
   core: Core;
+  cloud?: CloudService;
   start(): Promise<void>;
   stop(): Promise<void>;
 }
@@ -60,6 +65,8 @@ export const createHub = ({
   staticDirectory,
   auth,
   access,
+  dataDirectory,
+  secretProvider,
   host,
   port,
   telemetry,
@@ -69,17 +76,17 @@ export const createHub = ({
     createConnections: devices => new VuespDevices(devices),
   });
 
-  const telemetrySender = telemetry
-    ? new TelemetrySender({
+  const cloud = dataDirectory && secretProvider
+    ? createCloudService({
+        dataDirectory,
+        secretProvider,
         runtime,
         getDeviceModel,
-        url: telemetry.url,
-        token: telemetry.token,
-        hubName: telemetry.hubName,
-        dataDirectory: telemetry.dataDirectory,
+        ...(telemetry ? { bootstrap: { url: telemetry.url, token: telemetry.token, hubName: telemetry.hubName } } : {}),
       })
     : undefined;
 
+  const alisa = dataDirectory && secretProvider ? createAlisaService({ dataDirectory, secretProvider }) : undefined;
   const core = new Core({ workerScriptPath });
   const http = server({
     staticDirectory,
@@ -90,12 +97,14 @@ export const createHub = ({
     cameraStore,
     auth,
     access,
+    alisa,
+    cloud,
     host,
     port,
   });
 
   const start = async () => {
-    telemetrySender?.start();
+    cloud?.start();
     await runtime.start();
     await http.createExpress();
     await core.init();
@@ -106,7 +115,8 @@ export const createHub = ({
     for (const shutdown of [
       http.closeExpress,
       () => core.shutdown(),
-      () => telemetrySender?.stop(),
+      () => cloud?.stop(),
+      () => alisa?.dispose(),
       () => runtime.stop(),
       () => closeDeviceModel?.(),
     ]) {
@@ -119,5 +129,5 @@ export const createHub = ({
     if (errors.length) throw new AggregateError(errors, 'One or more hub services failed to shut down');
   };
 
-  return { runtime, core, start, stop };
+  return { runtime, core, cloud, start, stop };
 };

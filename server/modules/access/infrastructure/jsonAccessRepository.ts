@@ -7,8 +7,8 @@ import {
   isAccessPage,
   type AccessPage,
   type RoleAccess,
-} from '../domain/access.ts';
-import type { UserRole } from '../../users/domain/user.ts';
+} from '@server/modules/access/domain/access.ts';
+import type { UserRole } from '@server/modules/users/domain/user.ts';
 
 export interface AccessRepository {
   get(): RoleAccess;

@@ -1,9 +1,9 @@
 import { Router } from 'express';
 import type { Request, Response } from 'express';
 
-import { isAccessPage, type AccessPage } from '../domain/access.ts';
-import type { AccessRepository } from '../infrastructure/jsonAccessRepository.ts';
-import { requireRole } from '../../auth/api/middleware.ts';
+import { isAccessPage, type AccessPage } from '@server/modules/access/domain/access.ts';
+import type { AccessRepository } from '@server/modules/access/infrastructure/jsonAccessRepository.ts';
+import { requireRole } from '@server/modules/auth/api/middleware.ts';
 
 const parsePages = (value: unknown): AccessPage[] | null => {
   if (!Array.isArray(value)) return null;

@@ -29,8 +29,8 @@
         <div v-if="device.items.length" class="grid grid-cols-[repeat(auto-fill,minmax(130px,1fr))] gap-4">
           <component
             :is="getComponent(tile.type)"
-            v-for="tile in device.items"
-            :key="tile.id"
+            v-for="(tile, index) in device.items"
+            :key="`${tile.id}:${index}`"
             v-bind="tileProps(tile)"
             @setState="onSetState(device, tile, $event)"
           >
@@ -68,7 +68,7 @@ import DeviceTileIcon from '@/components/dashboard/DeviceTileIcon.vue';
 import { useWebSocketStore } from '@/stores/WebSocketStore';
 import type { DeviceMain } from '@/stores/WebSocketStore';
 import type { DeviceListItem } from '@/types';
-import { buildTileCommands, resolveTiles } from '@/utils/dashboardTiles.ts';
+import { buildTileCommands, resolveTiles } from '../../shared/dashboardTiles.ts';
 import { isRecordValue } from '../../shared/device.ts';
 
 const { t } = useI18n();

@@ -3,8 +3,8 @@ import { EventEmitter } from 'node:events';
 import { test } from 'node:test';
 import type { Server as SocketIOServer } from 'socket.io';
 
-import { DeviceRuntime, type DeviceConnectionManager } from '../../core/application/deviceRuntime.ts';
-import { socketDevice } from '../../server/modules/devices/sockets/device.ts';
+import { DeviceRuntime, type DeviceConnectionManager } from '@core/application/deviceRuntime.ts';
+import { socketDevice } from '@server/modules/devices/sockets/device.ts';
 
 class FakeDeviceManager extends EventEmitter implements DeviceConnectionManager {
   readonly sent: Array<{ target?: string; command: string; data?: Record<string, unknown> }> = [];

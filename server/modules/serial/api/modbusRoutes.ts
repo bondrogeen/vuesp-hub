@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import modbusController from '../application/modbusController.ts';
+import modbusController from '@server/modules/serial/application/modbusController.ts';
 
 const router = Router();
 

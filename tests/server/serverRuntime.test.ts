@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
-import { DeviceRuntime } from '../../core/application/deviceRuntime.ts';
-import { server } from '../../server/app/server.ts';
+import { DeviceRuntime } from '@core/application/deviceRuntime.ts';
+import { server } from '@server/app/server.ts';
 
 test('creates the server runtime from injected platform adapters', () => {
   const runtime = server({

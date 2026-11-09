@@ -1,6 +1,6 @@
 import type { Server, Socket } from 'socket.io';
 
-import Serial from '../application/ServiceSerial.ts';
+import Serial from '@server/modules/serial/application/ServiceSerial.ts';
 
 const serial = new Serial();
 

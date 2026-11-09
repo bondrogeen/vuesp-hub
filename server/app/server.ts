@@ -3,20 +3,23 @@ import type { NextFunction, Request, Response } from 'express';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
 
-import type { DeviceRuntime } from '../../core/application/deviceRuntime.ts';
-import type { AuthService } from '../modules/auth/application/authService.ts';
-import { requireAuth, requirePasswordChanged, socketAuth } from '../modules/auth/api/middleware.ts';
-import { createAuthRouter } from '../modules/auth/api/authRoutes.ts';
+import type { DeviceRuntime } from '@core/application/deviceRuntime.ts';
+import type { AuthService } from '@server/modules/auth/application/authService.ts';
+import type { AlisaService } from '@server/modules/alisa/application/alisaService.ts';
+import { requireAuth, requirePasswordChanged, socketAuth } from '@server/modules/auth/api/middleware.ts';
+import { createAuthRouter } from '@server/modules/auth/api/authRoutes.ts';
 import { createRouter } from './router.ts';
-import proxy from '../modules/proxy/proxy.ts';
-import type { CameraStore } from '../modules/cameras/application/cameraStore.ts';
-import type { DeviceRepository } from '../modules/devices/infrastructure/deviceRepository.ts';
-import type { StoreModelFactory } from '../shared/stores/types.ts';
-import type { AccessRepository } from '../modules/access/infrastructure/jsonAccessRepository.ts';
-import { createAccessRouter } from '../modules/access/api/accessRoutes.ts';
-import { socketDevice } from '../modules/devices/sockets/device.ts';
-import { socketSerial } from '../modules/serial/sockets/serial.ts';
-import { createCameraStreamManager, socketStream } from '../modules/cameras/sockets/stream.ts';
+import { createAlisaStreamRouter } from '@server/modules/alisa/api/alisaRoutes.ts';
+import type { CloudService } from '@server/modules/cloud/application/cloudService.ts';
+import proxy from '@server/modules/proxy/proxy.ts';
+import type { CameraStore } from '@server/modules/cameras/application/cameraStore.ts';
+import type { DeviceRepository } from '@server/modules/devices/infrastructure/deviceRepository.ts';
+import type { StoreModelFactory } from '@shared/stores/types.ts';
+import type { AccessRepository } from '@server/modules/access/infrastructure/jsonAccessRepository.ts';
+import { createAccessRouter } from '@server/modules/access/api/accessRoutes.ts';
+import { socketDevice } from '@server/modules/devices/sockets/device.ts';
+import { socketSerial } from '@server/modules/serial/sockets/serial.ts';
+import { createCameraStreamManager, socketStream } from '@server/modules/cameras/sockets/stream.ts';
 
 const defaultPort = 3005;
 const defaultHost = '127.0.0.1';
@@ -35,6 +38,8 @@ interface ServerOptions {
   cameraStore: CameraStore;
   auth?: AuthService;
   access?: AccessRepository;
+  alisa?: AlisaService;
+  cloud?: CloudService;
   host?: string;
   port?: number;
 }
@@ -48,6 +53,8 @@ export const server = ({
   cameraStore,
   auth,
   access,
+  alisa,
+  cloud,
   host = defaultHost,
   port = defaultPort,
 }: ServerOptions) => {
@@ -76,7 +83,8 @@ export const server = ({
       ioSerial.use(socketAuth(auth));
     }
 
-    const apiRouter = createRouter({ getDeviceModel, storeModel, cameraStore, streamManager, auth });
+    const apiRouter = createRouter({ getDeviceModel, storeModel, cameraStore, streamManager, auth, alisa, cloud });
+    if (alisa) app.use('/api/v1/alisa/music/stream', createAlisaStreamRouter(alisa));
     if (auth) {
       app.use('/api/v1/auth', createAuthRouter(auth));
       if (access) app.use('/api/v1/access', requireAuth(auth), requirePasswordChanged, createAccessRouter(access));

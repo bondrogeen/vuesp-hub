@@ -5,8 +5,8 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { test } from 'node:test';
 
-import { TelemetrySender, readOrCreateHubId } from '../../server/modules/telemetry/application/telemetrySender.ts';
-import type { DeviceRecord } from '../../shared/device.ts';
+import { TelemetrySender, readOrCreateHubId } from '@server/modules/telemetry/application/telemetrySender.ts';
+import type { DeviceRecord } from '@root/shared/device.ts';
 
 const records: DeviceRecord[] = [
   { id: 1, uuid: 'uuid-1', deviceId: 1, name: 'Lamp', ip: '192.0.2.5', firmware: [], addedAt: '' },

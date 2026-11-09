@@ -6,6 +6,9 @@ export const ACCESS_PAGES = [
   { key: 'raw', path: '/device/raw', label: 'access.pages.raw' },
   { key: 'video', path: '/video', label: 'access.pages.video' },
   { key: 'modbus', path: '/modbus', label: 'access.pages.modbus' },
+  { key: 'alisa', path: '/alisa', label: 'access.pages.alisa' },
+  { key: 'smartHome', path: '/smart-home', label: 'access.pages.smartHome' },
+  { key: 'cloud', path: '/cloud', label: 'access.pages.cloud' },
   { key: 'profile', path: '/profile', label: 'access.pages.profile' },
 ] as const;
 
@@ -15,7 +18,7 @@ export type RolePages = Record<UserRole, AccessPage[]>;
 
 export const DEFAULT_ROLE_PAGES: RolePages = {
   admin: ACCESS_PAGES.map(page => page.key),
-  user: ACCESS_PAGES.map(page => page.key),
+  user: ACCESS_PAGES.filter(page => page.key !== 'cloud').map(page => page.key),
   viewer: ['dashboard', 'devices', 'video', 'profile'],
 };
 

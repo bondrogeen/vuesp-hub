@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import generalController from './generalController.ts';
-import type { StoreModelFactory } from '../../../shared/stores/types.ts';
+import type { StoreModelFactory } from '@shared/stores/types.ts';
 
 export const createUserRouter = (storeModel: StoreModelFactory) => {
     const router = Router();

@@ -4,27 +4,22 @@
 
     <div class="hub-shell flex h-screen overflow-hidden">
       <AppAside :isSidebar="sidebarToggle" @sidebar="sidebarToggle = $event">
-        <div v-for="group in getMenu" :key="group.title" class="mb-4">
-          <h3 class="mb-4 text-xs leading-[20px] text-gray-400 uppercase" :class="sidebarToggle ? 'lg:hidden' : ''">
-            {{ group.title }}
-          </h3>
-
-          <AppNav :menu="getGroupItems(group.items)" :isSidebar="sidebarToggle" :fullPath="route.path" @sidebar="sidebarToggle = $event">
-            <template #icon="{ item }">
-              <component :is="getComponent(item.icon)" class="size-5" />
-            </template>
-
-            <template #icon-children="{ item }">
-              <component :is="getComponent(item.icon)" class="size-5" />
-            </template>
-          </AppNav>
-        </div>
+        <HubNav :groups="getMenu" :is-sidebar="sidebarToggle" :full-path="route.path" @sidebar="sidebarToggle = $event" />
         <div class="mt-auto pt-4 text-xs text-gray-400 dark:text-gray-500" :class="sidebarToggle ? 'lg:hidden' : ''">
           {{ t('common.appName') }}
         </div>
       </AppAside>
 
-      <div class="relative flex flex-1 flex-col overflow-y-auto overflow-x-hidden scrollbar">
+      <div class="relative flex flex-1 flex-col overflow-y-auto overflow-x-hidden scrollbar isolate">
+        <div class="hub-atmosphere -z-10" aria-hidden="true">
+          <span class="hub-orb hub-orb--one" />
+          <span class="hub-orb hub-orb--two" />
+          <span class="hub-orb hub-orb--three" />
+          <span class="hub-spark hub-spark--one" />
+          <span class="hub-spark hub-spark--two" />
+          <span class="hub-scan" />
+        </div>
+
         <HubHeader
           :notifications="headerNotifications"
           @sidebar="sidebarToggle = !sidebarToggle"
@@ -69,13 +64,13 @@ import { api } from '@/utils/helpers.ts';
 import { isAdmin } from '@/utils/auth.ts';
 import { useAccessStore } from '@/stores/AccessStore.ts';
 import { createDeviceMenu } from '@/utils/deviceMenu.ts';
-import legacyIcons from '@/components/app/legacyIcons.ts';
 
 import AppDialog from '@/components/app/AppDialog.vue';
 import HubHeader from '@/components/app/HubHeader.vue';
-import { AppAside, AppNav, AppNotification, VButton } from 'vuesp-components/components';
-import type { DeviceRecord, MenuChildType, MenuItemType } from '@/types';
-import type { IMenuItem, INotification } from 'vuesp-components/types';
+import HubNav from '@/components/app/HubNav.vue';
+import { AppAside, AppNotification, VButton } from 'vuesp-components/components';
+import type { DeviceRecord } from '@/types';
+import type { INotification } from 'vuesp-components/types';
 
 const route = useRoute();
 const { t } = useI18n();
@@ -83,41 +78,6 @@ const { t } = useI18n();
 const webSocketStore = useWebSocketStore();
 const appStore = useAppStore();
 const accessStore = useAccessStore();
-
-const {
-  IconDashboard,
-  IconDevice,
-  IconVideo,
-  IconList,
-  IconHome,
-  IconScript,
-  IconSettings,
-  IconStorage,
-  IconGpio,
-} = legacyIcons;
-
-const iconComponents = {
-  IconDashboard,
-  IconDevice,
-  IconVideo,
-  IconList,
-  IconHome,
-  IconScript,
-  IconSettings,
-  IconStorage,
-  IconGpio,
-};
-
-const getComponent = (name?: string) => iconComponents[name as keyof typeof iconComponents] ?? IconDashboard;
-
-const toNavigationItem = (item: MenuItemType | MenuChildType): IMenuItem => ({
-  name: item.name,
-  icon: item.icon ?? 'IconDevice',
-  path: item.path ?? '',
-  children: item.children?.map(toNavigationItem),
-});
-
-const getGroupItems = (items: MenuItemType[]): IMenuItem[] => items.map(toNavigationItem);
 
 const { menus } = storeToRefs(webSocketStore);
 const { dialog, notifications } = storeToRefs(appStore);
@@ -134,15 +94,19 @@ const loadRegistry = async (): Promise<void> => {
 
 const getMenu = computed(() => {
   const groups = createDeviceMenu(menus.value, t, registry.value);
-  if (isAdmin()) {
-    groups.push({
-      title: t('admin.title'),
-      items: [
-        { name: t('admin.users'), icon: 'IconSettings', path: '/admin/users/' },
-        { name: t('admin.access'), icon: 'IconSettings', path: '/admin/access/' },
-      ],
-    });
-  }
+  groups.push({
+    key: 'settings',
+    title: t('common.menuGroups.settings'),
+    items: [
+      { name: t('common.profile'), icon: 'IconUser' as const, path: '/profile/' },
+      ...(isAdmin()
+        ? [
+            { name: t('admin.users'), icon: 'IconSettings' as const, path: '/admin/users/' },
+            { name: t('admin.access'), icon: 'IconSettings' as const, path: '/admin/access/' },
+          ]
+        : []),
+    ],
+  });
 
   return groups
     .map(group => ({
@@ -152,7 +116,8 @@ const getMenu = computed(() => {
         .map(item => ({
           ...item,
           children: item.children?.filter(child => !child.path || accessStore.can(child.path)),
-        })),
+        }))
+        .filter(item => Boolean(item.path || item.children?.length)),
     }))
     .filter(group => group.items.length > 0);
 });

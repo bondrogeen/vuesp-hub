@@ -6,7 +6,7 @@ import { test } from 'node:test';
 import {
   createModbusController,
   type ModbusSerial,
-} from '../../server/modules/serial/application/modbusController.ts';
+} from '@server/modules/serial/application/modbusController.ts';
 
 const startApi = async (serial: ModbusSerial) => {
   const app = express();

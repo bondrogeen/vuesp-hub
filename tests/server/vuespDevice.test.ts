@@ -4,8 +4,8 @@ import { afterEach, test } from 'node:test';
 import type WebSocket from 'ws';
 import VuespStruct from 'vuesp-struct';
 
-import Device from '../../server/modules/devices/application/vuespDevice.ts';
-import type { DeviceEventPayload } from '../../shared/device.ts';
+import Device from '@server/modules/devices/application/vuespDevice.ts';
+import type { DeviceEventPayload } from '@root/shared/device.ts';
 
 const devices: Device[] = [];
 

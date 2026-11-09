@@ -1,6 +1,6 @@
 import Serial from './ServiceSerial.ts';
 import type { Request, Response } from 'express';
-import { sendApiError } from '../../../shared/http/apiResponse.ts';
+import { sendApiError } from '@shared/http/apiResponse.ts';
 
 export type ModbusSerial = Pick<Serial, 'getList' | 'writeAsync'>;
 

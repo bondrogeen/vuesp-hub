@@ -1,6 +1,6 @@
 import { Router } from 'express';
 
-import type { AuthService } from '../application/authService.ts';
+import type { AuthService } from '@server/modules/auth/application/authService.ts';
 import { requireAuth, type AuthenticatedRequest } from './middleware.ts';
 
 export const createAuthRouter = (auth: AuthService) => {

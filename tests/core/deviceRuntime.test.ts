@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { EventEmitter } from 'node:events';
 import { test } from 'node:test';
 
-import { DeviceRuntime, type DeviceConnectionManager } from '../../core/application/deviceRuntime.ts';
+import { DeviceRuntime, type DeviceConnectionManager } from '@core/application/deviceRuntime.ts';
 
 class FakeDeviceManager extends EventEmitter implements DeviceConnectionManager {
   connected = false;

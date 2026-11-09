@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
-import { isServiceStatusPayload } from '../../shared/socket.ts';
+import { isServiceStatusPayload } from '@root/shared/socket.ts';
 
 test('accepts only boolean service status payloads', () => {
   assert.equal(isServiceStatusPayload({ running: true }), true);

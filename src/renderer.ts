@@ -28,6 +28,6 @@
 
 // import './assets/style/index.css';
 
-import { useApp } from '../frontend/main.ts';
+import { useApp } from '@/main.ts';
 
 const app = useApp()

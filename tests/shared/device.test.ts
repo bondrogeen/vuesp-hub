@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
-import { isDeviceEventPayload, parseBroadcastDeviceCommand, parseDeviceCreateInput, parseDeviceUpdateInput, parseTargetedDeviceCommand } from '../../shared/device.ts';
+import { isDeviceEventPayload, parseBroadcastDeviceCommand, parseDeviceCreateInput, parseDeviceUpdateInput, parseTargetedDeviceCommand } from '@root/shared/device.ts';
 
 test('parses valid registry inputs and preserves legacy numeric device IDs', () => {
   assert.deepEqual(

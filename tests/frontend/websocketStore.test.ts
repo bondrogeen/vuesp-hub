@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import { createPinia, setActivePinia } from 'pinia';
 import { markRaw } from 'vue';
 
-import { useWebSocketStore } from '../../frontend/stores/WebSocketStore.ts';
+import { useWebSocketStore } from '@/stores/WebSocketStore.ts';
 
 type Listener = (data?: unknown) => void;
 type FakeAck = (error: Error | null, response?: { status?: string; message?: string; menus?: unknown[]; list?: unknown[]; running?: boolean }) => void;

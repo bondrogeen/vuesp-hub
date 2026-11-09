@@ -3,9 +3,9 @@ import { createServer } from 'node:http';
 import express from 'express';
 import { test } from 'node:test';
 
-import { createVuespRouter } from '../../server/modules/devices/api/vuespRoutes.ts';
-import { createDeviceRepository, type DeviceRepository } from '../../server/modules/devices/infrastructure/deviceRepository.ts';
-import type { SecretProvider } from '../../server/shared/secrets/secretProvider.ts';
+import { createVuespRouter } from '@server/modules/devices/api/vuespRoutes.ts';
+import { createDeviceRepository, type DeviceRepository } from '@server/modules/devices/infrastructure/deviceRepository.ts';
+import type { SecretProvider } from '@shared/secrets/secretProvider.ts';
 
 const secretProvider: SecretProvider = {
   encrypt: value => `encrypted:${value}`,

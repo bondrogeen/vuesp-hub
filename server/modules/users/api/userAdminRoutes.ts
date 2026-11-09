@@ -1,10 +1,10 @@
 import { Router } from 'express';
 import type { Request, Response } from 'express';
 
-import { hashPassword } from '../domain/password.ts';
-import { isUserRole, type UserRole } from '../domain/user.ts';
-import type { AuthService } from '../../auth/application/authService.ts';
-import { requireRole, type AuthenticatedRequest } from '../../auth/api/middleware.ts';
+import { hashPassword } from '@server/modules/users/domain/password.ts';
+import { isUserRole, type UserRole } from '@server/modules/users/domain/user.ts';
+import type { AuthService } from '@server/modules/auth/application/authService.ts';
+import { requireRole, type AuthenticatedRequest } from '@server/modules/auth/api/middleware.ts';
 
 interface UserParams {
   id: string;

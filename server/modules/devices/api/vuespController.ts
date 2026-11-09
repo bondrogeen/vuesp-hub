@@ -1,10 +1,10 @@
 import dgram from 'node:dgram';
-import type { DiscoveredDevice } from '../../../../shared/device.ts';
-import { createDiscoveryQuery, decodeDiscoveryMessage, decodeVuespAnnouncement } from '../domain/protocols/vuespDiscovery.ts';
+import type { DiscoveredDevice } from '@root/shared/device.ts';
+import { createDiscoveryQuery, decodeDiscoveryMessage, decodeVuespAnnouncement } from '@server/modules/devices/domain/protocols/vuespDiscovery.ts';
 
 const BROADCAST_PORT = 12345;
 const BROADCAST_ADDR = '255.255.255.255';
-export { decodeDiscoveryMessage } from '../domain/protocols/vuespDiscovery.ts';
+export { decodeDiscoveryMessage } from '@server/modules/devices/domain/protocols/vuespDiscovery.ts';
 
 export const scanDevices = ({ duration = 9000, interval = 3000 }: { duration?: number; interval?: number } = {}) =>
   new Promise<DiscoveredDevice[]>((resolve, reject) => {

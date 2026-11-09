@@ -4,11 +4,11 @@ import started from 'electron-squirrel-startup';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { createCameraStore } from '../server/modules/cameras/application/cameraStore.ts';
-import { createHub } from '../server/app/host.ts';
-import { createAuthService } from '../server/modules/auth/application/authService.ts';
-import { createJsonAccessRepository } from '../server/modules/access/infrastructure/jsonAccessRepository.ts';
-import { closeDeviceModel, getDeviceModel } from './adapters/deviceModel.ts';
+import { createCameraStore } from '@server/modules/cameras/application/cameraStore.ts';
+import { createHub } from '@server/app/host.ts';
+import { createAuthService } from '@server/modules/auth/application/authService.ts';
+import { createJsonAccessRepository } from '@server/modules/access/infrastructure/jsonAccessRepository.ts';
+import { closeDeviceModel, getDeviceModel, secretProvider } from './adapters/deviceModel.ts';
 import storeModel from './adapters/storeModel.ts';
 
 const appPath = app.getAppPath();
@@ -112,6 +112,8 @@ const start = (): void => {
     workerScriptPath,
     auth: createAuthService({ dataDirectory }),
     access: createJsonAccessRepository({ dataDirectory }),
+    dataDirectory,
+    secretProvider,
     telemetry: cloudUrl && cloudToken
       ? { url: cloudUrl, token: cloudToken, hubName: process.env.VUESP_CLOUD_HUB_NAME?.trim() || undefined, dataDirectory }
       : undefined,

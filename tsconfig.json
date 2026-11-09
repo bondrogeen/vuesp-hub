@@ -5,7 +5,11 @@
     "moduleResolution": "Bundler",
     "baseUrl": ".",
     "paths": {
-      "@/*": ["frontend/*"]
+      "@/*": ["frontend/*"],
+      "@server/*": ["server/*"],
+      "@shared/*": ["server/shared/*"],
+      "@core/*": ["core/*"],
+      "@root/*": ["*"]
     },
     "allowImportingTsExtensions": true,
     "resolveJsonModule": true,

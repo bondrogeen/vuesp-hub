@@ -2,11 +2,11 @@ import { randomBytes } from 'node:crypto';
 import { chmodSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 
-import { signJwt, verifyJwt } from '../domain/jwt.ts';
-import { hashPassword, verifyPassword } from '../../users/domain/password.ts';
-import type { UserRepository } from '../../users/domain/user.repository.ts';
-import type { UserRole } from '../../users/domain/user.ts';
-import { createJsonUserRepository } from '../../users/infrastructure/jsonUserRepository.ts';
+import { signJwt, verifyJwt } from '@server/modules/auth/domain/jwt.ts';
+import { hashPassword, verifyPassword } from '@server/modules/users/domain/password.ts';
+import type { UserRepository } from '@server/modules/users/domain/user.repository.ts';
+import type { UserRole } from '@server/modules/users/domain/user.ts';
+import { createJsonUserRepository } from '@server/modules/users/infrastructure/jsonUserRepository.ts';
 
 export interface AuthUser {
   id: number;

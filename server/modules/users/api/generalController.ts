@@ -1,7 +1,7 @@
 import type { Request, Response } from 'express';
-import type { ApiErrorResponse } from '../../../../shared/api.ts';
-import type { StoreModel } from '../../../shared/stores/types.ts';
-import { sendApiError, sendApiFailure } from '../../../shared/http/apiResponse.ts';
+import type { ApiErrorResponse } from '@root/shared/api.ts';
+import type { StoreModel } from '@shared/stores/types.ts';
+import { sendApiError, sendApiFailure } from '@shared/http/apiResponse.ts';
 
 interface ResourceParams {
   id: string;

@@ -11,6 +11,7 @@ export type IconName =
   | 'IconScript'
   | 'IconStorage'
   | 'IconGpio'
+  | 'IconUser'
   | 'IconSettings';
 
 export interface MenuChildType {
@@ -28,6 +29,7 @@ export interface MenuItemType {
 }
 
 export interface MenuType {
+  key?: string;
   title: string;
   items: MenuItemType[];
 }

@@ -8,8 +8,8 @@ import {
   parseDeviceUpdateInput,
   type DeviceConnectionRecord,
   type DeviceRecord,
-} from '../../../../shared/device.ts';
-import type { SecretProvider } from '../../../shared/secrets/secretProvider.ts';
+} from '@root/shared/device.ts';
+import type { SecretProvider } from '@shared/secrets/secretProvider.ts';
 
 type SqliteInputValue = null | number | bigint | string | NodeJS.ArrayBufferView;
 type SqliteOutputValue = null | number | bigint | string | NodeJS.NonSharedUint8Array;

@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { createPinia, setActivePinia } from 'pinia';
 
-import { useAppStore } from '../../frontend/stores/AppStore.ts';
+import { useAppStore } from '@/stores/AppStore.ts';
 
 test('persists notification updates, read state, and removal', () => {
   const values = new Map<string, string>();

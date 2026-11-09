@@ -66,6 +66,13 @@ declare module 'vue-router/auto-routes' {
       Record<never, never>,
       | never
     >,
+    '/alisa': RouteRecordInfo<
+      '/alisa',
+      '/alisa',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
     '/auth/change-password': RouteRecordInfo<
       '/auth/change-password',
       '/auth/change-password',
@@ -97,6 +104,13 @@ declare module 'vue-router/auto-routes' {
     '/auth/two-step-verification': RouteRecordInfo<
       '/auth/two-step-verification',
       '/auth/two-step-verification',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
+    '/cloud': RouteRecordInfo<
+      '/cloud',
+      '/cloud',
       Record<never, never>,
       Record<never, never>,
       | never
@@ -153,6 +167,13 @@ declare module 'vue-router/auto-routes' {
     '/profile': RouteRecordInfo<
       '/profile',
       '/profile',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
+    '/smart-home': RouteRecordInfo<
+      '/smart-home',
+      '/smart-home',
       Record<never, never>,
       Record<never, never>,
       | never
@@ -217,6 +238,14 @@ declare module 'vue-router/auto-routes' {
       pathParamNames:
         | never
     }
+    'frontend/pages/alisa.vue': {
+      routes:
+        | '/alisa'
+      views:
+        | never
+      pathParamNames:
+        | never
+    }
     'frontend/pages/auth/change-password.vue': {
       routes:
         | '/auth/change-password'
@@ -252,6 +281,14 @@ declare module 'vue-router/auto-routes' {
     'frontend/pages/auth/two-step-verification.vue': {
       routes:
         | '/auth/two-step-verification'
+      views:
+        | never
+      pathParamNames:
+        | never
+    }
+    'frontend/pages/cloud.vue': {
+      routes:
+        | '/cloud'
       views:
         | never
       pathParamNames:
@@ -316,6 +353,14 @@ declare module 'vue-router/auto-routes' {
     'frontend/pages/profile.vue': {
       routes:
         | '/profile'
+      views:
+        | never
+      pathParamNames:
+        | never
+    }
+    'frontend/pages/smart-home.vue': {
+      routes:
+        | '/smart-home'
       views:
         | never
       pathParamNames:

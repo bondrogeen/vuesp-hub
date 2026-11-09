@@ -7,10 +7,10 @@ import { test } from 'node:test';
 
 import express from 'express';
 
-import { createAuthService } from '../../server/modules/auth/application/authService.ts';
-import { requireAuth } from '../../server/modules/auth/api/middleware.ts';
-import { createUserAdminRouter } from '../../server/modules/users/api/userAdminRoutes.ts';
-import { hashPassword } from '../../server/modules/users/domain/password.ts';
+import { createAuthService } from '@server/modules/auth/application/authService.ts';
+import { requireAuth } from '@server/modules/auth/api/middleware.ts';
+import { createUserAdminRouter } from '@server/modules/users/api/userAdminRoutes.ts';
+import { hashPassword } from '@server/modules/users/domain/password.ts';
 
 const withServer = async (run: (baseUrl: string, auth: ReturnType<typeof createAuthService>) => Promise<void>) => {
   const directory = mkdtempSync(path.join(tmpdir(), 'vuesp-users-'));

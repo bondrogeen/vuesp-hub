@@ -1,5 +1,5 @@
 import type { Response } from 'express';
-import type { ApiErrorResponse } from '../../../shared/api.ts';
+import type { ApiErrorResponse } from '@root/shared/api.ts';
 
 export const sendApiError = (
   response: Response<ApiErrorResponse>,

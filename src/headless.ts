@@ -3,14 +3,14 @@ import { homedir } from 'node:os';
 import path from 'node:path';
 import { parseArgs } from 'node:util';
 
-import { createCameraStore } from '../server/modules/cameras/application/cameraStore.ts';
-import { createHub } from '../server/app/host.ts';
-import { createAuthService } from '../server/modules/auth/application/authService.ts';
-import { createJsonAccessRepository } from '../server/modules/access/infrastructure/jsonAccessRepository.ts';
-import { createDeviceRepository } from '../server/modules/devices/infrastructure/deviceRepository.ts';
-import { createJsonSettingsStore, createJsonStoreModel } from '../server/shared/stores/jsonStore.ts';
-import type { DeviceRepository } from '../server/modules/devices/infrastructure/deviceRepository.ts';
-import { createAesSecretProvider } from '../server/shared/secrets/aesSecretProvider.ts';
+import { createCameraStore } from '@server/modules/cameras/application/cameraStore.ts';
+import { createHub } from '@server/app/host.ts';
+import { createAuthService } from '@server/modules/auth/application/authService.ts';
+import { createJsonAccessRepository } from '@server/modules/access/infrastructure/jsonAccessRepository.ts';
+import { createDeviceRepository } from '@server/modules/devices/infrastructure/deviceRepository.ts';
+import { createJsonSettingsStore, createJsonStoreModel } from '@server/shared/stores/jsonStore.ts';
+import type { DeviceRepository } from '@server/modules/devices/infrastructure/deviceRepository.ts';
+import { createAesSecretProvider } from '@server/shared/secrets/aesSecretProvider.ts';
 
 const defaultDataDirectory = () => {
   if (process.env.VUESP_DATA_DIR) return process.env.VUESP_DATA_DIR;
@@ -103,6 +103,8 @@ export const main = async () => {
     workerScriptPath,
     auth: createAuthService({ dataDirectory }),
     access: createJsonAccessRepository({ dataDirectory }),
+    dataDirectory,
+    secretProvider,
     host,
     port,
     telemetry: cloudUrl && cloudToken
@@ -117,7 +119,7 @@ export const main = async () => {
   console.log(`  Data:     ${dataDirectory}`);
   console.log(`  Web UI:   ${webDirectory ?? 'API only (pass --static-dir)'}`);
   console.log(`  Secrets:  ${secretKey ? 'enabled (VUESP_SECRET_KEY)' : 'disabled (set VUESP_SECRET_KEY to save device credentials)'}`);
-  console.log(`  Cloud:    ${cloudUrl && cloudToken ? `enabled (${cloudUrl})` : 'disabled (set VUESP_CLOUD_URL and VUESP_CLOUD_TOKEN)'}`);
+  console.log(`  Cloud:    ${cloudUrl && cloudToken ? `bootstrap ${cloudUrl}` : 'pairing UI ready (no bootstrap credentials)'}`);
 
   let stopping = false;
   const shutdown = async (signal: string) => {

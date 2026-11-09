@@ -1,13 +1,13 @@
 import { chmodSync, existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 
-import { hashPassword } from '../domain/password.ts';
+import { hashPassword } from '@server/modules/users/domain/password.ts';
 import type {
   CreateUserData,
   UpdateUserData,
   UserRepository,
-} from '../domain/user.repository.ts';
-import { toPublicUser, type UserWithPassword } from '../domain/user.ts';
+} from '@server/modules/users/domain/user.repository.ts';
+import { toPublicUser, type UserWithPassword } from '@server/modules/users/domain/user.ts';
 
 interface UsersFile {
   users: UserWithPassword[];

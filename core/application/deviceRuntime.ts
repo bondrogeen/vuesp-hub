@@ -1,5 +1,5 @@
 import { EventEmitter } from 'node:events';
-import { isDeviceEventPayload, type DeviceCommandPayload } from '../../shared/device.ts';
+import { isDeviceEventPayload, type DeviceCommandPayload } from '@root/shared/device.ts';
 
 export interface DeviceConnectionManager {
   on(event: string, listener: (payload: unknown) => void): this;

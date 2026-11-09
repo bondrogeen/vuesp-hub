@@ -5,8 +5,9 @@ import { hostname } from 'node:os';
 import path from 'node:path';
 import { promisify } from 'node:util';
 
-import type { DeviceRecord } from '../../../../shared/device.ts';
-import { isDeviceEventPayload, isRecordValue } from '../../../../shared/device.ts';
+import type { DeviceRecord } from '@root/shared/device.ts';
+import { isDeviceEventPayload, isRecordValue } from '@root/shared/device.ts';
+import type { PublicDashboardTile } from '@root/shared/dashboardTiles.ts';
 
 const execFileAsync = promisify(execFile);
 
@@ -37,6 +38,25 @@ export interface TelemetrySenderOptions {
   now?: () => number;
   /** `null` means the platform cannot prove time sync; the sender then proceeds. */
   timeSyncCheck?: () => Promise<boolean | null>;
+  /** Optional transport (WebSocket). When omitted, the sender posts to `url`. */
+  transport?: (payload: TelemetryPayload) => Promise<void>;
+}
+
+export interface TelemetryDevicePayload {
+  deviceId: string;
+  name: string;
+  ip: string;
+  observedAt: number;
+  state: TelemetryDeviceState;
+  /** Resolved, safe dashboard tiles for the cloud. Raw expressions never leave the hub. */
+  tiles?: PublicDashboardTile[];
+}
+
+export interface TelemetryPayload {
+  hubId: string;
+  hubName: string;
+  observedAt: number;
+  devices: TelemetryDevicePayload[];
 }
 
 export interface TelemetryDeviceState {
@@ -49,14 +69,6 @@ export interface TelemetryDeviceState {
 interface PendingSnapshot {
   state: TelemetryDeviceState;
   updatedAt: number;
-}
-
-interface TelemetryDevicePayload {
-  deviceId: string;
-  name: string;
-  ip: string;
-  observedAt: number;
-  state: TelemetryDeviceState;
 }
 
 const emptyState = (): TelemetryDeviceState => ({ ports: {}, dallas: {}, slots: {} });
@@ -112,6 +124,7 @@ export class TelemetrySender {
   readonly #fetch: typeof fetch;
   readonly #now: () => number;
   readonly #timeSyncCheck: () => Promise<boolean | null>;
+  readonly #transport: TelemetrySenderOptions['transport'];
 
   readonly #states = new Map<string, PendingSnapshot>();
   readonly #dirty = new Set<string>();
@@ -134,6 +147,7 @@ export class TelemetrySender {
     fetchImpl = fetch,
     now = Date.now,
     timeSyncCheck = defaultTimeSyncCheck,
+    transport,
   }: TelemetrySenderOptions) {
     this.#runtime = runtime;
     this.#getDeviceModel = getDeviceModel;
@@ -144,6 +158,7 @@ export class TelemetrySender {
     this.#fetch = fetchImpl;
     this.#now = now;
     this.#timeSyncCheck = timeSyncCheck;
+    this.#transport = transport;
     this.hubId = readOrCreateHubId(dataDirectory);
     this.hubName = hubName?.trim() || hostname();
   }
@@ -163,6 +178,18 @@ export class TelemetrySender {
       clearTimeout(this.#timer);
       this.#timer = undefined;
     }
+  }
+
+  /** Latest aggregated state for a device; used to resolve an action on the hub. */
+  getState(ip: string): TelemetryDeviceState | undefined {
+    return this.#states.get(ip)?.state;
+  }
+
+  /** Republish every known device, e.g. after a reconnect or a dashboard config change. */
+  resend(): void {
+    if (this.#stopped) return;
+    for (const ip of this.#states.keys()) this.#dirty.add(ip);
+    this.#schedule(this.#debounceMs);
   }
 
   readonly #onData = (payload: unknown): void => {
@@ -254,21 +281,27 @@ export class TelemetrySender {
         return { sent: 0 };
       }
 
-      const response = await this.#fetch(`${this.#url}/telemetry/snapshots`, {
-        method: 'POST',
-        headers: {
-          authorization: `Bearer ${this.#token}`,
-          'content-type': 'application/json',
-        },
-        body: JSON.stringify({
-          hubId: this.hubId,
-          hubName: this.hubName,
-          observedAt: Math.max(...devices.map(device => device.observedAt)),
-          devices,
-        }),
-      });
+      const payload: TelemetryPayload = {
+        hubId: this.hubId,
+        hubName: this.hubName,
+        observedAt: Math.max(...devices.map(device => device.observedAt)),
+        devices,
+      };
 
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      if (this.#transport) {
+        await this.#transport(payload);
+      } else {
+        const response = await this.#fetch(`${this.#url}/telemetry/snapshots`, {
+          method: 'POST',
+          headers: {
+            authorization: `Bearer ${this.#token}`,
+            'content-type': 'application/json',
+          },
+          body: JSON.stringify(payload),
+        });
+
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      }
 
       for (const [ip, updatedAt] of pending) {
         if (this.#states.get(ip)?.updatedAt === updatedAt) this.#dirty.delete(ip);

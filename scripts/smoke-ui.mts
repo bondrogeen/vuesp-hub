@@ -7,10 +7,10 @@ import path from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
 import WebSocket from 'ws';
 
-import { DeviceRuntime } from '../core/application/deviceRuntime.ts';
-import { createAuthService } from '../server/modules/auth/application/authService.ts';
-import { createCameraStore } from '../server/modules/cameras/application/cameraStore.ts';
-import { server } from '../server/app/server.ts';
+import { DeviceRuntime } from '@core/application/deviceRuntime.ts';
+import { createAuthService } from '@server/modules/auth/application/authService.ts';
+import { createCameraStore } from '@server/modules/cameras/application/cameraStore.ts';
+import { server } from '@server/app/server.ts';
 
 /**
  * UI smoke test: serves the built web UI with a stub device runtime, opens the
@@ -100,7 +100,18 @@ const login = await fetch(`${base}/api/v1/auth/login`, {
   headers: { 'content-type': 'application/json' },
   body: JSON.stringify({ username: 'admin', password: 'admin' }),
 });
-const { token } = (await login.json()) as { token: string };
+let { token } = (await login.json()) as { token: string };
+
+// The bootstrap admin starts with a password-change flag. Clear it before the
+// UI smoke test so the router does not redirect to /auth/change-password.
+const changed = await fetch(`${base}/api/v1/auth/change-password`, {
+  method: 'POST',
+  headers: { 'content-type': 'application/json', authorization: `Bearer ${token}` },
+  body: JSON.stringify({ currentPassword: 'admin', newPassword: 'admin123' }),
+});
+if (changed.ok) {
+  token = ((await changed.json()) as { token: string }).token;
+}
 
 // --- headless Chrome via CDP -------------------------------------------------
 const cdpPort = await freePort();
@@ -220,17 +231,17 @@ console.log('sends:', JSON.stringify(sends));
 console.log('console:', JSON.stringify(logs.slice(-10)));
 
 // --- menu nesting -----------------------------------------------------------
-await evaluate('document.querySelector("aside nav ul > li button")?.click(); true');
+await evaluate('document.querySelector(\'aside a[href="/device/list/"]\')?.closest("li")?.querySelector("button")?.click(); true');
 await delay(400);
 const deviceLinks = JSON.parse(
-  (await evaluate('JSON.stringify([...document.querySelectorAll("aside nav ul > li:first-child ul a")].map((a) => a.getAttribute("href")))')) as string,
+  (await evaluate(`JSON.stringify([...document.querySelectorAll('aside a[href^="/device/192.0.2.5"]')].map((a) => a.getAttribute("href")))`)) as string,
 ) as string[];
 console.log('device menu links:', JSON.stringify(deviceLinks));
 
 await send('Page.navigate', { url: `${base}/device/192.0.2.5/dashboard` });
 await waitFor(async () => await evaluate('Boolean(document.querySelector(\'aside a[href="/device/192.0.2.5/dashboard/"]\'))'), 'device submenu');
 const nestedLinks = JSON.parse(
-  (await evaluate('JSON.stringify([...document.querySelectorAll(\'aside a[href^="/device/192.0.2.5"]\')].map((a) => a.getAttribute("href")))')) as string,
+  (await evaluate(`JSON.stringify([...document.querySelectorAll('aside a[href^="/device/192.0.2.5"]')].map((a) => a.getAttribute("href")))`)) as string,
 ) as string[];
 console.log('nested links:', JSON.stringify(nestedLinks));
 

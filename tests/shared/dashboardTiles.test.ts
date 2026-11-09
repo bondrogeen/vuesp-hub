@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
-import { buildTileCommands, resolveTiles } from '../../frontend/utils/dashboardTiles.ts';
+import { buildTileCommands, resolvePublicTiles, resolveTiles } from '../../shared/dashboardTiles.ts';
 import type { DashboardItem } from 'vuesp-dashboard-core';
 
 const state = {
@@ -35,6 +35,20 @@ test('resolves tile values from the per-device state', () => {
 
   const [port] = resolveTiles([dimmer], state);
   assert.equal(port.value, 10);
+});
+
+test('publishes only presentation fields and never dashboard expressions', () => {
+  const [published] = resolvePublicTiles([{ ...button, icon: 'bulb' }], state, 'uuid-1');
+  assert.equal(published.key, 'uuid-1:0');
+  assert.equal(published.id, 'device.output.1');
+  assert.equal(published.value, 0);
+  assert.equal(published.valueTo, 'OFF');
+  assert.equal(published.entityType, 'switch');
+  assert.equal(published.viewIcon, 'sun');
+
+  for (const forbidden of ['args', 'get', 'getTo', 'set', 'meta']) {
+    assert.equal(forbidden in published, false, `${forbidden} must be stripped`);
+  }
 });
 
 test('builds device commands from set expressions and derives the message key', () => {

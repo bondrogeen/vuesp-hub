@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { test } from 'node:test';
 
-import { createCameraStore } from '../../server/modules/cameras/application/cameraStore.ts';
+import { createCameraStore } from '@server/modules/cameras/application/cameraStore.ts';
 
 const withStore = (run: (store: ReturnType<typeof createCameraStore>, directory: string) => void) => {
   const directory = mkdtempSync(path.join(tmpdir(), 'vuesp-camera-store-'));

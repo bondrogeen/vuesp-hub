@@ -1,6 +1,6 @@
 import Struct from 'c-struct-to-json';
 import { isIP } from 'node:net';
-import { isDiscoveredDevice, type DiscoveredDevice } from '../../../../../shared/device.ts';
+import { isDiscoveredDevice, type DiscoveredDevice } from '@root/shared/device.ts';
 
 const discoveryStruct = [
   { name: 'command', type: 'uint8_t' },

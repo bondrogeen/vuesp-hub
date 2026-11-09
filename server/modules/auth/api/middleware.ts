@@ -1,8 +1,8 @@
 import type { NextFunction, Request, RequestHandler, Response } from 'express';
 import type { Socket } from 'socket.io';
 
-import type { AuthService, AuthUser } from '../application/authService.ts';
-import type { UserRole } from '../../users/domain/user.ts';
+import type { AuthService, AuthUser } from '@server/modules/auth/application/authService.ts';
+import type { UserRole } from '@server/modules/users/domain/user.ts';
 
 export interface AuthenticatedRequest extends Request {
   auth?: AuthUser;

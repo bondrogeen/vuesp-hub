@@ -1,4 +1,4 @@
-import type { UserRole } from '../../users/domain/user.ts';
+import type { UserRole } from '@server/modules/users/domain/user.ts';
 
 export const ACCESS_PAGES = ['dashboard', 'devices', 'raw', 'video', 'modbus', 'profile'] as const;
 

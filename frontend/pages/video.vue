@@ -9,6 +9,21 @@
 			</div>
 
 			<div class="flex flex-wrap items-center gap-2">
+				<span class="hidden text-[10px] uppercase tracking-wide text-gray-400 sm:inline">{{ t('video.view') }}</span>
+				<div class="inline-flex items-center rounded-md border border-gray-200/70 bg-white/40 p-0.5 dark:border-white/10 dark:bg-white/[0.03]">
+					<button
+						v-for="option of columnOptions"
+						:key="option"
+						type="button"
+						class="grid size-8 place-items-center rounded text-xs font-medium transition"
+						:class="columns === option ? 'bg-primary text-white shadow-sm' : 'text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white'"
+						:aria-label="t('video.columns', { count: option })"
+						:title="t('video.columns', { count: option })"
+						@click="setColumns(option)"
+					>
+						{{ option }}
+					</button>
+				</div>
 				<VButton color="blue" @click="openAdd">
 					{{ t('video.add') }}
 				</VButton>
@@ -30,7 +45,7 @@
 			<VButton color="blue" class="mt-5" @click="openAdd">{{ t('video.add') }}</VButton>
 		</div>
 
-		<div v-else class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+		<div v-else class="video-grid" :data-cols="columns">
 			<CameraCard
 				v-for="camera in cameras"
 				:key="camera.id"
@@ -137,6 +152,21 @@ import { api } from '@/utils/helpers.ts';
 import type { CameraDetail, CameraRecord } from '@/types/camera';
 
 const { t } = useI18n();
+
+type ColumnOption = 2 | 3 | 4 | 6;
+
+const columnOptions: ColumnOption[] = [2, 3, 4, 6];
+const VIDEO_VIEW_KEY = 'vuesp.hub.video.columns';
+const columns = ref<ColumnOption>(3);
+
+const setColumns = (value: ColumnOption): void => {
+	columns.value = value;
+	try {
+		localStorage.setItem(VIDEO_VIEW_KEY, String(value));
+	} catch {
+		// Best-effort preference; private mode must not break the page.
+	}
+};
 
 const examples = [
 	{ label: 'Hikvision', url: 'rtsp://user:password@192.168.1.10:554/Streaming/Channels/101' },
@@ -312,5 +342,13 @@ const onDrop = (target: CameraRecord): void => {
 	void saveOrder();
 };
 
-onMounted(load);
+onMounted(() => {
+	try {
+		const stored = Number(localStorage.getItem(VIDEO_VIEW_KEY));
+		if (columnOptions.includes(stored as ColumnOption)) columns.value = stored as ColumnOption;
+	} catch {
+		// Keep the default layout.
+	}
+	void load();
+});
 </script>

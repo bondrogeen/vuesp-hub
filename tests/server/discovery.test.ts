@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import Struct from 'c-struct-to-json';
 
-import { createDiscoveryQuery, decodeDiscoveryMessage } from '../../server/modules/devices/domain/protocols/vuespDiscovery.ts';
+import { createDiscoveryQuery, decodeDiscoveryMessage } from '@server/modules/devices/domain/protocols/vuespDiscovery.ts';
 
 const discoveryStruct = [
   { name: 'command', type: 'uint8_t' },

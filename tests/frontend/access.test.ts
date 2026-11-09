@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
-import { canAccess, DEFAULT_ROLE_PAGES } from '../../frontend/utils/access.ts';
+import { canAccess, DEFAULT_ROLE_PAGES } from '@/utils/access.ts';
 
 test('role page access uses one defaults table', () => {
   assert.ok(canAccess('admin', '/admin/users/'));

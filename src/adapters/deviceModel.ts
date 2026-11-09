@@ -3,8 +3,8 @@ import Store from 'electron-store';
 import { mkdirSync } from 'node:fs';
 import path from 'node:path';
 
-import { createDeviceRepository } from '../../server/modules/devices/infrastructure/deviceRepository.ts';
-import type { SecretProvider } from '../../server/shared/secrets/secretProvider.ts';
+import { createDeviceRepository } from '@server/modules/devices/infrastructure/deviceRepository.ts';
+import type { SecretProvider } from '@shared/secrets/secretProvider.ts';
 
 interface LegacyDevice {
   id?: number;
@@ -22,7 +22,7 @@ interface LegacyStore {
 
 let repositoryPromise: ReturnType<typeof createDeviceRepository> | undefined;
 
-const secretProvider: SecretProvider = {
+export const secretProvider: SecretProvider = {
   encrypt(value) {
     if (!safeStorage.isEncryptionAvailable()) {
       throw new Error('Secure credential storage is unavailable. Configure an OS keyring before saving device credentials.');

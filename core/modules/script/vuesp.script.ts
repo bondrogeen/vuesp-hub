@@ -1,5 +1,5 @@
 import { Worker } from 'node:worker_threads';
-import type Core from '../../core.ts';
+import type Core from '@core/core.ts';
 
 interface WorkerPoolEntry {
   worker: Worker;

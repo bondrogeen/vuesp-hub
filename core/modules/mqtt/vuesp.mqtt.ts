@@ -1,4 +1,4 @@
-import type Core from '../../core.ts';
+import type Core from '@core/core.ts';
 
 interface MqttClient {
   on(event: string, listener: (...args: unknown[]) => void): this;

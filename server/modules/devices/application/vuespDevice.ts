@@ -1,9 +1,9 @@
 import { EventEmitter } from 'node:events';
 import WebSocket from 'ws';
 import AxiosDigestAuth from '@mhoc/axios-digest-auth';
-import { parseLegacyDashboard } from '../domain/legacyDashboard.ts';
-import { LegacyDeviceProtocol } from '../domain/protocols/legacyDeviceProtocol.ts';
-import type { DeviceCommandPayload } from '../../../../shared/device.ts';
+import { parseLegacyDashboard } from '@server/modules/devices/domain/legacyDashboard.ts';
+import { LegacyDeviceProtocol } from '@server/modules/devices/domain/protocols/legacyDeviceProtocol.ts';
+import type { DeviceCommandPayload } from '@root/shared/device.ts';
 
 interface WebSocketClient {
   readyState: number;

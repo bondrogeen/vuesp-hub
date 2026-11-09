@@ -1,7 +1,7 @@
 import express from 'express';
 
-import type { CameraInput, CameraStore } from '../application/cameraStore.ts';
-import type { CameraStreamManager } from '../sockets/stream.ts';
+import type { CameraInput, CameraStore } from '@server/modules/cameras/application/cameraStore.ts';
+import type { CameraStreamManager } from '@server/modules/cameras/sockets/stream.ts';
 
 const errorMessage = (error: unknown): string => (error instanceof Error ? error.message : 'Unexpected error');
 

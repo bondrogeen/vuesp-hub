@@ -4,7 +4,7 @@ import type { Readable } from 'node:stream';
 import ffmpegStatic from 'ffmpeg-static';
 import type { Server, Socket } from 'socket.io';
 
-import type { CameraRecord, CameraStore } from '../application/cameraStore.ts';
+import type { CameraRecord, CameraStore } from '@server/modules/cameras/application/cameraStore.ts';
 
 export type CameraStreamStatus = 'idle' | 'starting' | 'live' | 'error';
 

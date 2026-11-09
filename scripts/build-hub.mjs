@@ -11,6 +11,7 @@ const common = {
   format: 'cjs',
   target: 'node22',
   packages: 'external',
+  tsconfig: 'tsconfig.json',
   sourcemap: true,
   logLevel: 'info',
 };
