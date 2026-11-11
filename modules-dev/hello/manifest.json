@@ -1,0 +1,18 @@
+{
+  "id": "vuesp-hub.hello",
+  "name": "Hello module",
+  "version": "0.1.0",
+  "apiVersion": 1,
+  "uiApiVersion": 1,
+  "entry": "server/index.cjs",
+  "web": {
+    "entry": "web/entry.js",
+    "element": "vuesp-module-hello",
+    "nav": {
+      "label": "Hello",
+      "icon": "sparkles"
+    }
+  },
+  "permissions": [],
+  "description": "Test module for the ModuleHost MVP"
+}

@@ -1,7 +1,7 @@
 <template>
   <main class="relative flex min-h-screen items-center justify-center px-4 py-10">
     <div class="glass-panel w-full max-w-md p-6">
-      <router-link to="/auth/login" class="mb-6 inline-flex items-center gap-2 text-sm text-gray-500 transition hover:text-gray-900 dark:text-gray-400 dark:hover:text-white">
+      <router-link to="/auth/login/" class="mb-6 inline-flex items-center gap-2 text-sm text-gray-500 transition hover:text-gray-900 dark:text-gray-400 dark:hover:text-white">
         {{ t('auth.backToDashboard') }}
       </router-link>
 
@@ -16,7 +16,7 @@
 
       <p class="mt-5 text-sm text-gray-500 dark:text-gray-400">
         {{ t('auth.rememberPassword') }}
-        <router-link to="/auth/login" class="font-medium text-[var(--accent-blue)] hover:underline">{{ t('auth.clickHere') }}</router-link>
+        <router-link to="/auth/login/" class="font-medium text-[var(--accent-blue)] hover:underline">{{ t('auth.clickHere') }}</router-link>
       </p>
     </div>
   </main>

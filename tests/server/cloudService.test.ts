@@ -156,7 +156,8 @@ test('publishes safe resolved tiles and applies an action on the hub', async () 
     const result = await waitFor(() => results[0], 'action result');
     assert.equal(result.requestId, 'req-1');
     assert.equal(result.ok, true);
-    assert.deepEqual(runtime.sent, [{ target: '192.0.2.5', comm: 'DEVICE', data: { output: 0, command: 2 } }]);
+    assert.deepEqual(runtime.sent[0], { target: '192.0.2.5', comm: 'DEVICE', data: { output: 0, command: 2 } });
+    assert.deepEqual(runtime.sent.slice(1).map((item) => item.comm), ['INFO', 'DEVICE', 'PORT']);
 
     // Two dashboard rows share `device.status3`; the unique key must pick the second one.
     runtime.sent.length = 0;
@@ -173,7 +174,8 @@ test('publishes safe resolved tiles and applies an action on the hub', async () 
 
     const duplicateResult = await waitFor(() => results[1], 'duplicate action result');
     assert.equal(duplicateResult.ok, true);
-    assert.deepEqual(runtime.sent, [{ target: '192.0.2.5', comm: 'DEVICE', data: { output: 4, command: 2 } }]);
+    assert.deepEqual(runtime.sent[0], { target: '192.0.2.5', comm: 'DEVICE', data: { output: 4, command: 2 } });
+    assert.deepEqual(runtime.sent.slice(1).map((item) => item.comm), ['INFO', 'DEVICE', 'PORT']);
 
     const status = await cloud.setPublishedTiles(['uuid-1:1', 'uuid-1:3']);
     assert.equal(status.state, 'connected');

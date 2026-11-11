@@ -1,6 +1,7 @@
 import { spawn } from 'node:child_process';
 import { EventEmitter } from 'node:events';
 import { existsSync, mkdtempSync, writeFileSync } from 'node:fs';
+import { cp } from 'node:fs/promises';
 import { createServer } from 'node:net';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
@@ -9,8 +10,8 @@ import WebSocket from 'ws';
 
 import { DeviceRuntime } from '@core/application/deviceRuntime.ts';
 import { createAuthService } from '@server/modules/auth/application/authService.ts';
-import { createCameraStore } from '@server/modules/cameras/application/cameraStore.ts';
 import { server } from '@server/app/server.ts';
+import { createModuleHost } from '@server/module-host/moduleHost.ts';
 
 /**
  * UI smoke test: serves the built web UI with a stub device runtime, opens the
@@ -72,6 +73,17 @@ const freePort = async () => {
   return port;
 };
 
+const modulesDirectory = path.join(temp, 'modules');
+const moduleHost = createModuleHost({
+  modulesDirectory,
+  dataDirectory: temp,
+  runnerPath: path.resolve('server/module-host/module-runner.cjs'),
+});
+const moduleSource = path.join(temp, 'vuesp-hub.hello');
+await cp(path.resolve('modules-dev/hello'), moduleSource, { recursive: true });
+await moduleHost.install(moduleSource);
+await moduleHost.start('vuesp-hub.hello');
+
 const appPort = await freePort();
 const app = server({
   staticDirectory: path.resolve('dist/web'),
@@ -82,8 +94,8 @@ const app = server({
   }) as never,
   storeModel: () => ({}) as never,
   serialSettingsStore: { get: () => undefined, set: () => {} },
-  cameraStore: createCameraStore({ dataDirectory: temp }),
   auth: createAuthService({ dataDirectory: temp }),
+  moduleHost,
   host: '127.0.0.1',
   port: appPort,
 });
@@ -245,13 +257,24 @@ const nestedLinks = JSON.parse(
 ) as string[];
 console.log('nested links:', JSON.stringify(nestedLinks));
 
+// --- module web component ---------------------------------------------------
+await send('Page.navigate', { url: `${base}/modules/vuesp-hub.hello` });
+await waitFor(
+  async () => await evaluate('Boolean(document.querySelector("vuesp-module-hello")?.shadowRoot?.textContent?.includes("vuesp-hub.hello"))'),
+  'module web component',
+);
+const moduleUi = await evaluate('document.querySelector("vuesp-module-hello")?.shadowRoot?.querySelector(".panel")?.innerText?.replace(/\\s+/g, " ").trim().slice(0, 200)');
+console.log('module ui:', moduleUi);
+
 socket.close();
 chrome.kill('SIGKILL');
+await moduleHost.stopAll();
 await app.closeExpress();
 
 const commandsOk = sends.length > 0 && sends[0].comm === 'DEVICE' && sends[0].target === '192.0.2.5';
 const menuOk = deviceLinks.includes('/device/192.0.2.5/') && nestedLinks.includes('/device/192.0.2.5/dashboard/');
+const moduleOk = typeof moduleUi === 'string' && moduleUi.includes('vuesp-hub.hello');
 
-const ok = commandsOk && menuOk;
+const ok = commandsOk && menuOk && moduleOk;
 console.log(ok ? 'E2E OK' : 'E2E FAILED');
 process.exit(ok ? 0 : 1);

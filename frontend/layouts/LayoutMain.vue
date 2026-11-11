@@ -53,7 +53,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, provide, computed, onMounted, watch } from 'vue';
+import { ref, provide, computed, onMounted, onUnmounted, watch } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
@@ -64,12 +64,13 @@ import { api } from '@/utils/helpers.ts';
 import { isAdmin } from '@/utils/auth.ts';
 import { useAccessStore } from '@/stores/AccessStore.ts';
 import { createDeviceMenu } from '@/utils/deviceMenu.ts';
+import { withTrailingSlash } from '@/utils/path.ts';
 
 import AppDialog from '@/components/app/AppDialog.vue';
 import HubHeader from '@/components/app/HubHeader.vue';
 import HubNav from '@/components/app/HubNav.vue';
 import { AppAside, AppNotification, VButton } from 'vuesp-components/components';
-import type { DeviceRecord } from '@/types';
+import type { DeviceRecord, MenuChildType, MenuItemType, ModuleSummary } from '@/types';
 import type { INotification } from 'vuesp-components/types';
 
 const route = useRoute();
@@ -83,6 +84,7 @@ const { menus } = storeToRefs(webSocketStore);
 const { dialog, notifications } = storeToRefs(appStore);
 
 const registry = ref<DeviceRecord[]>([]);
+const installedModules = ref<ModuleSummary[]>([]);
 
 const loadRegistry = async (): Promise<void> => {
   try {
@@ -90,21 +92,78 @@ const loadRegistry = async (): Promise<void> => {
   } catch {
     registry.value = [];
   }
+  try {
+    installedModules.value = await api.get<ModuleSummary[]>('/modules');
+  } catch {
+    installedModules.value = [];
+  }
 };
+
+const moduleAvailable = (moduleId?: string): boolean =>
+  !moduleId || installedModules.value.some(item => item.id === moduleId && item.running);
 
 const getMenu = computed(() => {
   const groups = createDeviceMenu(menus.value, t, registry.value);
+
+  const moduleItems: MenuItemType[] = [];
+  const moduleGroups = new Map<string, { name: string; icon: MenuItemType['icon']; order: number; children: MenuChildType[] }>();
+
+  for (const item of installedModules.value) {
+    if (!item.running || !item.web?.nav) continue;
+
+    const child = {
+      name: item.web.nav.label || item.name,
+      icon: item.group?.slug === 'video' ? ('IconVideo' as const) : ('IconPuzzle' as const),
+      path: withTrailingSlash(item.route),
+    };
+
+    if (!item.group) {
+      moduleItems.push({ ...child, icon: child.icon });
+      continue;
+    }
+
+    let group = moduleGroups.get(item.group.id);
+    if (!group) {
+      group = {
+        name: item.group.name,
+        icon: item.group.slug === 'video' ? 'IconVideo' : 'IconPuzzle',
+        order: item.group.order ?? 1000,
+        children: [],
+      };
+      moduleGroups.set(item.group.id, group);
+    }
+    group.children.push(child);
+  }
+
+  for (const group of [...moduleGroups.values()].sort((left, right) => left.order - right.order)) {
+    moduleItems.push({ name: group.name, icon: group.icon, children: group.children });
+  }
+
+  groups.push({
+    key: 'modules',
+    title: t('common.menuGroups.modules'),
+    items: [
+      { name: t('common.modules'), icon: 'IconPuzzle' as const, path: '/modules/' },
+      ...moduleItems,
+    ],
+  });
+
+  if (isAdmin()) {
+    groups.push({
+      key: 'users',
+      title: t('common.menuGroups.users'),
+      items: [
+        { name: t('admin.users'), icon: 'IconUser' as const, path: '/admin/users/' },
+        { name: t('admin.access'), icon: 'IconSettings' as const, path: '/admin/access/' },
+      ],
+    });
+  }
+
   groups.push({
     key: 'settings',
     title: t('common.menuGroups.settings'),
     items: [
       { name: t('common.profile'), icon: 'IconUser' as const, path: '/profile/' },
-      ...(isAdmin()
-        ? [
-            { name: t('admin.users'), icon: 'IconSettings' as const, path: '/admin/users/' },
-            { name: t('admin.access'), icon: 'IconSettings' as const, path: '/admin/access/' },
-          ]
-        : []),
     ],
   });
 
@@ -112,10 +171,12 @@ const getMenu = computed(() => {
     .map(group => ({
       ...group,
       items: group.items
-        .filter(item => !item.path || accessStore.can(item.path))
+        .filter(item => (!item.path || accessStore.can(item.path)) && moduleAvailable(item.moduleId))
         .map(item => ({
           ...item,
-          children: item.children?.filter(child => !child.path || accessStore.can(child.path)),
+          children: item.children?.filter(child =>
+            (!child.path || accessStore.can(child.path)) && moduleAvailable(child.moduleId)
+          ),
         }))
         .filter(item => Boolean(item.path || item.children?.length)),
     }))
@@ -134,9 +195,18 @@ const headerNotifications = computed<INotification[]>(() => notifications.value.
   text: notification.text ?? notification.message ?? notification.title ?? '',
 })));
 
+const onModulesChanged = (): void => {
+  void loadRegistry();
+};
+
 onMounted(() => {
   void loadRegistry();
   void accessStore.load(true);
+  window.addEventListener('vuesp:modules-changed', onModulesChanged);
+});
+
+onUnmounted(() => {
+  window.removeEventListener('vuesp:modules-changed', onModulesChanged);
 });
 
 watch(menus, () => {

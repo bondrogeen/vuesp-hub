@@ -12,7 +12,7 @@ import type { PublicDashboardTile } from '@root/shared/dashboardTiles.ts';
 const execFileAsync = promisify(execFile);
 
 const HUB_ID_FILE = 'hub-id';
-const DEFAULT_DEBOUNCE_MS = 1500;
+const DEFAULT_DEBOUNCE_MS = 250;
 const DEFAULT_MAX_BACKOFF_MS = 60_000;
 const TIME_SYNC_CACHE_MS = 60_000;
 

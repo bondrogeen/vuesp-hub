@@ -1,4 +1,4 @@
-import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
+import { copyFile, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 
 import { build } from 'esbuild';
 import { build as viteBuild } from 'vite';
@@ -32,6 +32,8 @@ await build({
 
 await viteBuild({ configFile: 'vite.web.config.mjs', logLevel: 'info' });
 
+await copyFile('server/module-host/module-runner.cjs', 'dist/module-runner.cjs');
+
 await mkdir('dist/bin', { recursive: true });
 await writeFile(
   'dist/bin/vuesp-hub.js',
@@ -63,7 +65,7 @@ const hubPackage = {
   engines: {
     node: '>=22.13.0',
   },
-  files: ['index.cjs', 'index.cjs.map', 'worker-script.cjs', 'worker-script.cjs.map', 'web', 'bin'],
+  files: ['index.cjs', 'index.cjs.map', 'worker-script.cjs', 'worker-script.cjs.map', 'module-runner.cjs', 'web', 'bin'],
   dependencies: {
     '@mhoc/axios-digest-auth': rootPackage.dependencies['@mhoc/axios-digest-auth'],
     'c-struct-to-json': rootPackage.dependencies['c-struct-to-json'],
@@ -72,6 +74,7 @@ const hubPackage = {
     serialport: rootPackage.dependencies.serialport,
     'socket.io': rootPackage.dependencies['socket.io'],
     'vuesp-struct': rootPackage.dependencies['vuesp-struct'],
+    tar: rootPackage.dependencies.tar,
     ws: rootPackage.dependencies.ws,
   },
 };

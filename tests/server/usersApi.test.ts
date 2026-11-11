@@ -61,10 +61,24 @@ test('user management is admin-only and keeps the last admin', async () => {
 
     const created = await call(baseUrl, admin.token, '', {
       method: 'POST',
-      body: JSON.stringify({ username: 'operator', password: 'secret1', role: 'user' }),
+      body: JSON.stringify({ username: 'operator', password: 'secret1', role: 'user', pages: ['dashboard', 'modules'] }),
     });
     assert.equal(created.status, 201);
     assert.equal(created.body.role, 'user');
+    assert.deepEqual(created.body.pages, ['dashboard', 'modules']);
+
+    const inherited = await call(baseUrl, admin.token, `/${created.body.id}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ pages: null }),
+    });
+    assert.equal(inherited.status, 200);
+    assert.equal(inherited.body.pages, null);
+
+    const invalidPages = await call(baseUrl, admin.token, `/${created.body.id}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ pages: ['unknown'] }),
+    });
+    assert.equal(invalidPages.status, 400);
 
     const promoted = await call(baseUrl, admin.token, `/${created.body.id}`, {
       method: 'PATCH',

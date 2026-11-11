@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import type { Request, Response } from 'express';
 
+import { isAccessPage, type AccessPage } from '@server/modules/access/domain/access.ts';
 import { hashPassword } from '@server/modules/users/domain/password.ts';
 import { isUserRole, type UserRole } from '@server/modules/users/domain/user.ts';
 import type { AuthService } from '@server/modules/auth/application/authService.ts';
@@ -29,6 +30,17 @@ const parsePassword = (value: unknown): string | null => {
 
 const parseRole = (value: unknown): UserRole | null => (isUserRole(value) ? value : null);
 
+const INVALID_PAGES = Symbol('invalid-pages');
+
+/** `null` resets to role defaults, `undefined` leaves the value unchanged. */
+const parsePages = (value: unknown): AccessPage[] | null | undefined | typeof INVALID_PAGES => {
+  if (value === undefined) return undefined;
+  if (value === null) return null;
+  if (!Array.isArray(value)) return INVALID_PAGES;
+  const pages = value.filter(isAccessPage);
+  return pages.length === value.length ? [...new Set(pages)] : INVALID_PAGES;
+};
+
 export const createUserAdminRouter = (auth: AuthService) => {
   const router = Router();
   router.use(requireRole('admin'));
@@ -42,8 +54,9 @@ export const createUserAdminRouter = (auth: AuthService) => {
     const username = parseUsername(body.username);
     const password = parsePassword(body.password);
     const role = parseRole(body.role ?? 'user');
+    const pages = parsePages(body.pages);
 
-    if (!username || !password || !role) {
+    if (!username || !password || !role || pages === INVALID_PAGES) {
       response.status(400).json({ error: 'Username, password and role are required' });
       return;
     }
@@ -52,7 +65,13 @@ export const createUserAdminRouter = (auth: AuthService) => {
       return;
     }
 
-    const user = auth.users.create({ username, passwordHash: hashPassword(password), role, mustChangePassword: true });
+    const user = auth.users.create({
+      username,
+      passwordHash: hashPassword(password),
+      role,
+      pages: pages === undefined ? null : pages,
+      mustChangePassword: true,
+    });
     response.status(201).json(user);
   });
 
@@ -73,8 +92,9 @@ export const createUserAdminRouter = (auth: AuthService) => {
     const username = body.username === undefined ? undefined : parseUsername(body.username);
     const password = body.password === undefined || body.password === '' ? undefined : parsePassword(body.password);
     const role = body.role === undefined ? undefined : parseRole(body.role);
+    const pages = parsePages(body.pages);
 
-    if (username === null || password === null || role === null) {
+    if (username === null || password === null || role === null || pages === INVALID_PAGES) {
       response.status(400).json({ error: 'Invalid user data' });
       return;
     }
@@ -91,6 +111,7 @@ export const createUserAdminRouter = (auth: AuthService) => {
       ...(username ? { username } : {}),
       ...(password ? { passwordHash: hashPassword(password), mustChangePassword: true } : {}),
       ...(role ? { role } : {}),
+      ...(pages !== undefined ? { pages } : {}),
     });
     response.json(user);
   });

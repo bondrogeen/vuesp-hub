@@ -9,7 +9,7 @@ const packagerIgnore = file => {
 
 module.exports = {
   packagerConfig: {
-    asar: { unpack: '**/{.vite/build/worker-script.cjs,node_modules/ffmpeg-static/**}' },
+    asar: { unpack: '**/{.vite/build/worker-script.cjs,.vite/build/module-runner.cjs,node_modules/ffmpeg-static/**}' },
     ignore: packagerIgnore,
   },
   rebuildConfig: {},

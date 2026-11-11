@@ -12,12 +12,15 @@ export type IconName =
   | 'IconStorage'
   | 'IconGpio'
   | 'IconUser'
-  | 'IconSettings';
+  | 'IconSettings'
+  | 'IconPuzzle';
 
 export interface MenuChildType {
   name: string;
   icon?: IconName;
   path?: string;
+  /** Hide the item unless this module is installed and running. */
+  moduleId?: string;
   children?: MenuChildType[];
 }
 
@@ -25,6 +28,8 @@ export interface MenuItemType {
   name: string;
   icon: IconName;
   path?: string;
+  /** Hide the item unless this module is installed and running. */
+  moduleId?: string;
   children?: MenuChildType[];
 }
 

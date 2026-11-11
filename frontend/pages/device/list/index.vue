@@ -72,12 +72,16 @@
       </ul>
     </CardMain>
 
-    <CardMain :title="t('devices.registered')" :loading="isLoading">
-      <template #header>
+    <section class="space-y-3">
+      <div class="flex justify-end">
         <span class="text-xs text-gray-500 dark:text-gray-400">{{ t('devices.total', { count: registeredDevices.length }) }}</span>
-      </template>
+      </div>
 
-      <div v-if="!registeredDevices.length" class="py-10 text-center">
+      <div v-if="isLoading" class="py-10 text-center text-sm text-gray-500 dark:text-gray-400">
+        {{ t('common.refreshing') }}
+      </div>
+
+      <div v-else-if="!registeredDevices.length" class="py-10 text-center">
         <p class="text-sm font-medium text-gray-900 dark:text-white">{{ t('devices.emptyTitle') }}</p>
         <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ t('devices.emptyHint') }}</p>
       </div>
@@ -94,7 +98,7 @@
             </template>
 
             <template #ip="{ item }">
-              <router-link :to="`/device/${item.ip}`" class="text-primary hover:underline" @click.stop="">{{ item.ip }}</router-link>
+              <router-link :to="`/device/${item.ip}/`" class="text-primary hover:underline" @click.stop="">{{ item.ip }}</router-link>
             </template>
 
             <template #action="{ item }">
@@ -122,14 +126,14 @@
               <p class="mt-1 truncate text-sm text-gray-500 dark:text-gray-400">{{ item.ip }} · {{ t('devices.shortId', { id: item.deviceId }) }}</p>
             </div>
 
-            <router-link :to="`/device/${item.ip}`" class="rounded-md px-2 py-1 text-sm font-medium text-primary hover:bg-blue-50 dark:hover:bg-blue-950/40">{{ t('common.open') }}</router-link>
+            <router-link :to="`/device/${item.ip}/`" class="rounded-md px-2 py-1 text-sm font-medium text-primary hover:bg-blue-50 dark:hover:bg-blue-950/40">{{ t('common.open') }}</router-link>
             <button type="button" :disabled="removingId === item.id" class="rounded-md px-2 py-1 text-sm font-medium text-red-600 hover:bg-red-50 disabled:opacity-40 dark:text-red-400 dark:hover:bg-red-950/40" @click="confirmRemove(item)">
               {{ removingId === item.id ? t('common.removing') : t('common.remove') }}
             </button>
           </li>
         </ul>
       </template>
-    </CardMain>
+    </section>
 
     <AppDialog v-if="selectedDevice" :title="t('devices.addDialogTitle')" size="sm" @close="selectedDevice = null">
       <DialogAddDevice :device="selectedDevice" @add="addDevice" />
@@ -285,7 +289,7 @@ const onMenu = (event: DeviceListMenu, device: DeviceRecord): void => {
     return;
   }
   if (event.type === DeviceListAction.VIEW) {
-    void router.push(`/device/${device.ip}`);
+    void router.push(`/device/${device.ip}/`);
   }
 };
 

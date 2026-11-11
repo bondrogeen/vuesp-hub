@@ -75,6 +75,7 @@ export const createDeviceMenu = (menus: DeviceMenu[], t: Translate, devices: Arr
       items: [
         { name: t('common.home'), icon: 'IconHome', path: '/' },
         { name: t('common.dashboard'), icon: 'IconDashboard', path: '/dashboard/' },
+        { name: t('common.dashboardPreview'), icon: 'IconDashboard', path: '/dashboard-preview/' },
       ],
     },
     {
@@ -99,30 +100,9 @@ export const createDeviceMenu = (menus: DeviceMenu[], t: Translate, devices: Arr
       title: t('common.menuGroups.services'),
       items: [
         {
-          name: t('common.video'),
-          icon: 'IconVideo',
-          path: '/video/',
-        },
-        {
           name: t('common.modbus'),
           icon: 'IconScript',
           path: '/modbus/',
-        },
-        {
-          name: t('common.yandex'),
-          icon: 'IconDevice',
-          children: [
-            {
-              name: t('common.alisa'),
-              icon: 'IconDevice',
-              path: '/alisa/',
-            },
-            {
-              name: t('common.smartHome'),
-              icon: 'IconHome',
-              path: '/smart-home/',
-            },
-          ],
         },
         {
           name: t('common.cloud'),

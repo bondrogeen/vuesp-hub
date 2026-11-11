@@ -66,13 +66,6 @@ declare module 'vue-router/auto-routes' {
       Record<never, never>,
       | never
     >,
-    '/alisa': RouteRecordInfo<
-      '/alisa',
-      '/alisa',
-      Record<never, never>,
-      Record<never, never>,
-      | never
-    >,
     '/auth/change-password': RouteRecordInfo<
       '/auth/change-password',
       '/auth/change-password',
@@ -122,6 +115,13 @@ declare module 'vue-router/auto-routes' {
       Record<never, never>,
       | never
     >,
+    '/dashboard-preview': RouteRecordInfo<
+      '/dashboard-preview',
+      '/dashboard-preview',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
     '/device/[...path]': RouteRecordInfo<
       '/device/[...path]',
       '/device/:path(.*)',
@@ -164,23 +164,23 @@ declare module 'vue-router/auto-routes' {
       Record<never, never>,
       | never
     >,
+    '/modules/': RouteRecordInfo<
+      '/modules/',
+      '/modules',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
+    '/modules/[...slug]': RouteRecordInfo<
+      '/modules/[...slug]',
+      '/modules/:slug(.*)',
+      { slug: ParamValue<true> },
+      { slug: ParamValue<false> },
+      | never
+    >,
     '/profile': RouteRecordInfo<
       '/profile',
       '/profile',
-      Record<never, never>,
-      Record<never, never>,
-      | never
-    >,
-    '/smart-home': RouteRecordInfo<
-      '/smart-home',
-      '/smart-home',
-      Record<never, never>,
-      Record<never, never>,
-      | never
-    >,
-    '/video': RouteRecordInfo<
-      '/video',
-      '/video',
       Record<never, never>,
       Record<never, never>,
       | never
@@ -233,14 +233,6 @@ declare module 'vue-router/auto-routes' {
     'frontend/pages/admin/users.vue': {
       routes:
         | '/admin/users'
-      views:
-        | never
-      pathParamNames:
-        | never
-    }
-    'frontend/pages/alisa.vue': {
-      routes:
-        | '/alisa'
       views:
         | never
       pathParamNames:
@@ -302,6 +294,14 @@ declare module 'vue-router/auto-routes' {
       pathParamNames:
         | never
     }
+    'frontend/pages/dashboard-preview.vue': {
+      routes:
+        | '/dashboard-preview'
+      views:
+        | never
+      pathParamNames:
+        | never
+    }
     'frontend/pages/device/[...path].vue': {
       routes:
         | '/device/[...path]'
@@ -350,25 +350,25 @@ declare module 'vue-router/auto-routes' {
       pathParamNames:
         | never
     }
+    'frontend/pages/modules/index.vue': {
+      routes:
+        | '/modules/'
+      views:
+        | never
+      pathParamNames:
+        | never
+    }
+    'frontend/pages/modules/[...slug].vue': {
+      routes:
+        | '/modules/[...slug]'
+      views:
+        | never
+      pathParamNames:
+        | 'slug'
+    }
     'frontend/pages/profile.vue': {
       routes:
         | '/profile'
-      views:
-        | never
-      pathParamNames:
-        | never
-    }
-    'frontend/pages/smart-home.vue': {
-      routes:
-        | '/smart-home'
-      views:
-        | never
-      pathParamNames:
-        | never
-    }
-    'frontend/pages/video.vue': {
-      routes:
-        | '/video'
       views:
         | never
       pathParamNames:

@@ -1,3 +1,4 @@
+import type { AccessPage } from '@server/modules/access/domain/access.ts';
 import type { User, UserRole } from './user.ts';
 
 export const USER_REPOSITORY = Symbol('USER_REPOSITORY');
@@ -6,6 +7,7 @@ export interface CreateUserData {
   username: string;
   passwordHash: string;
   role: UserRole;
+  pages?: AccessPage[] | null;
   mustChangePassword?: boolean;
 }
 
@@ -13,6 +15,7 @@ export interface UpdateUserData {
   username?: string;
   passwordHash?: string;
   role?: UserRole;
+  pages?: AccessPage[] | null;
   mustChangePassword?: boolean;
 }
 

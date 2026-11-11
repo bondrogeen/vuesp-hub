@@ -50,7 +50,7 @@ Authorization: Bearer <jwt>
 io('/ws/device', { auth: { token } })
 ```
 
-Middleware проверяет токен для `/ws/device`, `/ws/stream` и `/ws/serial`.
+Middleware проверяет токен для `/ws/device` и `/ws/serial`. Модульные сокеты (например, `/modules/video/cameras/ws/stream/`) проверяют короткоживущий module token через IPC.
 
 ## Web UI
 

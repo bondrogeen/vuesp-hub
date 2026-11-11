@@ -26,6 +26,8 @@
 import { onMounted, ref } from 'vue';
 import { useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
+
+import { withTrailingSlash } from '@/utils/path.ts';
 import { VButton, VTextField } from 'vuesp-components/components';
 
 import { login } from '@/utils/auth.ts';
@@ -57,7 +59,7 @@ const onSubmit = async (): Promise<void> => {
   try {
     const session = await login(username.value, password.value);
     const redirect = typeof route.query.redirect === 'string' ? route.query.redirect : '/';
-    window.location.assign(session.user.mustChangePassword ? '/auth/change-password' : redirect);
+    window.location.assign(session.user.mustChangePassword ? '/auth/change-password/' : withTrailingSlash(redirect));
   } catch (error) {
     errorMessage.value = error instanceof Error ? error.message : t('auth.loginFailed');
   } finally {

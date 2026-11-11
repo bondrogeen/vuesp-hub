@@ -3,8 +3,8 @@ import { homedir } from 'node:os';
 import path from 'node:path';
 import { parseArgs } from 'node:util';
 
-import { createCameraStore } from '@server/modules/cameras/application/cameraStore.ts';
 import { createHub } from '@server/app/host.ts';
+import { migrateLegacyAlisaData, migrateLegacyCameraData } from '@server/app/legacy.ts';
 import { createAuthService } from '@server/modules/auth/application/authService.ts';
 import { createJsonAccessRepository } from '@server/modules/access/infrastructure/jsonAccessRepository.ts';
 import { createDeviceRepository } from '@server/modules/devices/infrastructure/deviceRepository.ts';
@@ -63,12 +63,14 @@ export const main = async () => {
 
   const dataDirectory = path.resolve(values['data-dir'] ?? defaultDataDirectory());
   mkdirSync(dataDirectory, { recursive: true, mode: 0o700 });
+  migrateLegacyCameraData(dataDirectory);
 
   const secretKey = values['secret-key'] ?? process.env.VUESP_SECRET_KEY;
   const secretProvider = createAesSecretProvider({
     passphrase: secretKey,
     saltPath: path.join(dataDirectory, 'secret.salt'),
   });
+  migrateLegacyAlisaData(dataDirectory, secretProvider);
 
   let repositoryPromise: Promise<DeviceRepository> | undefined;
   const getDeviceModel = () => {
@@ -99,7 +101,6 @@ export const main = async () => {
     closeDeviceModel,
     storeModel: createJsonStoreModel(path.join(dataDirectory, 'store.json')),
     serialSettingsStore: createJsonSettingsStore(path.join(dataDirectory, 'settings.json')),
-    cameraStore: createCameraStore({ dataDirectory }),
     workerScriptPath,
     auth: createAuthService({ dataDirectory }),
     access: createJsonAccessRepository({ dataDirectory }),
@@ -110,6 +111,9 @@ export const main = async () => {
     telemetry: cloudUrl && cloudToken
       ? { url: cloudUrl, token: cloudToken, hubName: process.env.VUESP_CLOUD_HUB_NAME?.trim() || undefined, dataDirectory }
       : undefined,
+    moduleRunnerPath: path.join(__dirname, 'module-runner.cjs'),
+    modulesDirectory: path.join(dataDirectory, 'modules'),
+    modulesCatalogUrl: process.env.VUESP_MODULES_CATALOG?.trim() || 'https://modules.vuesp.ru/catalog.json',
   });
 
   await hub.start();

@@ -4,6 +4,7 @@ import path from 'node:path';
 
 import { signJwt, verifyJwt } from '@server/modules/auth/domain/jwt.ts';
 import { hashPassword, verifyPassword } from '@server/modules/users/domain/password.ts';
+import type { AccessPage } from '@server/modules/access/domain/access.ts';
 import type { UserRepository } from '@server/modules/users/domain/user.repository.ts';
 import type { UserRole } from '@server/modules/users/domain/user.ts';
 import { createJsonUserRepository } from '@server/modules/users/infrastructure/jsonUserRepository.ts';
@@ -12,6 +13,8 @@ export interface AuthUser {
   id: number;
   username: string;
   role: UserRole;
+  /** Explicit page access; `null` means "inherit the role defaults". */
+  pages: AccessPage[] | null;
   mustChangePassword: boolean;
 }
 
@@ -25,10 +28,14 @@ export interface AuthService {
   verify(token: string | undefined): AuthUser | null;
   changePassword(id: number, currentPassword: string, newPassword: string): AuthSession | null;
   isDefaultAdminPassword(): boolean;
+  /** Short-lived token scoped to a single module; never valid as a hub session. */
+  issueModuleToken(user: AuthUser, moduleId: string, ttlSeconds?: number): string;
+  verifyModuleToken(token: string | undefined, moduleId: string): AuthUser | null;
   users: UserRepository;
 }
 
 const DEFAULT_TTL_SECONDS = 7 * 24 * 60 * 60;
+const MODULE_TTL_SECONDS = 5 * 60;
 
 const loadSecret = (dataDirectory: string): Buffer => {
   if (process.env.VUESP_JWT_SECRET) return Buffer.from(process.env.VUESP_JWT_SECRET, 'utf8');
@@ -46,10 +53,17 @@ const loadSecret = (dataDirectory: string): Buffer => {
   return Buffer.from(secret, 'utf8');
 };
 
-const toAuthUser = (user: { id: number; username: string; role: UserRole; mustChangePassword: boolean }): AuthUser => ({
+const toAuthUser = (user: {
+  id: number;
+  username: string;
+  role: UserRole;
+  pages: AccessPage[] | null;
+  mustChangePassword: boolean;
+}): AuthUser => ({
   id: user.id,
   username: user.username,
   role: user.role,
+  pages: user.pages,
   mustChangePassword: user.mustChangePassword,
 });
 
@@ -69,7 +83,13 @@ export const createAuthService = ({
   const users = createJsonUserRepository({ dataDirectory });
   const secret = loadSecret(dataDirectory);
 
-  const sessionFor = (user: { id: number; username: string; role: UserRole; mustChangePassword: boolean }): AuthSession => ({
+  const sessionFor = (user: {
+    id: number;
+    username: string;
+    role: UserRole;
+    pages: AccessPage[] | null;
+    mustChangePassword: boolean;
+  }): AuthSession => ({
     token: signJwt(user.username, secret, ttlSeconds, {
       role: user.role,
       uid: user.id,
@@ -90,7 +110,7 @@ export const createAuthService = ({
 
     verify(token) {
       const payload = verifyJwt(token, secret);
-      if (!payload) return null;
+      if (!payload || payload.aud !== undefined) return null;
       // `uid` survives a username change; fall back to the subject for legacy tokens.
       const user = (typeof payload.uid === 'number' ? users.findById(payload.uid) : null) ?? users.findByUsername(payload.sub);
       return user ? toAuthUser(user) : null;
@@ -110,6 +130,24 @@ export const createAuthService = ({
       if (!admin?.mustChangePassword) return false;
       const withPassword = users.findWithPassword('admin');
       return Boolean(withPassword && verifyPassword('admin', withPassword.passwordHash));
+    },
+
+    issueModuleToken(user, moduleId, ttl = MODULE_TTL_SECONDS) {
+      return signJwt(user.username, secret, ttl, {
+        aud: 'module',
+        mid: moduleId,
+        role: user.role,
+        uid: user.id,
+        mustChange: user.mustChangePassword,
+      });
+    },
+
+    verifyModuleToken(token, moduleId) {
+      const payload = verifyJwt(token, secret);
+      if (!payload || payload.aud !== 'module' || payload.mid !== moduleId) return null;
+      const user = (typeof payload.uid === 'number' ? users.findById(payload.uid) : null) ?? users.findByUsername(payload.sub);
+      if (!user || user.mustChangePassword) return null;
+      return toAuthUser(user);
     },
   };
 };

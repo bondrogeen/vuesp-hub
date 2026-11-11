@@ -15,57 +15,71 @@
       {{ error }}
     </p>
 
-    <CardMain :title="t('admin.users')" :loading="isLoading">
-      <template #header>
+    <section class="space-y-3">
+      <div class="flex justify-end">
         <span class="text-xs text-gray-500 dark:text-gray-400">{{ t('admin.total', { count: users.length }) }}</span>
-      </template>
+      </div>
 
-      <div v-if="!isLoading && !users.length" class="py-10 text-center">
+      <div v-if="isLoading" class="py-10 text-center text-sm text-gray-500 dark:text-gray-400">
+        {{ t('common.refreshing') }}
+      </div>
+
+      <div v-else-if="!users.length" class="py-10 text-center">
         <p class="text-sm font-medium text-gray-900 dark:text-white">{{ t('admin.emptyTitle') }}</p>
         <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ t('admin.emptyHint') }}</p>
       </div>
 
-      <div v-else class="hidden md:block">
-        <VTable :headers="headers" :items="users">
-          <template #username="{ item }">
-            <div class="flex items-center gap-3">
-              <span class="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-primary to-[var(--accent-blue)] text-xs font-semibold uppercase text-white">
-                {{ item.username.slice(0, 2) }}
+      <div v-else>
+        <div class="hidden md:block">
+          <VTable :headers="headers" :items="users">
+            <template #username="{ item }">
+              <div class="flex items-center gap-3">
+                <span class="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-primary to-[var(--accent-blue)] text-xs font-semibold uppercase text-white">
+                  {{ item.username.slice(0, 2) }}
+                </span>
+                <span class="font-medium text-gray-900 dark:text-white">{{ item.username }}</span>
+              </div>
+            </template>
+
+            <template #role="{ item }">
+              <span class="inline-flex rounded-full px-2.5 py-1 text-xs font-medium" :class="roleClass(item.role)">
+                {{ t(`admin.roles.${item.role}`) }}
               </span>
-              <span class="font-medium text-gray-900 dark:text-white">{{ item.username }}</span>
-            </div>
-          </template>
+            </template>
 
-          <template #role="{ item }">
-            <span class="inline-flex rounded-full px-2.5 py-1 text-xs font-medium" :class="roleClass(item.role)">
-              {{ t(`admin.roles.${item.role}`) }}
+            <template #access="{ item }">
+              <span class="text-sm text-gray-600 dark:text-gray-300" :title="accessTitle(item)">
+                {{ accessLabel(item) }}
+              </span>
+            </template>
+
+            <template #action="{ item }">
+              <div class="flex justify-end gap-2">
+                <VButton size="sm" color="gray" @click="openEdit(item)">{{ t('admin.edit') }}</VButton>
+                <VButton size="sm" color="red" :disabled="item.id === currentUserId" @click="confirmDelete(item)">{{ t('common.remove') }}</VButton>
+              </div>
+            </template>
+          </VTable>
+        </div>
+
+        <ul class="divide-y divide-gray-200 md:hidden dark:divide-gray-800">
+          <li v-for="item in users" :key="item.id" class="flex items-center gap-3 py-4">
+            <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-primary to-[var(--accent-blue)] text-xs font-semibold uppercase text-white">
+              {{ item.username.slice(0, 2) }}
             </span>
-          </template>
-
-          <template #action="{ item }">
-            <div class="flex justify-end gap-2">
-              <VButton size="sm" color="gray" @click="openEdit(item)">{{ t('admin.edit') }}</VButton>
-              <VButton size="sm" color="red" :disabled="item.id === currentUserId" @click="confirmDelete(item)">{{ t('common.remove') }}</VButton>
+            <div class="min-w-0 flex-1">
+              <p class="truncate font-medium text-gray-900 dark:text-white">{{ item.username }}</p>
+              <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                {{ t(`admin.roles.${item.role}`) }} · {{ accessLabel(item) }}
+              </p>
             </div>
-          </template>
-        </VTable>
+            <button type="button" class="rounded-md px-2 py-1 text-sm font-medium text-primary hover:bg-blue-50 dark:hover:bg-blue-950/40" @click="openEdit(item)">
+              {{ t('admin.edit') }}
+            </button>
+          </li>
+        </ul>
       </div>
-
-      <ul class="divide-y divide-gray-200 md:hidden dark:divide-gray-800">
-        <li v-for="item in users" :key="item.id" class="flex items-center gap-3 py-4">
-          <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-primary to-[var(--accent-blue)] text-xs font-semibold uppercase text-white">
-            {{ item.username.slice(0, 2) }}
-          </span>
-          <div class="min-w-0 flex-1">
-            <p class="truncate font-medium text-gray-900 dark:text-white">{{ item.username }}</p>
-            <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">{{ t(`admin.roles.${item.role}`) }}</p>
-          </div>
-          <button type="button" class="rounded-md px-2 py-1 text-sm font-medium text-primary hover:bg-blue-50 dark:hover:bg-blue-950/40" @click="openEdit(item)">
-            {{ t('admin.edit') }}
-          </button>
-        </li>
-      </ul>
-    </CardMain>
+    </section>
 
     <VDialog v-if="dialog" :title="dialogTitle" size="md" @close="closeDialog">
       <div class="grid grid-cols-1 gap-3">
@@ -81,6 +95,32 @@
         </p>
 
         <VSelect :model-value="roleLabel" :items="roleOptions" :label="t('admin.role')" @change="onRole" />
+
+        <div v-if="form.role === 'admin'" class="rounded-md bg-gray-50 px-3 py-2 text-xs text-gray-500 dark:bg-white/5 dark:text-gray-400">
+          {{ t('admin.adminHasAllPages') }}
+        </div>
+
+        <div v-else class="space-y-3">
+          <div class="flex items-center gap-2">
+            <VCheckbox :model-value="inheritPages" @update:model-value="toggleInherit" />
+            <span class="text-sm font-medium text-gray-900 dark:text-white">{{ t('admin.inheritPages') }}</span>
+          </div>
+          <p class="text-xs text-gray-500 dark:text-gray-400">{{ t('admin.inheritPagesHint') }}</p>
+
+          <div v-if="!inheritPages" class="grid grid-cols-1 gap-2 sm:grid-cols-2">
+            <div
+              v-for="page in ACCESS_PAGES"
+              :key="page.key"
+              class="flex items-center gap-2 rounded-md border border-gray-200 px-3 py-2 dark:border-white/10"
+            >
+              <VCheckbox
+                :model-value="form.pages.includes(page.key)"
+                @update:model-value="togglePage(page.key)"
+              />
+              <span class="text-sm text-gray-700 dark:text-gray-200">{{ t(page.label) }}</span>
+            </div>
+          </div>
+        </div>
       </div>
 
       <p v-if="formError" class="mt-2 text-sm text-red-600 dark:text-red-400">{{ formError }}</p>
@@ -109,8 +149,8 @@ import { useI18n } from 'vue-i18n';
 
 import {
   BlockBreadcrumb as VBreadcrumb,
-  CardMain,
   VButton,
+  VCheckbox,
   VDialog,
   VSelect,
   VTable,
@@ -119,6 +159,7 @@ import {
 
 import { api } from '@/utils/helpers.ts';
 import { getUserId } from '@/utils/auth.ts';
+import { ACCESS_PAGES, DEFAULT_ROLE_PAGES, type AccessPage } from '@/utils/access.ts';
 import type { IListItem } from 'vuesp-components/types';
 import type { ManagedUser, UserRole } from '@/types';
 import { userRoles } from '@/types';
@@ -135,12 +176,14 @@ const dialog = ref(false);
 const editing = ref<ManagedUser | null>(null);
 const deleting = ref<ManagedUser | null>(null);
 const currentUserId = getUserId();
+const inheritPages = ref(true);
 
-const form = reactive({ username: '', password: '', role: 'user' as UserRole });
+const form = reactive({ username: '', password: '', role: 'user' as UserRole, pages: [] as AccessPage[] });
 
 const headers = [
   { name: t('admin.username'), key: 'username', className: 'min-w-50' },
   { name: t('admin.role'), key: 'role', className: 'w-40' },
+  { name: t('admin.access'), key: 'access', className: 'w-56' },
   { name: '', key: 'action', className: 'w-48' },
 ];
 
@@ -149,6 +192,23 @@ const roleOptions = computed<IListItem<UserRole>[]>(() =>
 );
 const roleLabel = computed(() => t(`admin.roles.${form.role}`));
 const dialogTitle = computed(() => (editing.value ? t('admin.editUser') : t('admin.addUser')));
+
+const effectivePages = (user: ManagedUser): AccessPage[] => {
+  if (user.role === 'admin') return ACCESS_PAGES.map(page => page.key);
+  return user.pages ?? DEFAULT_ROLE_PAGES[user.role];
+};
+
+const accessLabel = (user: ManagedUser): string => {
+  if (user.role === 'admin') return t('admin.allPages');
+  if (user.pages === null) return t('admin.pagesByRole');
+  return t('admin.pagesSelected', { count: user.pages.length, total: ACCESS_PAGES.length });
+};
+
+const accessTitle = (user: ManagedUser): string => {
+  const pages = effectivePages(user);
+  if (user.role === 'admin') return t('admin.allPages');
+  return pages.map(key => t(ACCESS_PAGES.find(page => page.key === key)?.label ?? key)).join(', ');
+};
 
 const roleClass = (role: UserRole) => {
   if (role === 'admin') return 'bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300';
@@ -173,6 +233,8 @@ const openCreate = () => {
   form.username = '';
   form.password = '';
   form.role = 'user';
+  form.pages = [...DEFAULT_ROLE_PAGES.user];
+  inheritPages.value = true;
   formError.value = '';
   dialog.value = true;
 };
@@ -182,6 +244,8 @@ const openEdit = (user: ManagedUser) => {
   form.username = user.username;
   form.password = '';
   form.role = user.role;
+  form.pages = user.pages ? [...user.pages] : [...DEFAULT_ROLE_PAGES[user.role]];
+  inheritPages.value = user.pages === null;
   formError.value = '';
   dialog.value = true;
 };
@@ -191,8 +255,19 @@ const closeDialog = () => {
   dialog.value = false;
 };
 
+const toggleInherit = (value: boolean) => {
+  inheritPages.value = value;
+  if (value) form.pages = [...DEFAULT_ROLE_PAGES[form.role]];
+};
+
+const togglePage = (page: AccessPage) => {
+  form.pages = form.pages.includes(page) ? form.pages.filter(item => item !== page) : [...form.pages, page];
+};
+
 const onRole = ({ value }: IListItem<unknown>) => {
-  if (value === 'admin' || value === 'user' || value === 'viewer') form.role = value;
+  if (value !== 'admin' && value !== 'user' && value !== 'viewer') return;
+  form.role = value;
+  if (inheritPages.value) form.pages = [...DEFAULT_ROLE_PAGES[value]];
 };
 
 const save = async () => {
@@ -205,16 +280,22 @@ const save = async () => {
     formError.value = t('admin.passwordRule');
     return;
   }
+  if (form.role !== 'admin' && !inheritPages.value && !form.pages.length) {
+    formError.value = t('admin.pagesRequired');
+    return;
+  }
+
+  const pages = form.role === 'admin' || inheritPages.value ? null : [...form.pages];
 
   isSaving.value = true;
   try {
     if (editing.value) {
-      const body: Record<string, unknown> = { username: form.username, role: form.role };
+      const body: Record<string, unknown> = { username: form.username, role: form.role, pages };
       if (form.password) body.password = form.password;
       await api.patch<ManagedUser>(`/users/${editing.value.id}`, { body: JSON.stringify(body) });
     } else {
       await api.post<ManagedUser>('/users', {
-        body: JSON.stringify({ username: form.username, password: form.password, role: form.role }),
+        body: JSON.stringify({ username: form.username, password: form.password, role: form.role, pages }),
       });
     }
     dialog.value = false;

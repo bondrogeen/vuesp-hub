@@ -4,22 +4,20 @@ import started from 'electron-squirrel-startup';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { createCameraStore } from '@server/modules/cameras/application/cameraStore.ts';
 import { createHub } from '@server/app/host.ts';
+import { migrateLegacyAlisaData, migrateLegacyCameraData } from '@server/app/legacy.ts';
 import { createAuthService } from '@server/modules/auth/application/authService.ts';
 import { createJsonAccessRepository } from '@server/modules/access/infrastructure/jsonAccessRepository.ts';
 import { closeDeviceModel, getDeviceModel, secretProvider } from './adapters/deviceModel.ts';
 import storeModel from './adapters/storeModel.ts';
 
 const appPath = app.getAppPath();
-const workerScriptPath = path.join(
-  app.isPackaged ? `${appPath}.unpacked` : appPath,
-  '.vite',
-  'build',
-  'worker-script.cjs',
-);
+const buildDirectory = path.join(app.isPackaged ? `${appPath}.unpacked` : appPath, '.vite', 'build');
+const workerScriptPath = path.join(buildDirectory, 'worker-script.cjs');
 
 const dataDirectory = app.getPath('userData');
+migrateLegacyCameraData(dataDirectory);
+migrateLegacyAlisaData(dataDirectory, secretProvider);
 const cloudUrl = process.env.VUESP_CLOUD_URL?.trim();
 const cloudToken = process.env.VUESP_CLOUD_TOKEN?.trim();
 
@@ -108,12 +106,14 @@ const start = (): void => {
     closeDeviceModel,
     storeModel,
     serialSettingsStore: new Store<Record<string, unknown>>(),
-    cameraStore: createCameraStore({ dataDirectory }),
     workerScriptPath,
     auth: createAuthService({ dataDirectory }),
     access: createJsonAccessRepository({ dataDirectory }),
     dataDirectory,
     secretProvider,
+    moduleRunnerPath: path.join(buildDirectory, 'module-runner.cjs'),
+    modulesDirectory: path.join(dataDirectory, 'modules'),
+    modulesCatalogUrl: process.env.VUESP_MODULES_CATALOG?.trim() || 'https://modules.vuesp.ru/catalog.json',
     telemetry: cloudUrl && cloudToken
       ? { url: cloudUrl, token: cloudToken, hubName: process.env.VUESP_CLOUD_HUB_NAME?.trim() || undefined, dataDirectory }
       : undefined,

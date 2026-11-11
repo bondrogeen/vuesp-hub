@@ -40,15 +40,15 @@ export const apiFetch = async <T>(path: string, init?: RequestInit): Promise<T> 
   const response = await fetch(`${basePath}${path}`, { ...init, headers: requestHeaders });
   if (response.status === 401 && path !== '/auth/login') {
     clearToken();
-    if (typeof window !== 'undefined' && window.location.pathname !== '/auth/login') {
-      window.location.assign('/auth/login');
+    if (typeof window !== 'undefined' && window.location.pathname !== '/auth/login/') {
+      window.location.assign('/auth/login/');
     }
   }
 
   if (response.status === 403) {
     const body = (await response.clone().json().catch(() => null)) as { code?: unknown } | null;
-    if (body?.code === 'PASSWORD_CHANGE_REQUIRED' && typeof window !== 'undefined' && window.location.pathname !== '/auth/change-password') {
-      window.location.assign('/auth/change-password');
+    if (body?.code === 'PASSWORD_CHANGE_REQUIRED' && typeof window !== 'undefined' && window.location.pathname !== '/auth/change-password/') {
+      window.location.assign('/auth/change-password/');
     }
   }
   if (!response.ok) {

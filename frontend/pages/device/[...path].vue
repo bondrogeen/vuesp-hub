@@ -2,7 +2,7 @@
   <main class="flex-auto max-w-(--breakpoint-2xl) p-4 md:p-6">
     <VBreadcrumb :items="breadcrumbs" class="mb-6" />
 
-    <div class="glass-panel relative flex h-[calc(100dvh-11rem)] min-h-[480px] flex-col overflow-hidden rounded-[10px]">
+    <div class="relative flex h-[calc(100dvh-11rem)] min-h-[480px] flex-col overflow-hidden">
       <div
         v-if="isLoading"
         class="absolute inset-0 z-10 flex items-center justify-center bg-white/65 backdrop-blur-sm dark:bg-[#060b28]/80"

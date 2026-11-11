@@ -2,52 +2,57 @@
 	<main class="flex-auto max-w-(--breakpoint-2xl) p-4 md:p-6">
 		<VBreadcrumb :items="[{ name: t('common.home'), path: '/' }, { name: t('cloud.title') }]" class="mb-6" />
 
-		<div class="mb-6">
-			<h1 class="text-2xl font-semibold text-gray-900 dark:text-white">{{ t('cloud.title') }}</h1>
-			<p class="mt-2 max-w-2xl text-sm text-gray-500 dark:text-gray-400">{{ t('cloud.subtitle') }}</p>
+		<div class="mb-6 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+			<div>
+				<h1 class="text-2xl font-semibold text-gray-900 dark:text-white">{{ t('cloud.title') }}</h1>
+				<p class="mt-2 max-w-2xl text-sm text-gray-500 dark:text-gray-400">{{ t('cloud.subtitle') }}</p>
+			</div>
+
+			<div v-if="status?.state === 'connected'" class="flex flex-col items-start gap-2 lg:items-end">
+				<span
+					class="glass-inset inline-flex items-center gap-2 rounded-full px-3 py-2 text-xs font-medium text-emerald-600 dark:text-emerald-400"
+					:title="heartbeatTitle"
+				>
+					<span class="size-2 rounded-full bg-emerald-500" />
+					{{ t('cloud.statusConnected') }}
+				</span>
+				<p v-if="status.name" class="text-xs font-medium text-gray-700 dark:text-gray-200">{{ status.name }}</p>
+			</div>
 		</div>
 
 		<p v-if="error" class="mb-4 rounded-md border border-red-400/40 bg-red-500/10 px-4 py-3 text-sm text-red-600 dark:text-red-300">{{ error }}</p>
 
-		<CardMain :title="t('cloud.title')" :loading="loading">
+		<div v-if="loading" class="text-sm text-gray-500 dark:text-gray-400">{{ t('common.refreshing') }}</div>
+
+		<section v-else class="space-y-5">
 			<div v-if="!status" class="text-sm text-gray-500 dark:text-gray-400">{{ t('cloud.loadError') }}</div>
 
 			<div v-else-if="status.state === 'connected'" class="space-y-5">
-				<div class="flex flex-wrap items-center gap-3">
-					<span class="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-2.5 py-1 text-[11px] font-medium text-emerald-600 dark:text-emerald-400">
-						<span class="size-1.5 rounded-full bg-emerald-500" />
-						{{ t('cloud.online') }}
-					</span>
-					<span class="text-sm font-medium text-gray-900 dark:text-white">{{ status.name || t('cloud.hub') }}</span>
-				</div>
-
-				<dl class="grid gap-3 text-sm sm:grid-cols-2">
-					<div class="rounded-md bg-white/50 px-3 py-2 dark:bg-white/[0.03]">
-						<dt class="text-[10px] uppercase tracking-wide text-gray-400">{{ t('cloud.hub') }}</dt>
-						<dd class="mt-1 truncate font-medium">{{ status.hubId || '—' }}</dd>
-					</div>
-					<div class="rounded-md bg-white/50 px-3 py-2 dark:bg-white/[0.03]">
-						<dt class="text-[10px] uppercase tracking-wide text-gray-400">{{ t('cloud.server') }}</dt>
-						<dd class="mt-1 truncate font-medium">{{ status.url || '—' }}</dd>
-					</div>
-					<div class="rounded-md bg-white/50 px-3 py-2 dark:bg-white/[0.03]">
-						<dt class="text-[10px] uppercase tracking-wide text-gray-400">{{ t('cloud.lastHeartbeat') }}</dt>
-						<dd class="mt-1 font-medium">{{ formatDate(status.lastHeartbeat) }}</dd>
-					</div>
-				</dl>
-
 				<div class="rounded-md border border-gray-200/70 bg-white/40 p-4 dark:border-white/10 dark:bg-white/[0.03]">
 					<div class="flex flex-wrap items-start justify-between gap-3">
-						<div class="min-w-0">
+						<div class="flex min-w-0 items-center gap-2">
 							<p class="text-sm font-medium text-gray-900 dark:text-white">{{ t('cloud.tilesTitle') }}</p>
-							<p class="mt-1 max-w-2xl text-xs leading-relaxed text-gray-500 dark:text-gray-400">{{ t('cloud.tilesHint') }}</p>
+							<IconInformationLine
+								class="size-4 shrink-0 text-gray-400"
+								:title="t('cloud.tilesHint')"
+								:aria-label="t('cloud.tilesHint')"
+							/>
 						</div>
 						<div class="flex items-center gap-2">
 							<span class="rounded-full bg-primary/10 px-2.5 py-1 text-[11px] font-medium text-primary">
 								{{ t('cloud.tilesSelected', { count: selectedCount, max: maxTiles }) }}
 							</span>
-							<VButton outline color="gray" size="sm" :loading="tilesLoading" @click="loadTiles">
-								{{ t('cloud.tilesRefresh') }}
+							<VButton
+								type="icon"
+								outline
+								color="gray"
+								size="sm"
+								:loading="tilesLoading"
+								:title="t('cloud.tilesRefresh')"
+								:aria-label="t('cloud.tilesRefresh')"
+								@click="loadTiles"
+							>
+								<IconRefreshLine class="size-4" />
 							</VButton>
 						</div>
 					</div>
@@ -87,12 +92,9 @@
 							</section>
 						</div>
 
-						<div class="mt-4 flex flex-wrap items-center justify-between gap-3">
-							<p class="text-[11px] text-gray-500 dark:text-gray-400">{{ t('cloud.tilesLimit', { max: maxTiles }) }}</p>
-							<div class="flex items-center gap-2">
-								<span v-if="tilesSaved" class="text-[11px] text-emerald-500">{{ t('cloud.tilesSaved') }}</span>
-								<VButton color="blue" size="sm" :loading="savingTiles" @click="saveTiles">{{ t('cloud.tilesSave') }}</VButton>
-							</div>
+						<div class="mt-4 flex flex-wrap items-center justify-end gap-3">
+							<span v-if="tilesSaved" class="text-[11px] text-emerald-500">{{ t('cloud.tilesSaved') }}</span>
+							<VButton color="blue" size="sm" :loading="savingTiles" @click="saveTiles">{{ t('cloud.tilesSave') }}</VButton>
 						</div>
 					</template>
 				</div>
@@ -135,14 +137,16 @@
 					{{ status.lastError ? t('cloud.retry') : t('cloud.connect') }}
 				</VButton>
 			</div>
-		</CardMain>
+		</section>
 	</main>
 </template>
 
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { BlockBreadcrumb as VBreadcrumb, CardMain, VButton } from 'vuesp-components/components';
+import { BlockBreadcrumb as VBreadcrumb, VButton } from 'vuesp-components/components';
+import IconInformationLine from '~icons/ri/information-line';
+import IconRefreshLine from '~icons/ri/refresh-line';
 
 import type { CloudTilesResult, PublicDashboardTile } from '../../shared/dashboardTiles.ts';
 import { api } from '@/utils/helpers.ts';
@@ -170,6 +174,7 @@ let timer: ReturnType<typeof setInterval> | undefined;
 let clock: ReturnType<typeof setInterval> | undefined;
 
 const formatDate = (value?: string): string => (value ? new Date(value).toLocaleString('ru-RU') : '—');
+const heartbeatTitle = computed(() => `${t('cloud.lastHeartbeat')}: ${formatDate(status.value?.lastHeartbeat)}`);
 
 const tiles = ref<CloudTilesResult | null>(null);
 const selected = ref<Set<string>>(new Set());

@@ -4,6 +4,10 @@ export interface JwtPayload {
   sub: string;
   role?: string;
   uid?: number;
+  /** Token audience. Module tokens use `module` and must not be accepted as hub sessions. */
+  aud?: string;
+  /** Module id for audience `module`. */
+  mid?: string;
   iat: number;
   exp: number;
 }

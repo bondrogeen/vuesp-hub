@@ -90,8 +90,8 @@ export const useWebSocketStore = defineStore('websocketstore', {
       socket.on('connect_error', (error: Error) => {
         if (/unauthorized|jwt|token/i.test(error.message)) {
           clearToken();
-          if (typeof window !== 'undefined' && window.location.pathname !== '/auth/login') {
-            window.location.assign('/auth/login');
+          if (typeof window !== 'undefined' && window.location.pathname !== '/auth/login/') {
+            window.location.assign('/auth/login/');
           }
         }
       });

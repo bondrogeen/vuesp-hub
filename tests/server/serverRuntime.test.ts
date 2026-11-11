@@ -22,15 +22,6 @@ test('creates the server runtime from injected platform adapters', () => {
       get: () => undefined,
       set: () => {},
     },
-    cameraStore: {
-      list: () => [],
-      get: () => undefined,
-      create: () => { throw new Error('not used'); },
-      update: () => { throw new Error('not used'); },
-      remove: () => false,
-      reorder: () => [],
-      close: () => {},
-    },
   });
 
   assert.equal(typeof runtime.createExpress, 'function');

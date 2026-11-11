@@ -1,4 +1,7 @@
+import { createHash, randomBytes } from 'node:crypto';
+import { chmodSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { hostname } from 'node:os';
+import path from 'node:path';
 
 import WebSocket from 'ws';
 
@@ -46,6 +49,49 @@ export interface CloudService {
   listTiles(): Promise<CloudTilesResult>;
   /** Replaces the allowlist of published tile keys. */
   setPublishedTiles(keys: string[]): Promise<CloudStatus>;
+  /** Verifies a Vuesp user token and returns a long-lived LAN token. */
+  mobileSession(accessToken: string): Promise<MobileSession>;
+  /** Verifies a LAN token issued by this hub. */
+  verifyMobileToken(token: string): MobileTokenRecord | null;
+  /** Hub data for a paired mobile client. */
+  mobileHub(): Promise<MobileHub>;
+  /** Applies a tile action without a cloud WebSocket round-trip. */
+  action(deviceId: string, tileId: string, tileKey: string, value: unknown): Promise<{ ok: boolean; error?: string; at?: number }>;
+}
+
+export interface MobileSession {
+  token: string;
+  hubId: string | null;
+  name: string | null;
+}
+
+export interface MobileHub {
+  id: string | null;
+  name: string | null;
+  status: 'active';
+  devices: number;
+  lastSeenAt: string | null;
+  lastSnapshotAt: string | null;
+  installedAt: string | null;
+  platform: string | null;
+  installationId: string | null;
+  devicesList: Array<{
+    hubId: string;
+    deviceId: string;
+    name: string;
+    ip: string;
+    state: Record<string, unknown>;
+    tiles: PublicDashboardTile[];
+    observedAt: string;
+    receivedAt: string;
+  }>;
+}
+
+export interface MobileTokenRecord {
+  tokenHash: string;
+  userId: string;
+  userName: string;
+  createdAt: string;
 }
 
 export interface CloudServiceOptions {
@@ -110,6 +156,31 @@ export const createCloudService = ({
   let state: CloudState = 'disconnected';
   let lastError = '';
   let lastHeartbeat = '';
+
+  const mobileFilePath = path.join(dataDirectory, 'mobile.json');
+  const readMobileTokens = (): MobileTokenRecord[] => {
+    try {
+      if (!existsSync(mobileFilePath)) return [];
+      const parsed = JSON.parse(readFileSync(mobileFilePath, 'utf8')) as { tokens?: unknown };
+      if (!Array.isArray(parsed.tokens)) return [];
+      return parsed.tokens.filter(
+        (token): token is MobileTokenRecord =>
+          isRecordValue(token) &&
+          typeof token.tokenHash === 'string' &&
+          typeof token.userId === 'string' &&
+          typeof token.userName === 'string' &&
+          typeof token.createdAt === 'string'
+      );
+    } catch {
+      return [];
+    }
+  };
+  const writeMobileTokens = (tokens: MobileTokenRecord[]): void => {
+    mkdirSync(dataDirectory, { recursive: true, mode: 0o700 });
+    writeFileSync(mobileFilePath, JSON.stringify({ tokens }, null, 2), { mode: 0o600 });
+    chmodSync(mobileFilePath, 0o600);
+  };
+  const hashMobileToken = (token: string): string => createHash('sha256').update(token).digest('hex');
 
   const status = (): CloudStatus => ({
     state,
@@ -231,13 +302,27 @@ export const createCloudService = ({
     return status();
   };
 
-  const sendActionResult = (target: WebSocket, requestId: string, ok: boolean, error?: string): void => {
+  const sendActionResult = (target: WebSocket, requestId: string, ok: boolean, error?: string, at?: number): void => {
     if (target.readyState !== WebSocket.OPEN) return;
-    target.send(JSON.stringify({ type: 'action_result', requestId, ok, at: Date.now(), ...(error ? { error } : {}) }));
+    target.send(
+      JSON.stringify({
+        type: 'action_result',
+        requestId,
+        ok,
+        at: at ?? Date.now(),
+        ...(error ? { error } : {}),
+      })
+    );
   };
 
-  const requestDeviceState = (): void => {
+  const requestDeviceState = (ip?: string): void => {
     try {
+      if (ip) {
+        runtime.send(ip, 'INFO');
+        runtime.send(ip, 'DEVICE');
+        runtime.send(ip, 'PORT', { gpio: 0, command: 3 });
+        return;
+      }
       runtime.sendAll('INFO');
       runtime.sendAll('DEVICE');
       runtime.sendAll('PORT', { gpio: 0, command: 3 });
@@ -246,30 +331,20 @@ export const createCloudService = ({
     }
   };
 
-  const handleAction = async (target: WebSocket, message: Record<string, unknown>): Promise<void> => {
-    const requestId = typeof message.requestId === 'string' ? message.requestId : '';
-    if (!requestId) return;
-
-    const deviceId = typeof message.deviceId === 'string' ? message.deviceId : '';
-    const tileId = typeof message.tileId === 'string' ? message.tileId : '';
-    const tileKey = typeof message.tileKey === 'string' ? message.tileKey : '';
-    const value = message.value;
-
-    if (!deviceId || (!tileId && !tileKey)) {
-      sendActionResult(target, requestId, false, 'Invalid action payload');
-      return;
-    }
+  const action = async (
+    deviceId: string,
+    tileId: string,
+    tileKey: string,
+    value: unknown
+  ): Promise<{ ok: boolean; error?: string; at?: number }> => {
+    if (!deviceId || (!tileId && !tileKey)) return { ok: false, error: 'Invalid action payload' };
     if (value !== null && !['string', 'number', 'boolean'].includes(typeof value)) {
-      sendActionResult(target, requestId, false, 'Unsupported action value');
-      return;
+      return { ok: false, error: 'Unsupported action value' };
     }
 
     try {
       const record = (await getDeviceModel()).getAll().find(device => device.uuid === deviceId);
-      if (!record) {
-        sendActionResult(target, requestId, false, 'Unknown device');
-        return;
-      }
+      if (!record) return { ok: false, error: 'Unknown device' };
 
       const entry = readDeviceList().get(record.ip);
       const items = Array.isArray(entry?.list) ? entry.list : [];
@@ -285,25 +360,110 @@ export const createCloudService = ({
       if (!isRecordValue(item) && tileId) {
         item = items.find(candidate => isRecordValue(candidate) && candidate.id === tileId);
       }
-      if (!isRecordValue(item)) {
-        sendActionResult(target, requestId, false, 'Unknown tile');
-        return;
-      }
+      if (!isRecordValue(item)) return { ok: false, error: 'Unknown tile' };
 
       const commands = buildTileCommands(item as unknown as DashboardItem, value, sender?.getState(record.ip) ?? {});
-      if (!commands.length) {
-        sendActionResult(target, requestId, false, 'This tile cannot be changed');
-        return;
-      }
+      if (!commands.length) return { ok: false, error: 'This tile cannot be changed' };
 
       let ok = true;
       for (const command of commands) {
         if (!runtime.send(record.ip, command.comm, command.data)) ok = false;
       }
-      sendActionResult(target, requestId, ok, ok ? undefined : 'Device is not connected');
+      if (ok) {
+        // Ask the device for its new state so the cloud snapshot follows
+        // immediately instead of waiting for the regular sensor debounce.
+        requestDeviceState(record.ip);
+        return { ok: true, at: Date.now() };
+      }
+      return { ok: false, error: 'Device is not connected' };
     } catch (error) {
-      sendActionResult(target, requestId, false, error instanceof Error ? error.message : 'Action failed');
+      return { ok: false, error: error instanceof Error ? error.message : 'Action failed' };
     }
+  };
+
+  const handleAction = async (target: WebSocket, message: Record<string, unknown>): Promise<void> => {
+    const requestId = typeof message.requestId === 'string' ? message.requestId : '';
+    if (!requestId) return;
+
+    const deviceId = typeof message.deviceId === 'string' ? message.deviceId : '';
+    const tileId = typeof message.tileId === 'string' ? message.tileId : '';
+    const tileKey = typeof message.tileKey === 'string' ? message.tileKey : '';
+    const result = await action(deviceId, tileId, tileKey, message.value);
+    sendActionResult(target, requestId, result.ok, result.error, result.at);
+  };
+
+  const mobileSession = async (accessToken: string): Promise<MobileSession> => {
+    if (!config) throw new Error('Cloud is not connected');
+    const token = accessToken.trim();
+    if (!token) throw new Error('Access token is required');
+
+    const response = await fetchImpl(joinUrl(config.url, '/auth/hub/access'), {
+      method: 'POST',
+      headers: {
+        authorization: `Bearer ${config.token}`,
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify({ accessToken: token }),
+    });
+    if (!response.ok) {
+      throw new Error(response.status === 401 || response.status === 403 ? 'Access denied' : `Cloud request failed (${response.status})`);
+    }
+
+    const data = (await response.json()) as { hubId?: unknown; user?: { id?: unknown; name?: unknown } };
+    const hubId = typeof data.hubId === 'string' ? data.hubId : config.hubId || null;
+    const mobileToken = randomBytes(32).toString('base64url');
+    const record: MobileTokenRecord = {
+      tokenHash: hashMobileToken(mobileToken),
+      userId: typeof data.user?.id === 'string' ? data.user.id : '',
+      userName: typeof data.user?.name === 'string' ? data.user.name : '',
+      createdAt: new Date().toISOString(),
+    };
+    writeMobileTokens([record, ...readMobileTokens()].slice(0, 20));
+
+    return { token: mobileToken, hubId, name: config.name ?? null };
+  };
+
+  const verifyMobileToken = (token: string): MobileTokenRecord | null => {
+    const value = token.trim();
+    if (!value) return null;
+    const hash = hashMobileToken(value);
+    return readMobileTokens().find(record => record.tokenHash === hash) ?? null;
+  };
+
+  const mobileHub = async (): Promise<MobileHub> => {
+    const tiles = await listTiles();
+    const selected = new Set(tiles.selected);
+    const hubId = config?.hubId || null;
+    const now = new Date().toISOString();
+    const devicesList = tiles.devices
+      .map(device => ({
+        ...device,
+        tiles: device.tiles.filter(tile => selected.has(tile.key)),
+      }))
+      .filter(device => device.tiles.length > 0)
+      .map(device => ({
+      hubId: hubId ?? '',
+      deviceId: device.deviceId,
+      name: device.name,
+      ip: device.ip,
+      state: {},
+      tiles: device.tiles,
+        observedAt: now,
+        receivedAt: now,
+      }));
+
+    return {
+      id: hubId,
+      name: config?.name ?? null,
+      status: 'active',
+      devices: devicesList.length,
+      lastSeenAt: now,
+      lastSnapshotAt: now,
+      installedAt: null,
+      platform: 'Vuesp Hub · LAN',
+      installationId: null,
+      devicesList,
+    };
   };
 
   const sendPayload = async (payload: TelemetryPayload): Promise<void> => {
@@ -539,5 +699,17 @@ export const createCloudService = ({
     closeSocket();
   };
 
-  return { status, start, stop, startPairing, disconnect, listTiles, setPublishedTiles };
+  return {
+    status,
+    start,
+    stop,
+    startPairing,
+    disconnect,
+    listTiles,
+    setPublishedTiles,
+    mobileSession,
+    verifyMobileToken,
+    mobileHub,
+    action,
+  };
 };

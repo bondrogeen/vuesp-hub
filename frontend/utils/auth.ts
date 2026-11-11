@@ -1,4 +1,5 @@
 import { translate } from '@/i18n/index.ts';
+import type { AccessPage } from './access.ts';
 
 export const AUTH_TOKEN_KEY = 'vuesp-auth-token';
 
@@ -9,6 +10,7 @@ export interface AuthUser {
   username: string;
   role: UserRole;
   mustChangePassword: boolean;
+  pages?: AccessPage[] | null;
 }
 
 export interface AuthSession {
@@ -112,5 +114,5 @@ export const login = async (username: string, password: string): Promise<AuthSes
 
 export const logout = (): void => {
   clearToken();
-  if (typeof window !== 'undefined') window.location.assign('/auth/login');
+  if (typeof window !== 'undefined') window.location.assign('/auth/login/');
 };

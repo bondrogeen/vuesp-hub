@@ -92,7 +92,7 @@ const features = [
 const quickLinks = [
   { label: 'landing.quick.devices', path: '/device/list/' },
   { label: 'landing.quick.dashboard', path: '/dashboard/' },
-  { label: 'landing.quick.video', path: '/video/' },
+  { label: 'landing.quick.video', path: '/modules/video/cameras/' },
   { label: 'landing.quick.profile', path: '/profile/' },
 ];
 

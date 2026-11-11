@@ -1,6 +1,7 @@
 import { chmodSync, existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 
+import { isAccessPage, type AccessPage } from '@server/modules/access/domain/access.ts';
 import { hashPassword } from '@server/modules/users/domain/password.ts';
 import type {
   CreateUserData,
@@ -34,6 +35,7 @@ const readUsers = (filePath: string): UserWithPassword[] | null => {
   }
   return (parsed as UsersFile).users.map(user => ({
     ...user,
+    pages: Array.isArray(user.pages) ? user.pages.filter(isAccessPage) : null,
     mustChangePassword: typeof user.mustChangePassword === 'boolean' ? user.mustChangePassword : true,
   }));
 };
@@ -73,6 +75,7 @@ export const createJsonUserRepository = ({
       username: normalizeUsername(legacy?.username ?? 'admin'),
       passwordHash: legacy?.passwordHash ?? hashPassword('admin'),
       role: 'admin',
+      pages: null,
       mustChangePassword: true,
       createdAt: new Date().toISOString(),
     };
@@ -101,6 +104,7 @@ export const createJsonUserRepository = ({
         username: normalizeUsername(data.username),
         passwordHash: data.passwordHash,
         role: data.role,
+        pages: data.pages ?? null,
         mustChangePassword: data.mustChangePassword ?? true,
         createdAt: new Date().toISOString(),
       };
