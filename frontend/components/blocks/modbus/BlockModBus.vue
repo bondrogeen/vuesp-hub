@@ -18,7 +18,7 @@
           <div
             v-for="(item, i) of dataPack"
             :key="i"
-            class="flex-[0_0_30px] flex justify-center items-center border-r border-t border-b border-gray-600 h-8 w-full uppercase"
+            class="flex-[0_0_30px] flex justify-center items-center border-r border-t border-b border-gray-dark-25 h-8 w-full uppercase"
             :class="{ 'border-l': !i }"
           >
             {{ intToHex(item) }}
@@ -38,7 +38,7 @@
         <div
           v-for="(item, i) of getSize"
           :key="item"
-          class="flex-[0_0_30px] flex justify-center items-center border-r border-t border-b border-gray-600 h-8 w-full uppercase"
+          class="flex-[0_0_30px] flex justify-center items-center border-r border-t border-b border-gray-dark-25 h-8 w-full uppercase"
           :class="{ 'border-l': !i }"
         >
           {{ intToHex(getDataByte(i)) }}

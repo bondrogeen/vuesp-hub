@@ -4,8 +4,8 @@
 
     <div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
       <div>
-        <h1 class="text-2xl font-semibold text-gray-900 dark:text-white">{{ t('admin.users') }}</h1>
-        <p class="mt-2 max-w-2xl text-sm text-gray-500 dark:text-gray-400">{{ t('admin.usersHint') }}</p>
+        <h1 class="text-2xl font-semibold text-gray-dark-40 dark:text-white">{{ t('admin.users') }}</h1>
+        <p class="mt-2 max-w-2xl text-sm text-gray-dark-25 dark:text-gray-main">{{ t('admin.usersHint') }}</p>
       </div>
 
       <VButton color="blue" @click="openCreate">{{ t('admin.addUser') }}</VButton>
@@ -17,16 +17,16 @@
 
     <section class="space-y-3">
       <div class="flex justify-end">
-        <span class="text-xs text-gray-500 dark:text-gray-400">{{ t('admin.total', { count: users.length }) }}</span>
+        <span class="text-xs text-gray-dark-25 dark:text-gray-main">{{ t('admin.total', { count: users.length }) }}</span>
       </div>
 
-      <div v-if="isLoading" class="py-10 text-center text-sm text-gray-500 dark:text-gray-400">
+      <div v-if="isLoading" class="py-10 text-center text-sm text-gray-dark-25 dark:text-gray-main">
         {{ t('common.refreshing') }}
       </div>
 
       <div v-else-if="!users.length" class="py-10 text-center">
-        <p class="text-sm font-medium text-gray-900 dark:text-white">{{ t('admin.emptyTitle') }}</p>
-        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ t('admin.emptyHint') }}</p>
+        <p class="text-sm font-medium text-gray-dark-40 dark:text-white">{{ t('admin.emptyTitle') }}</p>
+        <p class="mt-1 text-sm text-gray-dark-25 dark:text-gray-main">{{ t('admin.emptyHint') }}</p>
       </div>
 
       <div v-else>
@@ -34,10 +34,10 @@
           <VTable :headers="headers" :items="users">
             <template #username="{ item }">
               <div class="flex items-center gap-3">
-                <span class="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-primary to-[var(--accent-blue)] text-xs font-semibold uppercase text-white">
+                <span class="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-cyan-main to-[var(--color-blue-main)] text-xs font-semibold uppercase text-white">
                   {{ item.username.slice(0, 2) }}
                 </span>
-                <span class="font-medium text-gray-900 dark:text-white">{{ item.username }}</span>
+                <span class="font-medium text-gray-dark-40 dark:text-white">{{ item.username }}</span>
               </div>
             </template>
 
@@ -48,7 +48,7 @@
             </template>
 
             <template #access="{ item }">
-              <span class="text-sm text-gray-600 dark:text-gray-300" :title="accessTitle(item)">
+              <span class="text-sm text-gray-dark-25 dark:text-gray-light-10" :title="accessTitle(item)">
                 {{ accessLabel(item) }}
               </span>
             </template>
@@ -62,18 +62,18 @@
           </VTable>
         </div>
 
-        <ul class="divide-y divide-gray-200 md:hidden dark:divide-gray-800">
+        <ul class="divide-y divide-gray-light-10 md:hidden dark:divide-gray-dark-30">
           <li v-for="item in users" :key="item.id" class="flex items-center gap-3 py-4">
-            <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-primary to-[var(--accent-blue)] text-xs font-semibold uppercase text-white">
+            <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-cyan-main to-[var(--color-blue-main)] text-xs font-semibold uppercase text-white">
               {{ item.username.slice(0, 2) }}
             </span>
             <div class="min-w-0 flex-1">
-              <p class="truncate font-medium text-gray-900 dark:text-white">{{ item.username }}</p>
-              <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+              <p class="truncate font-medium text-gray-dark-40 dark:text-white">{{ item.username }}</p>
+              <p class="mt-1 text-xs text-gray-dark-25 dark:text-gray-main">
                 {{ t(`admin.roles.${item.role}`) }} · {{ accessLabel(item) }}
               </p>
             </div>
-            <button type="button" class="rounded-md px-2 py-1 text-sm font-medium text-primary hover:bg-blue-50 dark:hover:bg-blue-950/40" @click="openEdit(item)">
+            <button type="button" class="rounded-md px-2 py-1 text-sm font-medium text-cyan-main hover:bg-blue-50 dark:hover:bg-blue-950/40" @click="openEdit(item)">
               {{ t('admin.edit') }}
             </button>
           </li>
@@ -90,34 +90,34 @@
           type="password"
           autocomplete="new-password"
         />
-        <p class="-mt-1 text-xs text-gray-500 dark:text-gray-400">
+        <p class="-mt-1 text-xs text-gray-dark-25 dark:text-gray-main">
           {{ editing ? t('admin.passwordHint') : t('admin.passwordRule') }}
         </p>
 
         <VSelect :model-value="roleLabel" :items="roleOptions" :label="t('admin.role')" @change="onRole" />
 
-        <div v-if="form.role === 'admin'" class="rounded-md bg-gray-50 px-3 py-2 text-xs text-gray-500 dark:bg-white/5 dark:text-gray-400">
+        <div v-if="form.role === 'admin'" class="rounded-md bg-gray-light-30 px-3 py-2 text-xs text-gray-dark-25 dark:bg-white/5 dark:text-gray-main">
           {{ t('admin.adminHasAllPages') }}
         </div>
 
         <div v-else class="space-y-3">
           <div class="flex items-center gap-2">
             <VCheckbox :model-value="inheritPages" @update:model-value="toggleInherit" />
-            <span class="text-sm font-medium text-gray-900 dark:text-white">{{ t('admin.inheritPages') }}</span>
+            <span class="text-sm font-medium text-gray-dark-40 dark:text-white">{{ t('admin.inheritPages') }}</span>
           </div>
-          <p class="text-xs text-gray-500 dark:text-gray-400">{{ t('admin.inheritPagesHint') }}</p>
+          <p class="text-xs text-gray-dark-25 dark:text-gray-main">{{ t('admin.inheritPagesHint') }}</p>
 
           <div v-if="!inheritPages" class="grid grid-cols-1 gap-2 sm:grid-cols-2">
             <div
               v-for="page in ACCESS_PAGES"
               :key="page.key"
-              class="flex items-center gap-2 rounded-md border border-gray-200 px-3 py-2 dark:border-white/10"
+              class="flex items-center gap-2 rounded-md border border-gray-light-10 px-3 py-2 dark:border-white/10"
             >
               <VCheckbox
                 :model-value="form.pages.includes(page.key)"
                 @update:model-value="togglePage(page.key)"
               />
-              <span class="text-sm text-gray-700 dark:text-gray-200">{{ t(page.label) }}</span>
+              <span class="text-sm text-gray-dark-30 dark:text-gray-light-10">{{ t(page.label) }}</span>
             </div>
           </div>
         </div>
@@ -134,7 +134,7 @@
     </VDialog>
 
     <VDialog v-if="deleting" :title="t('admin.deleteTitle')" size="sm" @close="deleting = null">
-      <p class="text-sm text-gray-600 dark:text-gray-300">{{ t('admin.deleteMessage', { username: deleting.username }) }}</p>
+      <p class="text-sm text-gray-dark-25 dark:text-gray-light-10">{{ t('admin.deleteMessage', { username: deleting.username }) }}</p>
       <div class="mt-5 flex justify-end gap-3">
         <VButton outline color="gray" @click="deleting = null">{{ t('admin.cancel') }}</VButton>
         <VButton color="red" :loading="isDeleting" :disabled="isDeleting" @click="removeUser">{{ t('common.remove') }}</VButton>
@@ -213,7 +213,7 @@ const accessTitle = (user: ManagedUser): string => {
 const roleClass = (role: UserRole) => {
   if (role === 'admin') return 'bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300';
   if (role === 'user') return 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300';
-  return 'bg-gray-100 text-gray-600 dark:bg-white/5 dark:text-gray-300';
+  return 'bg-gray-light-30 text-gray-dark-25 dark:bg-white/5 dark:text-gray-light-10';
 };
 
 const load = async () => {

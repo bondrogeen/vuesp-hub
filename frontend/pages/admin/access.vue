@@ -3,8 +3,8 @@
     <VBreadcrumb :items="[{ name: t('common.home'), path: '/' }, { name: t('admin.access') }]" class="mb-6" />
 
     <div class="mb-6">
-      <h1 class="text-2xl font-semibold text-gray-900 dark:text-white">{{ t('access.title') }}</h1>
-      <p class="mt-2 max-w-2xl text-sm text-gray-500 dark:text-gray-400">{{ t('access.hint') }}</p>
+      <h1 class="text-2xl font-semibold text-gray-dark-40 dark:text-white">{{ t('access.title') }}</h1>
+      <p class="mt-2 max-w-2xl text-sm text-gray-dark-25 dark:text-gray-main">{{ t('access.hint') }}</p>
     </div>
 
     <p v-if="error" role="alert" class="mb-5 rounded-md border border-red-400/50 bg-red-50/80 px-4 py-3 text-sm text-red-700 dark:border-red-500/40 dark:bg-red-950/30 dark:text-red-200">
@@ -18,7 +18,7 @@
       <div class="overflow-x-auto">
         <table class="w-full min-w-[560px] text-left text-sm">
           <thead>
-            <tr class="border-b border-gray-200/70 text-xs uppercase tracking-wide text-gray-500 dark:border-white/10 dark:text-gray-400">
+            <tr class="border-b border-gray-light-10/70 text-xs uppercase tracking-wide text-gray-dark-25 dark:border-white/10 dark:text-gray-main">
               <th class="py-3 pr-4 font-medium">{{ t('access.page') }}</th>
               <th class="w-32 py-3 text-center font-medium">{{ t('access.roles.admin') }}</th>
               <th class="w-32 py-3 text-center font-medium">{{ t('access.roles.user') }}</th>
@@ -26,9 +26,9 @@
             </tr>
           </thead>
           <tbody>
-            <tr v-for="page in pages" :key="page.key" class="border-b border-gray-100 last:border-0 dark:border-white/5">
-              <td class="py-3 pr-4 font-medium text-gray-900 dark:text-white">{{ t(page.label) }}</td>
-              <td class="py-3 text-center text-xs text-gray-400">{{ t('access.always') }}</td>
+            <tr v-for="page in pages" :key="page.key" class="border-b border-gray-light-30 last:border-0 dark:border-white/5">
+              <td class="py-3 pr-4 font-medium text-gray-dark-40 dark:text-white">{{ t(page.label) }}</td>
+              <td class="py-3 text-center text-xs text-gray-main">{{ t('access.always') }}</td>
               <td class="py-3 text-center">
                 <VCheckbox
                   :model-value="selected.user.includes(page.key)"

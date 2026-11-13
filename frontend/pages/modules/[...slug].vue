@@ -11,16 +11,16 @@
 
     <div v-if="showHeader" class="mb-6 flex flex-wrap items-end justify-between gap-4">
       <div class="min-w-0">
-        <h1 class="text-2xl font-semibold text-gray-900 dark:text-white">
+        <h1 class="text-2xl font-semibold text-gray-dark-40 dark:text-white">
           {{ module?.name ?? label }}
         </h1>
-        <p v-if="module" class="mt-2 text-sm text-gray-500 dark:text-gray-400">
+        <p v-if="module" class="mt-2 text-sm text-gray-dark-25 dark:text-gray-main">
           {{ module.id }} · v{{ module.version }}
           <span
             class="ml-2 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide"
             :class="module.running
               ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400'
-              : 'bg-gray-500/15 text-gray-500 dark:text-gray-400'"
+              : 'bg-gray-dark-25/15 text-gray-dark-25 dark:text-gray-main'"
           >
             {{ module.running ? t('modules.running') : t('modules.stopped') }}
           </span>
@@ -55,7 +55,7 @@
       {{ error }}
     </div>
 
-    <div v-if="loading" class="text-sm text-gray-500 dark:text-gray-400">
+    <div v-if="loading" class="text-sm text-gray-dark-25 dark:text-gray-main">
       {{ t('common.refreshing') }}
     </div>
 
@@ -67,7 +67,7 @@
       />
       <p
         v-else
-        class="rounded-md border border-dashed border-gray-300/70 px-4 py-10 text-center text-sm text-gray-500 dark:border-white/15 dark:text-gray-400"
+        class="rounded-md border border-dashed border-gray-light-10/70 px-4 py-10 text-center text-sm text-gray-dark-25 dark:border-white/15 dark:text-gray-main"
       >
         {{ t('modules.noUi') }}
       </p>
@@ -75,7 +75,7 @@
 
     <p
       v-else-if="!loading"
-      class="rounded-md border border-dashed border-gray-300/70 px-4 py-10 text-center text-sm text-gray-500 dark:border-white/15 dark:text-gray-400"
+      class="rounded-md border border-dashed border-gray-light-10/70 px-4 py-10 text-center text-sm text-gray-dark-25 dark:border-white/15 dark:text-gray-main"
     >
       {{ t('modules.notFound') }}
     </p>

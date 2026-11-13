@@ -83,7 +83,11 @@ const viewIcons: Record<string, string> = {
 
 export const tileViewIcon = (icon?: string): string => (icon && viewIcons[icon]) || 'box';
 
-const evaluate: DashboardEvaluator = (body, v, a, b, c) => new Function('v', 'a', 'b', 'c', body)(v, a, b, c);
+const evaluate: DashboardEvaluator = (body, scope) => {
+  const fn = new Function(...Object.keys(scope), body);
+
+  return fn(...Object.values(scope));
+};
 
 /** Maps the first path segment of dashboard `args` to the device message key. */
 const messageKeys: Record<string, string> = {

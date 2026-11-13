@@ -254,6 +254,9 @@ export default {
     empty: 'No devices are connected to the hub.',
     devices: 'Devices',
     noTiles: 'This device does not expose dashboard tiles.',
+    newValue: 'New value',
+    getResult: 'Result of Get',
+    argument: 'Argument',
   },
   landing: {
     badge: 'Local-first',

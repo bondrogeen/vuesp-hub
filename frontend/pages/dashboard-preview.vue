@@ -7,23 +7,23 @@
 
     <div class="mb-6 flex flex-wrap items-end justify-between gap-3">
       <div class="min-w-0">
-        <h1 class="text-2xl font-semibold text-gray-900 dark:text-white">
+        <h1 class="text-2xl font-semibold text-gray-dark-40 dark:text-white">
           {{ t('dashboardPreview.title') }}
         </h1>
-        <p class="mt-2 max-w-2xl text-sm text-gray-500 dark:text-gray-400">
+        <p class="mt-2 max-w-2xl text-sm text-gray-dark-25 dark:text-gray-main">
           {{ t('dashboardPreview.subtitle') }}
         </p>
       </div>
 
       <div class="flex flex-wrap items-center gap-2">
-        <span class="glass-inset inline-flex items-center gap-2 rounded-full px-3 py-2 text-xs text-gray-500 dark:text-gray-400">
+        <span class="glass-inset inline-flex items-center gap-2 rounded-full px-3 py-2 text-xs text-gray-dark-25 dark:text-gray-main">
           <span class="size-1.5 rounded-full bg-emerald-500" />
           {{ t('dashboardPreview.demo') }}
         </span>
-        <span class="glass-inset inline-flex items-center gap-2 rounded-full px-3 py-2 text-xs text-gray-500 dark:text-gray-400">
+        <span class="glass-inset inline-flex items-center gap-2 rounded-full px-3 py-2 text-xs text-gray-dark-25 dark:text-gray-main">
           {{ t('dashboardPreview.tilesCount', { count: tilesCount }) }}
         </span>
-        <span class="text-[11px] text-gray-400 dark:text-gray-500">
+        <span class="text-[11px] text-gray-main dark:text-gray-dark-25">
           {{ saving ? t('dashboardPreview.saving') : t('dashboardPreview.saved') }}
         </span>
 
@@ -64,7 +64,7 @@
       </div>
     </div>
 
-    <p class="mb-3 text-xs text-gray-400 dark:text-gray-500">
+    <p class="mb-3 text-xs text-gray-main dark:text-gray-dark-25">
       {{ t('dashboardPreview.dragHint') }}
     </p>
 
@@ -85,7 +85,7 @@
           v-for="widget of widgetList"
           :key="widget.type"
           type="button"
-          class="flex items-start gap-3 rounded-md border border-gray-200/70 bg-white/40 p-4 text-left transition hover:border-primary/40 hover:bg-primary/5 dark:border-white/10 dark:bg-white/[0.03]"
+          class="flex items-start gap-3 rounded-md border border-gray-light-10/70 bg-white/40 p-4 text-left transition hover:border-cyan-main/40 hover:bg-cyan-main/5 dark:border-white/10 dark:bg-white/[0.03]"
           @click="addWidget(widget.type)"
         >
           <span
@@ -98,15 +98,15 @@
             />
           </span>
           <span class="min-w-0">
-            <span class="block text-sm font-semibold text-gray-900 dark:text-white">{{ t(widget.label) }}</span>
-            <span class="mt-1 block text-xs leading-relaxed text-gray-500 dark:text-gray-400">{{ t(widget.text) }}</span>
+            <span class="block text-sm font-semibold text-gray-dark-40 dark:text-white">{{ t(widget.label) }}</span>
+            <span class="mt-1 block text-xs leading-relaxed text-gray-dark-25 dark:text-gray-main">{{ t(widget.text) }}</span>
           </span>
         </button>
       </div>
     </VDialog>
 
     <VDialog v-if="resetOpen" :title="t('dashboardPreview.reset')" size="sm" @close="resetOpen = false">
-      <p class="text-sm leading-relaxed text-gray-600 dark:text-gray-300">
+      <p class="text-sm leading-relaxed text-gray-dark-25 dark:text-gray-light-10">
         {{ t('dashboardPreview.resetConfirm') }}
       </p>
       <div class="mt-4 flex flex-wrap justify-end gap-2">
@@ -838,7 +838,7 @@ onBeforeUnmount(() => {
   border-radius: 10px;
   background:
     radial-gradient(circle at 25% 20%, rgb(40 183 240 / 0.22), transparent 45%),
-    linear-gradient(145deg, #0b1220, #111c34 55%, #0a1628);
+    linear-gradient(145deg, var(--color-night-main), var(--color-night-light-10) 55%, var(--color-night-main));
 }
 
 .pv-cam-grid {
@@ -949,7 +949,7 @@ onBeforeUnmount(() => {
   width: 18px;
   height: 18px;
   border-radius: 9999px;
-  background: #fff;
+  background: var(--color-gray-light-30);
   transition: transform 160ms ease;
 }
 

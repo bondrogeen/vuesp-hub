@@ -7,10 +7,10 @@
 
     <div class="mb-6 flex flex-wrap items-end justify-between gap-4">
       <div class="min-w-0">
-        <h1 class="text-2xl font-semibold text-gray-900 dark:text-white">
+        <h1 class="text-2xl font-semibold text-gray-dark-40 dark:text-white">
           {{ t('modules.title') }}
         </h1>
-        <p class="mt-2 max-w-2xl text-sm text-gray-500 dark:text-gray-400">
+        <p class="mt-2 max-w-2xl text-sm text-gray-dark-25 dark:text-gray-main">
           {{ t('modules.subtitle') }}
         </p>
       </div>
@@ -55,11 +55,11 @@
       </VButton>
     </div>
 
-    <p v-if="loading && !modules.length" class="text-sm text-gray-500 dark:text-gray-400">
+    <p v-if="loading && !modules.length" class="text-sm text-gray-dark-25 dark:text-gray-main">
       {{ t('common.refreshing') }}
     </p>
 
-    <p v-else-if="!modules.length" class="rounded-md border border-dashed border-gray-300/70 px-4 py-10 text-center text-sm text-gray-500 dark:border-white/15 dark:text-gray-400">
+    <p v-else-if="!modules.length" class="rounded-md border border-dashed border-gray-light-10/70 px-4 py-10 text-center text-sm text-gray-dark-25 dark:border-white/15 dark:text-gray-main">
       {{ t('modules.empty') }}
     </p>
 
@@ -69,7 +69,7 @@
         :key="section.key"
         class="space-y-3"
       >
-        <h2 class="text-sm font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+        <h2 class="text-sm font-semibold uppercase tracking-wide text-gray-dark-25 dark:text-gray-main">
           {{ section.title }}
         </h2>
 
@@ -77,14 +77,14 @@
           <article
             v-for="item of section.items"
             :key="item.id"
-            class="flex flex-col gap-4 rounded-lg border border-gray-200/70 bg-white/60 p-4 dark:border-white/10 dark:bg-white/5"
+            class="flex flex-col gap-4 rounded-lg border border-gray-light-10/70 bg-white/60 p-4 dark:border-white/10 dark:bg-white/5"
           >
             <div class="flex items-start justify-between gap-3">
               <div class="min-w-0">
-                <h2 class="truncate text-base font-semibold text-gray-900 dark:text-white">
+                <h2 class="truncate text-base font-semibold text-gray-dark-40 dark:text-white">
                   {{ item.name }}
                 </h2>
-                <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                <p class="mt-1 text-xs text-gray-dark-25 dark:text-gray-main">
                   {{ item.id }} · v{{ item.version }}
                 </p>
               </div>
@@ -92,18 +92,18 @@
                 class="shrink-0 rounded-full px-2 py-1 text-[10px] font-semibold uppercase tracking-wide"
                 :class="item.running
                   ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400'
-                  : 'bg-gray-500/15 text-gray-500 dark:text-gray-400'"
+                  : 'bg-gray-dark-25/15 text-gray-dark-25 dark:text-gray-main'"
               >
                 {{ item.running ? t('modules.running') : t('modules.stopped') }}
               </span>
             </div>
 
-            <p v-if="item.description" class="text-xs leading-relaxed text-gray-600 dark:text-gray-300">
+            <p v-if="item.description" class="text-xs leading-relaxed text-gray-dark-25 dark:text-gray-light-10">
               {{ item.description }}
             </p>
 
-            <div class="text-xs text-gray-500 dark:text-gray-400">
-              <span class="font-medium text-gray-600 dark:text-gray-300">{{ t('modules.permissions') }}:</span>
+            <div class="text-xs text-gray-dark-25 dark:text-gray-main">
+              <span class="font-medium text-gray-dark-25 dark:text-gray-light-10">{{ t('modules.permissions') }}:</span>
               {{ item.permissions.length ? item.permissions.join(', ') : t('modules.noPermissions') }}
             </div>
 
@@ -165,25 +165,25 @@
           @change="onFileChange"
         />
 
-        <div class="rounded-md border border-dashed border-gray-300/70 p-4 dark:border-white/15">
-          <p class="text-sm font-medium text-gray-900 dark:text-white">
+        <div class="rounded-md border border-dashed border-gray-light-10/70 p-4 dark:border-white/15">
+          <p class="text-sm font-medium text-gray-dark-40 dark:text-white">
             {{ t('modules.uploadTitle') }}
           </p>
-          <p class="mt-1 text-xs leading-relaxed text-gray-500 dark:text-gray-400">
+          <p class="mt-1 text-xs leading-relaxed text-gray-dark-25 dark:text-gray-main">
             {{ t('modules.uploadHint') }}
           </p>
           <div class="mt-3 flex flex-wrap items-center gap-3">
             <VButton color="blue" size="sm" @click="fileInput?.click()">
               {{ t('modules.chooseFile') }}
             </VButton>
-            <span class="min-w-0 truncate text-xs text-gray-500 dark:text-gray-400">
+            <span class="min-w-0 truncate text-xs text-gray-dark-25 dark:text-gray-main">
               {{ selectedFile?.name ?? t('modules.noFile') }}
             </span>
           </div>
         </div>
 
-        <details class="rounded-md border border-gray-200/70 p-4 dark:border-white/10">
-          <summary class="cursor-pointer text-xs font-medium text-gray-600 dark:text-gray-300">
+        <details class="rounded-md border border-gray-light-10/70 p-4 dark:border-white/10">
+          <summary class="cursor-pointer text-xs font-medium text-gray-dark-25 dark:text-gray-light-10">
             {{ t('modules.installByPath') }}
           </summary>
           <VTextField
@@ -218,17 +218,17 @@
       @close="catalogOpen = false"
     >
       <div class="space-y-4">
-        <p class="text-xs leading-relaxed text-gray-500 dark:text-gray-400">
+        <p class="text-xs leading-relaxed text-gray-dark-25 dark:text-gray-main">
           {{ t('modules.catalogHint') }}
         </p>
 
-        <p v-if="catalogLoading" class="text-sm text-gray-500 dark:text-gray-400">
+        <p v-if="catalogLoading" class="text-sm text-gray-dark-25 dark:text-gray-main">
           {{ t('common.refreshing') }}
         </p>
         <p v-else-if="catalogError" class="rounded-md border border-red-400/40 bg-red-500/10 px-3 py-2 text-xs text-red-600 dark:text-red-300">
           {{ catalogError }}
         </p>
-        <p v-else-if="!catalog.length" class="text-sm text-gray-500 dark:text-gray-400">
+        <p v-else-if="!catalog.length" class="text-sm text-gray-dark-25 dark:text-gray-main">
           {{ t('modules.catalogEmpty') }}
         </p>
 
@@ -236,18 +236,18 @@
           <article
             v-for="item of catalog"
             :key="item.id"
-            class="flex flex-wrap items-center justify-between gap-3 rounded-md border border-gray-200/70 p-3 dark:border-white/10"
+            class="flex flex-wrap items-center justify-between gap-3 rounded-md border border-gray-light-10/70 p-3 dark:border-white/10"
           >
             <div class="min-w-0">
-              <h3 class="text-sm font-semibold text-gray-900 dark:text-white">
+              <h3 class="text-sm font-semibold text-gray-dark-40 dark:text-white">
                 {{ item.name }}
               </h3>
-              <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+              <p class="mt-1 text-xs text-gray-dark-25 dark:text-gray-main">
                 {{ item.id }} · v{{ item.version }}
                 <span v-if="item.group"> · {{ item.group.name }}</span>
                 <span v-if="item.size"> · {{ formatSize(item.size) }}</span>
               </p>
-              <p v-if="item.description" class="mt-1 text-xs text-gray-600 dark:text-gray-300">
+              <p v-if="item.description" class="mt-1 text-xs text-gray-dark-25 dark:text-gray-light-10">
                 {{ item.description }}
               </p>
             </div>
@@ -279,7 +279,7 @@
       size="sm"
       @close="removeTarget = null"
     >
-      <p class="text-sm leading-relaxed text-gray-600 dark:text-gray-300">
+      <p class="text-sm leading-relaxed text-gray-dark-25 dark:text-gray-light-10">
         {{ t('modules.removeConfirm', { name: removeTarget.name }) }}
       </p>
       <div class="mt-4 flex flex-wrap justify-end gap-2">
@@ -303,7 +303,7 @@
       size="lg"
       @close="logsOpen = false"
     >
-      <div v-if="!logs.length" class="text-sm text-gray-500 dark:text-gray-400">
+      <div v-if="!logs.length" class="text-sm text-gray-dark-25 dark:text-gray-main">
         {{ t('modules.logsEmpty') }}
       </div>
       <ul v-else class="space-y-1 font-mono text-xs">
@@ -311,9 +311,9 @@
           v-for="(entry, index) of logs"
           :key="`${entry.at}:${index}`"
           class="flex gap-2"
-          :class="entry.level === 'error' ? 'text-red-600 dark:text-red-400' : entry.level === 'warn' ? 'text-amber-600 dark:text-amber-400' : 'text-gray-600 dark:text-gray-300'"
+          :class="entry.level === 'error' ? 'text-red-600 dark:text-red-400' : entry.level === 'warn' ? 'text-amber-600 dark:text-amber-400' : 'text-gray-dark-25 dark:text-gray-light-10'"
         >
-          <span class="shrink-0 text-gray-400">{{ entry.at.slice(11, 19) }}</span>
+          <span class="shrink-0 text-gray-main">{{ entry.at.slice(11, 19) }}</span>
           <span class="min-w-0 break-words">{{ entry.message }}</span>
         </li>
       </ul>

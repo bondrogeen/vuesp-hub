@@ -20,9 +20,9 @@ const button = (id: string): DashboardItem => ({
   name: id,
   type: 'button',
   args: ['device.output', 'device'],
-  get: '(v & 1 ? 1 : 0)',
+  get: '(a & 1 ? 1 : 0)',
   getTo: "v ? 'ON' : 'OFF'",
-  set: '({...a, output: v ? 1 : 0, command: 2 })',
+  set: '({...b, output: v ? 1 : 0, command: 2 })',
 });
 
 class FakeRuntime extends EventEmitter {
@@ -78,12 +78,12 @@ test('publishes safe resolved tiles and applies an action on the hub', async () 
   const charge: DashboardItem = {
     ...button('device.status3'),
     name: 'Charge MOSFET',
-    set: '({ ...a, output: 2, command: 2 })',
+    set: '({ ...b, output: 2, command: 2 })',
   };
   const discharge: DashboardItem = {
     ...button('device.status3'),
     name: 'Discharge MOSFET',
-    set: '({ ...a, output: 4, command: 2 })',
+    set: '({ ...b, output: 4, command: 2 })',
   };
   const runtime = new FakeRuntime([
     ...Array.from({ length: 25 }, (_, index) => button(`device.output.${index}`)),

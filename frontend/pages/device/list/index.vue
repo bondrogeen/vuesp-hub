@@ -4,12 +4,12 @@
 
     <div class="mb-6 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
       <div>
-        <h1 class="text-2xl font-semibold text-gray-900 dark:text-white">{{ t('devices.title') }}</h1>
-        <p class="mt-2 max-w-2xl text-sm text-gray-500 dark:text-gray-400">{{ t('devices.subtitle') }}</p>
+        <h1 class="text-2xl font-semibold text-gray-dark-40 dark:text-white">{{ t('devices.title') }}</h1>
+        <p class="mt-2 max-w-2xl text-sm text-gray-dark-25 dark:text-gray-main">{{ t('devices.subtitle') }}</p>
       </div>
 
       <div class="flex flex-wrap items-center gap-2">
-        <span class="glass-inset inline-flex items-center gap-2 rounded-full px-3 py-2 text-xs font-medium text-gray-600 dark:text-gray-300">
+        <span class="glass-inset inline-flex items-center gap-2 rounded-full px-3 py-2 text-xs font-medium text-gray-dark-25 dark:text-gray-light-10">
           <span class="h-2 w-2 rounded-full" :class="serviceRunning ? 'bg-emerald-500' : 'bg-red-500'"></span>
           {{ serviceRunning ? t('common.serviceRunning') : t('common.serviceStopped') }}
         </span>
@@ -47,19 +47,19 @@
     </div>
 
     <CardMain v-if="hasScanned" :title="t('devices.discovered')" :loading="isScanning" class="mb-6">
-      <div v-if="!foundDevices.length" class="py-8 text-center text-sm text-gray-500 dark:text-gray-400">
+      <div v-if="!foundDevices.length" class="py-8 text-center text-sm text-gray-dark-25 dark:text-gray-main">
         {{ t('devices.noNewDevices') }}
       </div>
 
-      <ul v-else class="divide-y divide-gray-200 dark:divide-gray-800">
+      <ul v-else class="divide-y divide-gray-light-10 dark:divide-gray-dark-30">
         <li v-for="found in foundDevices" :key="found.ip" class="flex flex-col gap-4 py-4 sm:flex-row sm:items-center sm:justify-between">
           <div class="min-w-0">
-            <p class="truncate font-medium text-gray-900 dark:text-white">{{ found.name }}</p>
-            <p class="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-gray-500 dark:text-gray-400">
+            <p class="truncate font-medium text-gray-dark-40 dark:text-white">{{ found.name }}</p>
+            <p class="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-gray-dark-25 dark:text-gray-main">
               <span>{{ found.ip }}</span>
-              <span class="text-gray-300 dark:text-gray-700">·</span>
+              <span class="text-gray-light-10 dark:text-gray-dark-30">·</span>
               <span>{{ t('devices.deviceId', { id: found.deviceId }) }}</span>
-              <span class="text-gray-300 dark:text-gray-700">·</span>
+              <span class="text-gray-light-10 dark:text-gray-dark-30">·</span>
               <span>{{ t('devices.firmware', { version: formatFirmware(found.firmware) }) }}</span>
             </p>
             <p v-if="isLegacyIdRegistered(found)" class="mt-1 text-xs text-amber-700 dark:text-amber-300">
@@ -74,16 +74,16 @@
 
     <section class="space-y-3">
       <div class="flex justify-end">
-        <span class="text-xs text-gray-500 dark:text-gray-400">{{ t('devices.total', { count: registeredDevices.length }) }}</span>
+        <span class="text-xs text-gray-dark-25 dark:text-gray-main">{{ t('devices.total', { count: registeredDevices.length }) }}</span>
       </div>
 
-      <div v-if="isLoading" class="py-10 text-center text-sm text-gray-500 dark:text-gray-400">
+      <div v-if="isLoading" class="py-10 text-center text-sm text-gray-dark-25 dark:text-gray-main">
         {{ t('common.refreshing') }}
       </div>
 
       <div v-else-if="!registeredDevices.length" class="py-10 text-center">
-        <p class="text-sm font-medium text-gray-900 dark:text-white">{{ t('devices.emptyTitle') }}</p>
-        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ t('devices.emptyHint') }}</p>
+        <p class="text-sm font-medium text-gray-dark-40 dark:text-white">{{ t('devices.emptyTitle') }}</p>
+        <p class="mt-1 text-sm text-gray-dark-25 dark:text-gray-main">{{ t('devices.emptyHint') }}</p>
       </div>
 
       <template v-else>
@@ -94,11 +94,11 @@
             </template>
 
             <template #name="{ item }">
-              <span class="font-medium text-gray-900 dark:text-white">{{ item.name }}</span>
+              <span class="font-medium text-gray-dark-40 dark:text-white">{{ item.name }}</span>
             </template>
 
             <template #ip="{ item }">
-              <router-link :to="`/device/${item.ip}/`" class="text-primary hover:underline" @click.stop="">{{ item.ip }}</router-link>
+              <router-link :to="`/device/${item.ip}/`" class="text-cyan-main hover:underline" @click.stop="">{{ item.ip }}</router-link>
             </template>
 
             <template #action="{ item }">
@@ -117,16 +117,16 @@
           </VTable>
         </div>
 
-        <ul class="divide-y divide-gray-200 md:hidden dark:divide-gray-800">
+        <ul class="divide-y divide-gray-light-10 md:hidden dark:divide-gray-dark-30">
           <li v-for="item in registeredDevices" :key="item.id" class="flex items-center gap-3 py-4">
             <span class="h-8 w-1 shrink-0 rounded-full" :class="getStatus(item, devices)"></span>
 
             <div class="min-w-0 flex-1">
-              <p class="truncate font-medium text-gray-900 dark:text-white">{{ item.name }}</p>
-              <p class="mt-1 truncate text-sm text-gray-500 dark:text-gray-400">{{ item.ip }} · {{ t('devices.shortId', { id: item.deviceId }) }}</p>
+              <p class="truncate font-medium text-gray-dark-40 dark:text-white">{{ item.name }}</p>
+              <p class="mt-1 truncate text-sm text-gray-dark-25 dark:text-gray-main">{{ item.ip }} · {{ t('devices.shortId', { id: item.deviceId }) }}</p>
             </div>
 
-            <router-link :to="`/device/${item.ip}/`" class="rounded-md px-2 py-1 text-sm font-medium text-primary hover:bg-blue-50 dark:hover:bg-blue-950/40">{{ t('common.open') }}</router-link>
+            <router-link :to="`/device/${item.ip}/`" class="rounded-md px-2 py-1 text-sm font-medium text-cyan-main hover:bg-blue-50 dark:hover:bg-blue-950/40">{{ t('common.open') }}</router-link>
             <button type="button" :disabled="removingId === item.id" class="rounded-md px-2 py-1 text-sm font-medium text-red-600 hover:bg-red-50 disabled:opacity-40 dark:text-red-400 dark:hover:bg-red-950/40" @click="confirmRemove(item)">
               {{ removingId === item.id ? t('common.removing') : t('common.remove') }}
             </button>

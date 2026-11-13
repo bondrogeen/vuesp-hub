@@ -3,7 +3,7 @@
     <div class="flex h-[72px] items-center gap-2 px-3 sm:px-5 lg:px-7">
       <button
         type="button"
-        class="flex h-10 w-10 items-center justify-center rounded-md text-gray-500 transition hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-white"
+        class="flex h-10 w-10 items-center justify-center rounded-md text-gray-dark-25 transition hover:bg-gray-light-30 hover:text-gray-dark-40 dark:text-gray-main dark:hover:bg-white/5 dark:hover:text-white"
         :aria-label="t('header.toggleSidebar')"
         @click="emit('sidebar', $event)"
       >
@@ -11,11 +11,11 @@
       </button>
 
       <router-link to="/" class="flex items-center lg:hidden">
-        <IconLogoMini class="h-7 text-primary" />
+        <IconLogoMini class="h-7 text-cyan-main" />
       </router-link>
 
-      <div class="hidden items-center gap-2 text-xs text-gray-500 dark:text-gray-400 lg:flex">
-        <span class="h-2 w-2 rounded-full bg-emerald-500 shadow-[0_0_0_3px_rgba(16,185,129,0.15)]"></span>
+      <div class="hidden items-center gap-2 text-xs text-gray-dark-25 dark:text-gray-main lg:flex">
+        <span class="h-2 w-2 rounded-full bg-emerald-500 shadow-[var(--shadow-green-ring)]"></span>
         <span>{{ t('header.localHub') }}</span>
       </div>
 
@@ -23,7 +23,7 @@
 
       <button
         type="button"
-        class="flex h-10 min-w-10 items-center justify-center rounded-md px-2 text-xs font-semibold uppercase text-gray-500 transition hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-white"
+        class="flex h-10 min-w-10 items-center justify-center rounded-md px-2 text-xs font-semibold uppercase text-gray-dark-25 transition hover:bg-gray-light-30 hover:text-gray-dark-40 dark:text-gray-main dark:hover:bg-white/5 dark:hover:text-white"
         :aria-label="t('common.language')"
         @click="toggleLocale"
       >
@@ -32,7 +32,7 @@
 
       <button
         type="button"
-        class="flex h-10 w-10 items-center justify-center rounded-md text-gray-500 transition hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-white"
+        class="flex h-10 w-10 items-center justify-center rounded-md text-gray-dark-25 transition hover:bg-gray-light-30 hover:text-gray-dark-40 dark:text-gray-main dark:hover:bg-white/5 dark:hover:text-white"
         :aria-label="t('header.toggleTheme')"
         @click="appStore.changeTheme()"
       >
@@ -42,50 +42,50 @@
 
       <button
         type="button"
-        class="relative flex h-10 w-10 items-center justify-center rounded-md text-gray-500 transition hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-white"
+        class="relative flex h-10 w-10 items-center justify-center rounded-md text-gray-dark-25 transition hover:bg-gray-light-30 hover:text-gray-dark-40 dark:text-gray-main dark:hover:bg-white/5 dark:hover:text-white"
         :aria-label="t('header.notifications')"
         @click="emit('notif', $event)"
       >
-        <span v-if="hasUnread" class="absolute right-2 top-2 h-2 w-2 rounded-full bg-orange-400 ring-2 ring-white/80 dark:ring-[#0b1538]"></span>
+        <span v-if="hasUnread" class="absolute right-2 top-2 h-2 w-2 rounded-full bg-orange-400 ring-2 ring-white/80 dark:ring-night-light-10"></span>
         <IconBell class="size-5" />
       </button>
 
-      <div class="mx-1 h-6 w-px bg-gray-200/70 dark:bg-white/10"></div>
+      <div class="mx-1 h-6 w-px bg-gray-light-10/70 dark:bg-white/10"></div>
 
       <VDropdown left="unset" right="0" top="calc(100% + 10px)" :title="t('common.account')">
         <template #activator="{ on }">
           <button
             type="button"
-            class="flex items-center gap-2 rounded-md p-1.5 pr-2 text-left transition hover:bg-gray-100 dark:hover:bg-white/5"
+            class="flex items-center gap-2 rounded-md p-1.5 pr-2 text-left transition hover:bg-gray-light-30 dark:hover:bg-white/5"
             @click="on.click($event)"
           >
-            <span class="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-primary to-[var(--accent-blue)] text-xs font-semibold uppercase text-white shadow-sm">
+            <span class="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-cyan-main to-[var(--color-blue-main)] text-xs font-semibold uppercase text-white shadow-sm">
               {{ initials }}
             </span>
 
             <span class="hidden min-w-0 sm:block">
-              <span class="block truncate text-sm font-medium text-gray-900 dark:text-white">{{ username }}</span>
-              <span class="block text-xs text-gray-500 dark:text-gray-400">{{ roleLabel }}</span>
+              <span class="block truncate text-sm font-medium text-gray-dark-40 dark:text-white">{{ username }}</span>
+              <span class="block text-xs text-gray-dark-25 dark:text-gray-main">{{ roleLabel }}</span>
             </span>
 
-            <IconChevron class="hidden size-4 rotate-90 text-gray-400 sm:block" />
+            <IconChevron class="hidden size-4 rotate-90 text-gray-main sm:block" />
           </button>
         </template>
 
         <template #default="{ hide }">
           <div class="glass-popover w-[min(28rem,calc(100vw-2rem))] overflow-hidden rounded-[10px] lg:w-64">
-            <div class="border-b border-gray-200/70 px-4 py-3 dark:border-white/10">
-              <p class="truncate text-sm font-semibold text-gray-900 dark:text-white">{{ username }}</p>
-              <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">{{ roleLabel }}</p>
+            <div class="border-b border-gray-light-10/70 px-4 py-3 dark:border-white/10">
+              <p class="truncate text-sm font-semibold text-gray-dark-40 dark:text-white">{{ username }}</p>
+              <p class="mt-0.5 text-xs text-gray-dark-25 dark:text-gray-main">{{ roleLabel }}</p>
             </div>
 
             <div class="p-1.5">
               <button
                 type="button"
-                class="flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-left text-sm text-gray-700 transition hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-white/5"
+                class="flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-left text-sm text-gray-dark-30 transition hover:bg-gray-light-30 dark:text-gray-light-10 dark:hover:bg-white/5"
                 @click="goProfile(hide)"
               >
-                <IconUser class="size-4 text-gray-400" />
+                <IconUser class="size-4 text-gray-main" />
                 {{ t('header.profile') }}
               </button>
 

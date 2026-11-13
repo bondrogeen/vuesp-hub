@@ -5,7 +5,7 @@
     <div class="relative flex h-[calc(100dvh-11rem)] min-h-[480px] flex-col overflow-hidden">
       <div
         v-if="isLoading"
-        class="absolute inset-0 z-10 flex items-center justify-center bg-white/65 backdrop-blur-sm dark:bg-[#060b28]/80"
+        class="absolute inset-0 z-10 flex items-center justify-center bg-white/65 backdrop-blur-sm dark:bg-night-main/80"
       >
         <VLoader />
       </div>

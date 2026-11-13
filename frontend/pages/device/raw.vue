@@ -4,14 +4,14 @@
 
     <div class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
       <div>
-        <h1 class="text-2xl font-semibold text-gray-900 dark:text-white">{{ t('raw.title') }}</h1>
-        <p class="mt-2 max-w-3xl text-sm text-gray-600 dark:text-gray-400">
+        <h1 class="text-2xl font-semibold text-gray-dark-40 dark:text-white">{{ t('raw.title') }}</h1>
+        <p class="mt-2 max-w-3xl text-sm text-gray-dark-25 dark:text-gray-main">
           {{ t('raw.subtitle') }}
         </p>
       </div>
 
       <div class="flex items-center gap-3">
-        <span class="flex items-center gap-1.5 text-xs text-gray-600 dark:text-gray-400">
+        <span class="flex items-center gap-1.5 text-xs text-gray-dark-25 dark:text-gray-main">
           <span class="h-2 w-2 rounded-full" :class="serviceRunning ? 'bg-green-500' : 'bg-red-500'"></span>
           {{ serviceRunning ? t('common.serviceRunning') : t('common.serviceStopped') }}
         </span>
@@ -27,7 +27,7 @@
     </div>
 
     <CardMain v-if="!rows.length" :title="t('common.devices')" :loading="isLoading">
-      <p class="py-8 text-center text-sm text-gray-500 dark:text-gray-400">
+      <p class="py-8 text-center text-sm text-gray-dark-25 dark:text-gray-main">
         {{ t('raw.empty') }}
       </p>
     </CardMain>
@@ -35,7 +35,7 @@
     <div v-else class="flex flex-col gap-6">
       <CardMain v-for="row in rows" :key="row.id" :title="row.name" :loading="isLoading">
         <template #header>
-          <span class="flex items-center gap-1.5 text-xs text-gray-600 dark:text-gray-400">
+          <span class="flex items-center gap-1.5 text-xs text-gray-dark-25 dark:text-gray-main">
             <span class="h-2 w-2 rounded-full" :class="statusColor(row.state)"></span>
             {{ statusLabel(row.state) }}
           </span>
@@ -43,37 +43,37 @@
 
         <dl class="grid gap-x-6 gap-y-2 text-sm sm:grid-cols-2 xl:grid-cols-4">
           <div>
-            <dt class="text-xs text-gray-500 dark:text-gray-400">{{ t('raw.ip') }}</dt>
-            <dd class="font-medium text-gray-900 dark:text-white">{{ row.ip || t('common.unknown') }}</dd>
+            <dt class="text-xs text-gray-dark-25 dark:text-gray-main">{{ t('raw.ip') }}</dt>
+            <dd class="font-medium text-gray-dark-40 dark:text-white">{{ row.ip || t('common.unknown') }}</dd>
           </div>
           <div>
-            <dt class="text-xs text-gray-500 dark:text-gray-400">{{ t('raw.deviceId') }}</dt>
-            <dd class="font-medium text-gray-900 dark:text-white">{{ row.deviceId }}</dd>
+            <dt class="text-xs text-gray-dark-25 dark:text-gray-main">{{ t('raw.deviceId') }}</dt>
+            <dd class="font-medium text-gray-dark-40 dark:text-white">{{ row.deviceId }}</dd>
           </div>
           <div>
-            <dt class="text-xs text-gray-500 dark:text-gray-400">{{ t('raw.uuid') }}</dt>
-            <dd class="truncate font-medium text-gray-900 dark:text-white">{{ row.uuid || t('common.notRegistered') }}</dd>
+            <dt class="text-xs text-gray-dark-25 dark:text-gray-main">{{ t('raw.uuid') }}</dt>
+            <dd class="truncate font-medium text-gray-dark-40 dark:text-white">{{ row.uuid || t('common.notRegistered') }}</dd>
           </div>
           <div>
-            <dt class="text-xs text-gray-500 dark:text-gray-400">{{ t('raw.structKeys') }}</dt>
-            <dd class="font-medium text-gray-900 dark:text-white">{{ Object.keys(row.state).length }}</dd>
+            <dt class="text-xs text-gray-dark-25 dark:text-gray-main">{{ t('raw.structKeys') }}</dt>
+            <dd class="font-medium text-gray-dark-40 dark:text-white">{{ Object.keys(row.state).length }}</dd>
           </div>
         </dl>
 
-        <pre class="scrollbar mt-4 max-h-[32rem] overflow-auto rounded-md border border-white/10 bg-[#060b28] p-4 text-xs leading-5 text-gray-100">{{ pretty(row.state) }}</pre>
+        <pre class="scrollbar mt-4 max-h-[32rem] overflow-auto rounded-md border border-white/10 bg-night-main p-4 text-xs leading-5 text-gray-light-30">{{ pretty(row.state) }}</pre>
 
         <div class="mt-5 flex items-center justify-between gap-3">
-          <h3 class="text-sm font-semibold text-gray-800 dark:text-white/90">{{ t('raw.messages') }}</h3>
+          <h3 class="text-sm font-semibold text-gray-dark-30 dark:text-white/90">{{ t('raw.messages') }}</h3>
           <div class="flex items-center gap-3">
-            <span class="text-xs text-gray-500 dark:text-gray-400">{{ t('common.shown', { count: eventsFor(row.id).length }) }}</span>
+            <span class="text-xs text-gray-dark-25 dark:text-gray-main">{{ t('common.shown', { count: eventsFor(row.id).length }) }}</span>
             <VButton color="gray" size="sm" @click="webSocketStore.clearEvents">{{ t('common.clear') }}</VButton>
           </div>
         </div>
 
-        <p v-if="!eventsFor(row.id).length" class="py-4 text-sm text-gray-500 dark:text-gray-400">{{ t('raw.noMessages') }}</p>
+        <p v-if="!eventsFor(row.id).length" class="py-4 text-sm text-gray-dark-25 dark:text-gray-main">{{ t('raw.noMessages') }}</p>
         <div v-else class="glass-inset scrollbar mt-2 max-h-80 overflow-auto rounded-md">
           <table class="w-full text-left text-xs">
-            <thead class="sticky top-0 bg-white/60 text-gray-500 backdrop-blur-sm dark:bg-white/[0.06] dark:text-gray-400">
+            <thead class="sticky top-0 bg-white/60 text-gray-dark-25 backdrop-blur-sm dark:bg-white/[0.06] dark:text-gray-main">
               <tr>
                 <th class="px-3 py-2 font-medium">{{ t('raw.time') }}</th>
                 <th class="px-3 py-2 font-medium">{{ t('raw.event') }}</th>
@@ -81,9 +81,9 @@
                 <th class="px-3 py-2 font-medium">{{ t('raw.data') }}</th>
               </tr>
             </thead>
-            <tbody class="divide-y divide-gray-200 dark:divide-gray-800">
+            <tbody class="divide-y divide-gray-light-10 dark:divide-gray-dark-30">
               <tr v-for="(event, index) in eventsFor(row.id)" :key="`${event.at}-${index}`" class="align-top">
-                <td class="whitespace-nowrap px-3 py-2 font-mono text-gray-500 dark:text-gray-400">{{ formatTime(event.at) }}</td>
+                <td class="whitespace-nowrap px-3 py-2 font-mono text-gray-dark-25 dark:text-gray-main">{{ formatTime(event.at) }}</td>
                 <td class="whitespace-nowrap px-3 py-2">{{ event.event }}</td>
                 <td class="whitespace-nowrap px-3 py-2">{{ event.key || '—' }}</td>
                 <td class="max-w-[32rem] truncate px-3 py-2 font-mono" :title="compact(event.data)">{{ compact(event.data) }}</td>
@@ -161,7 +161,7 @@ const statusLabel = (state: Record<string, unknown>): string => {
 
 const statusColor = (state: Record<string, unknown>): string => {
   const delta = pingDelta(state);
-  if (delta === undefined) return 'bg-gray-500';
+  if (delta === undefined) return 'bg-gray-dark-25';
   return delta <= 5000 ? 'bg-green-500' : 'bg-red-500';
 };
 

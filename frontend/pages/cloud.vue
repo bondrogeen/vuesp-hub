@@ -4,8 +4,8 @@
 
 		<div class="mb-6 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
 			<div>
-				<h1 class="text-2xl font-semibold text-gray-900 dark:text-white">{{ t('cloud.title') }}</h1>
-				<p class="mt-2 max-w-2xl text-sm text-gray-500 dark:text-gray-400">{{ t('cloud.subtitle') }}</p>
+				<h1 class="text-2xl font-semibold text-gray-dark-40 dark:text-white">{{ t('cloud.title') }}</h1>
+				<p class="mt-2 max-w-2xl text-sm text-gray-dark-25 dark:text-gray-main">{{ t('cloud.subtitle') }}</p>
 			</div>
 
 			<div v-if="status?.state === 'connected'" class="flex flex-col items-start gap-2 lg:items-end">
@@ -16,30 +16,30 @@
 					<span class="size-2 rounded-full bg-emerald-500" />
 					{{ t('cloud.statusConnected') }}
 				</span>
-				<p v-if="status.name" class="text-xs font-medium text-gray-700 dark:text-gray-200">{{ status.name }}</p>
+				<p v-if="status.name" class="text-xs font-medium text-gray-dark-30 dark:text-gray-light-10">{{ status.name }}</p>
 			</div>
 		</div>
 
 		<p v-if="error" class="mb-4 rounded-md border border-red-400/40 bg-red-500/10 px-4 py-3 text-sm text-red-600 dark:text-red-300">{{ error }}</p>
 
-		<div v-if="loading" class="text-sm text-gray-500 dark:text-gray-400">{{ t('common.refreshing') }}</div>
+		<div v-if="loading" class="text-sm text-gray-dark-25 dark:text-gray-main">{{ t('common.refreshing') }}</div>
 
 		<section v-else class="space-y-5">
-			<div v-if="!status" class="text-sm text-gray-500 dark:text-gray-400">{{ t('cloud.loadError') }}</div>
+			<div v-if="!status" class="text-sm text-gray-dark-25 dark:text-gray-main">{{ t('cloud.loadError') }}</div>
 
 			<div v-else-if="status.state === 'connected'" class="space-y-5">
-				<div class="rounded-md border border-gray-200/70 bg-white/40 p-4 dark:border-white/10 dark:bg-white/[0.03]">
+				<div class="rounded-md border border-gray-light-10/70 bg-white/40 p-4 dark:border-white/10 dark:bg-white/[0.03]">
 					<div class="flex flex-wrap items-start justify-between gap-3">
 						<div class="flex min-w-0 items-center gap-2">
-							<p class="text-sm font-medium text-gray-900 dark:text-white">{{ t('cloud.tilesTitle') }}</p>
+							<p class="text-sm font-medium text-gray-dark-40 dark:text-white">{{ t('cloud.tilesTitle') }}</p>
 							<IconInformationLine
-								class="size-4 shrink-0 text-gray-400"
+								class="size-4 shrink-0 text-gray-main"
 								:title="t('cloud.tilesHint')"
 								:aria-label="t('cloud.tilesHint')"
 							/>
 						</div>
 						<div class="flex items-center gap-2">
-							<span class="rounded-full bg-primary/10 px-2.5 py-1 text-[11px] font-medium text-primary">
+							<span class="rounded-full bg-cyan-main/10 px-2.5 py-1 text-[11px] font-medium text-cyan-main">
 								{{ t('cloud.tilesSelected', { count: selectedCount, max: maxTiles }) }}
 							</span>
 							<VButton
@@ -57,38 +57,38 @@
 						</div>
 					</div>
 
-					<div v-if="tilesLoading" class="mt-4 text-xs text-gray-500 dark:text-gray-400">{{ t('cloud.tilesLoading') }}</div>
+					<div v-if="tilesLoading" class="mt-4 text-xs text-gray-dark-25 dark:text-gray-main">{{ t('cloud.tilesLoading') }}</div>
 					<div v-else-if="tilesError" class="mt-4 rounded-md bg-red-500/10 px-3 py-2 text-xs text-red-600 dark:text-red-300">{{ tilesError }}</div>
 					<template v-else-if="tiles">
-						<p v-if="!tiles.devices.length" class="mt-4 text-xs text-gray-500 dark:text-gray-400">{{ t('cloud.tilesEmpty') }}</p>
+						<p v-if="!tiles.devices.length" class="mt-4 text-xs text-gray-dark-25 dark:text-gray-main">{{ t('cloud.tilesEmpty') }}</p>
 						<div v-else class="mt-4 space-y-4">
 							<section v-for="device of tiles.devices" :key="device.deviceId">
 								<div class="mb-2 flex flex-wrap items-center gap-2">
-									<span class="text-xs font-semibold text-gray-900 dark:text-white">{{ device.name }}</span>
-									<span class="text-[10px] text-gray-400">{{ device.ip }}</span>
-									<span v-if="!device.online" class="rounded bg-gray-500/10 px-1.5 py-0.5 text-[10px] text-gray-400">{{ t('cloud.offline') }}</span>
+									<span class="text-xs font-semibold text-gray-dark-40 dark:text-white">{{ device.name }}</span>
+									<span class="text-[10px] text-gray-main">{{ device.ip }}</span>
+									<span v-if="!device.online" class="rounded bg-gray-dark-25/10 px-1.5 py-0.5 text-[10px] text-gray-main">{{ t('cloud.offline') }}</span>
 								</div>
 								<div v-if="device.tiles.length" class="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
 									<label
 										v-for="tile of device.tiles"
 										:key="tile.key"
-										class="flex cursor-pointer items-start gap-2 rounded-md border border-transparent bg-white/[0.03] px-2.5 py-2 text-xs transition hover:border-primary/25"
-										:class="selected.has(tile.key) ? 'border-primary/30 bg-primary/[0.06]' : ''"
+										class="flex cursor-pointer items-start gap-2 rounded-md border border-transparent bg-white/[0.03] px-2.5 py-2 text-xs transition hover:border-cyan-main/25"
+										:class="selected.has(tile.key) ? 'border-cyan-main/30 bg-cyan-main/[0.06]' : ''"
 									>
 										<input
 											type="checkbox"
-											class="mt-0.5 accent-primary"
+											class="mt-0.5 accent-cyan-main"
 											:checked="selected.has(tile.key)"
 											:disabled="!selected.has(tile.key) && selectedCount >= maxTiles"
 											@change="toggleTile(tile)"
 										/>
 										<span class="min-w-0">
-											<span class="block truncate font-medium text-gray-900 dark:text-white">{{ tile.name }}</span>
-											<span class="block truncate text-[10px] text-gray-500 dark:text-gray-400">{{ displayValue(tile) }}</span>
+											<span class="block truncate font-medium text-gray-dark-40 dark:text-white">{{ tile.name }}</span>
+											<span class="block truncate text-[10px] text-gray-dark-25 dark:text-gray-main">{{ displayValue(tile) }}</span>
 										</span>
 									</label>
 								</div>
-								<p v-else class="text-[11px] text-gray-500 dark:text-gray-400">{{ t('cloud.tilesDeviceEmpty') }}</p>
+								<p v-else class="text-[11px] text-gray-dark-25 dark:text-gray-main">{{ t('cloud.tilesDeviceEmpty') }}</p>
 							</section>
 						</div>
 
@@ -99,21 +99,21 @@
 					</template>
 				</div>
 
-				<p class="text-xs text-gray-500 dark:text-gray-400">{{ t('cloud.connectedHint') }}</p>
+				<p class="text-xs text-gray-dark-25 dark:text-gray-main">{{ t('cloud.connectedHint') }}</p>
 
 				<VButton color="red" size="sm" :loading="action === 'disconnect'" @click="disconnect">{{ t('cloud.disconnect') }}</VButton>
 			</div>
 
 			<div v-else-if="status.state === 'pairing'" class="space-y-5">
 				<div>
-					<p class="text-sm font-medium text-gray-900 dark:text-white">{{ t('cloud.pairTitle') }}</p>
-					<p class="mt-1 max-w-2xl text-xs leading-relaxed text-gray-500 dark:text-gray-400">{{ t('cloud.pairHint') }}</p>
+					<p class="text-sm font-medium text-gray-dark-40 dark:text-white">{{ t('cloud.pairTitle') }}</p>
+					<p class="mt-1 max-w-2xl text-xs leading-relaxed text-gray-dark-25 dark:text-gray-main">{{ t('cloud.pairHint') }}</p>
 				</div>
 
-				<div class="rounded-md border border-primary/25 bg-primary/5 px-4 py-6 text-center">
-					<p class="text-[10px] uppercase tracking-[0.2em] text-gray-400">{{ t('cloud.code') }}</p>
-					<p class="mt-2 font-mono text-4xl font-black tracking-[0.18em] text-primary">{{ status.code || '—' }}</p>
-					<p class="mt-3 text-xs text-gray-500 dark:text-gray-400">{{ remaining }}</p>
+				<div class="rounded-md border border-cyan-main/25 bg-cyan-main/5 px-4 py-6 text-center">
+					<p class="text-[10px] uppercase tracking-[0.2em] text-gray-main">{{ t('cloud.code') }}</p>
+					<p class="mt-2 font-mono text-4xl font-black tracking-[0.18em] text-cyan-main">{{ status.code || '—' }}</p>
+					<p class="mt-3 text-xs text-gray-dark-25 dark:text-gray-main">{{ remaining }}</p>
 				</div>
 
 				<p v-if="status.lastError" class="rounded-md bg-red-500/10 px-3 py-2 text-xs text-red-600 dark:text-red-300">{{ status.lastError }}</p>
@@ -125,8 +125,8 @@
 
 			<div v-else class="space-y-5">
 				<div>
-					<p class="text-sm font-medium text-gray-900 dark:text-white">{{ t('cloud.disconnected') }}</p>
-					<p class="mt-1 max-w-2xl text-xs leading-relaxed text-gray-500 dark:text-gray-400">{{ t('cloud.disconnectedHint') }}</p>
+					<p class="text-sm font-medium text-gray-dark-40 dark:text-white">{{ t('cloud.disconnected') }}</p>
+					<p class="mt-1 max-w-2xl text-xs leading-relaxed text-gray-dark-25 dark:text-gray-main">{{ t('cloud.disconnectedHint') }}</p>
 				</div>
 
 				<p v-if="status.lastError" class="rounded-md bg-red-500/10 px-3 py-2 text-xs text-red-600 dark:text-red-300">

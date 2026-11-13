@@ -3,8 +3,8 @@
     <VBreadcrumb :items="[{ name: t('common.service'), path: '/' }, { name: t('common.modbus') }]" class="mb-6" />
 
     <div class="mb-6">
-      <h1 class="text-2xl font-semibold text-gray-900 dark:text-white">{{ t('modbus.title') }}</h1>
-      <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">{{ t('modbus.subtitle') }}</p>
+      <h1 class="text-2xl font-semibold text-gray-dark-40 dark:text-white">{{ t('modbus.title') }}</h1>
+      <p class="mt-2 text-sm text-gray-dark-25 dark:text-gray-main">{{ t('modbus.subtitle') }}</p>
     </div>
 
     <div class="grid grid-cols-1 gap-4">

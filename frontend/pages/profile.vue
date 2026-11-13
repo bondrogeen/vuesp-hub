@@ -3,35 +3,35 @@
     <VBreadcrumb :items="[{ name: t('common.home'), path: '/' }, { name: t('common.profile') }]" class="mb-6" />
 
     <div class="mb-6">
-      <h1 class="text-2xl font-semibold text-gray-900 dark:text-white">{{ t('profile.title') }}</h1>
-      <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">{{ t('profile.subtitle') }}</p>
+      <h1 class="text-2xl font-semibold text-gray-dark-40 dark:text-white">{{ t('profile.title') }}</h1>
+      <p class="mt-2 text-sm text-gray-dark-25 dark:text-gray-main">{{ t('profile.subtitle') }}</p>
     </div>
 
     <div class="grid grid-cols-1 gap-6 xl:grid-cols-3">
       <CardMain :title="t('profile.account')" :loading="false" class="xl:col-span-1">
         <div class="flex items-center gap-4">
-          <div class="flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-primary to-[var(--accent-blue)] text-lg font-semibold uppercase text-white shadow-sm">
+          <div class="flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-cyan-main to-[var(--color-blue-main)] text-lg font-semibold uppercase text-white shadow-sm">
             {{ initials }}
           </div>
 
           <div class="min-w-0">
-            <p class="truncate text-base font-semibold text-gray-900 dark:text-white">{{ username }}</p>
-            <p class="text-sm text-gray-500 dark:text-gray-400">{{ roleLabel }}</p>
+            <p class="truncate text-base font-semibold text-gray-dark-40 dark:text-white">{{ username }}</p>
+            <p class="text-sm text-gray-dark-25 dark:text-gray-main">{{ roleLabel }}</p>
           </div>
         </div>
 
         <dl class="mt-6 space-y-4 text-sm">
           <div class="flex items-center justify-between gap-4">
-            <dt class="text-gray-500 dark:text-gray-400">{{ t('profile.role') }}</dt>
-            <dd class="font-medium text-gray-900 dark:text-white">{{ roleLabel }}</dd>
+            <dt class="text-gray-dark-25 dark:text-gray-main">{{ t('profile.role') }}</dt>
+            <dd class="font-medium text-gray-dark-40 dark:text-white">{{ roleLabel }}</dd>
           </div>
           <div class="flex items-center justify-between gap-4">
-            <dt class="text-gray-500 dark:text-gray-400">{{ t('profile.scope') }}</dt>
-            <dd class="font-medium text-gray-900 dark:text-white">{{ t('profile.thisHub') }}</dd>
+            <dt class="text-gray-dark-25 dark:text-gray-main">{{ t('profile.scope') }}</dt>
+            <dd class="font-medium text-gray-dark-40 dark:text-white">{{ t('profile.thisHub') }}</dd>
           </div>
           <div class="flex items-center justify-between gap-4">
-            <dt class="text-gray-500 dark:text-gray-400">{{ t('profile.authentication') }}</dt>
-            <dd class="font-medium text-gray-900 dark:text-white">JWT</dd>
+            <dt class="text-gray-dark-25 dark:text-gray-main">{{ t('profile.authentication') }}</dt>
+            <dd class="font-medium text-gray-dark-40 dark:text-white">JWT</dd>
           </div>
         </dl>
       </CardMain>

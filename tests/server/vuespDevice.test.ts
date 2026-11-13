@@ -276,8 +276,8 @@ test('loads the device dashboard into tile list and tags events with ip and name
       type: 'button',
       icon: 'bulb',
       args: ['device.output', 'device'],
-      get: '(v & 1 ? 0 : 1)',
-      set: '({...a, output: v, command: 2 })',
+      get: '(a & 1 ? 0 : 1)',
+      set: '({...b, output: v, command: 2 })',
     },
   ];
   const device = new Device(

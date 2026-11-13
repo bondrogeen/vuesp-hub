@@ -10,10 +10,10 @@
 
     @apply min-h-screen leading-[140%] text-base md:overflow-y-scroll;
 
-    /* @apply overflow-y-auto [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:bg-gray-800 [&::-webkit-scrollbar-thumb]:bg-gray-600 dark:[&::-webkit-scrollbar-track]:bg-blue-700 dark:[&::-webkit-scrollbar-thumb]:bg-blue-500; */
+    /* @apply overflow-y-auto [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:bg-gray-dark-30 [&::-webkit-scrollbar-thumb]:bg-gray-dark-25 dark:[&::-webkit-scrollbar-track]:bg-blue-700 dark:[&::-webkit-scrollbar-thumb]:bg-blue-500; */
   }
   body {
-    @apply min-h-screen min-w-[320px] text-gray-900 dark:text-white;
+    @apply min-h-screen min-w-[320px] text-gray-dark-40 dark:text-white;
   }
   input {
     outline: none;
@@ -123,28 +123,28 @@
   }
   .scrollbar::-webkit-scrollbar-track {
     border-radius: 100vh;
-    @apply bg-gray-200;
+    @apply bg-gray-light-10;
   }
   .scrollbar::-webkit-scrollbar-thumb {
-    @apply bg-gray-400;
+    @apply bg-gray-main;
     border-radius: 100vh;
   }
 
   .scrollbar::-webkit-scrollbar-thumb:hover {
-    @apply bg-gray-400;
+    @apply bg-gray-main;
   }
 
   .dark {
     .scrollbar::-webkit-scrollbar-track {
-      @apply bg-gray-800;
+      @apply bg-gray-dark-30;
     }
 
     .scrollbar::-webkit-scrollbar-thumb {
-      @apply bg-gray-600;
+      @apply bg-gray-dark-25;
     }
 
     .scrollbar::-webkit-scrollbar-thumb:hover {
-      @apply bg-gray-600;
+      @apply bg-gray-dark-25;
     }
   }
 }

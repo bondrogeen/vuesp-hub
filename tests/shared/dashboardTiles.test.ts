@@ -15,9 +15,9 @@ const button: DashboardItem = {
   name: 'output.1',
   type: 'button',
   args: ['device.output', 'device'],
-  get: '(v & 1 ? 0 : 1)',
+  get: '(a & 1 ? 0 : 1)',
   getTo: "v ? 'ON' : 'OFF'",
-  set: '({...a, output: v ? (a.output &= ~1) : (a.output |= 1), command: 2 })',
+  set: '({...b, output: v ? (b.output &= ~1) : (b.output |= 1), command: 2 })',
 };
 
 const dimmer: DashboardItem = {
@@ -25,7 +25,7 @@ const dimmer: DashboardItem = {
   name: 'port.25',
   type: 'dimmer',
   args: ['ports.25.value', 'ports.25'],
-  set: '({ ...a, value: v, command: 2})',
+  set: '({ ...b, value: v, command: 2})',
 };
 
 test('resolves tile values from the per-device state', () => {
@@ -90,7 +90,7 @@ test('prefers an explicit key/object pair and falls back to the args root', () =
     name: 'dallas',
     type: 'info',
     args: ['dallas.280102.value', 'dallas.280102'],
-    set: '({ ...a, value: v })',
+    set: '({ ...b, value: v })',
   };
   assert.deepEqual(buildTileCommands(dallas, 21, state), [
     { comm: 'DALLAS', data: { address: [40, 1, 2], value: 21 } },

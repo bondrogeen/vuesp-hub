@@ -3,25 +3,25 @@
     <VBreadcrumb :items="[{ name: t('common.home'), path: '/' }, { name: t('demo.title') }]" />
 
     <div class="glass-panel rounded-[10px] p-5 lg:p-6">
-      <h3 class="mb-5 text-lg font-semibold text-gray-800 dark:text-white/90 lg:mb-7">{{ t('demo.title') }}</h3>
+      <h3 class="mb-5 text-lg font-semibold text-gray-dark-30 dark:text-white/90 lg:mb-7">{{ t('demo.title') }}</h3>
 
       <div class="glass-inset mb-6 rounded-md p-5 lg:p-6">
         <div class="flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between">
           <div class="flex flex-col items-center w-full gap-6 xl:flex-row">
-            <div class="w-20 h-20 overflow-hidden border border-gray-200/70 rounded-full dark:border-white/10">
+            <div class="w-20 h-20 overflow-hidden border border-gray-light-10/70 rounded-full dark:border-white/10">
               <img src="@/assets/images/product-01.jpg" :alt="t('demo.userAlt')" />
             </div>
             <div class="order-3 xl:order-2">
-              <h4 class="mb-2 text-lg font-semibold text-center text-gray-800 dark:text-white/90 xl:text-left">{{ t('demo.fullName') }}</h4>
+              <h4 class="mb-2 text-lg font-semibold text-center text-gray-dark-30 dark:text-white/90 xl:text-left">{{ t('demo.fullName') }}</h4>
               <div class="flex flex-col items-center gap-1 text-center xl:flex-row xl:gap-3 xl:text-left">
-                <p class="text-sm text-gray-500 dark:text-gray-400">{{ t('demo.teamManager') }}</p>
-                <div class="hidden h-3.5 w-px bg-gray-300 dark:bg-gray-700 xl:block"></div>
-                <p class="text-sm text-gray-500 dark:text-gray-400">{{ t('demo.location') }}</p>
+                <p class="text-sm text-gray-dark-25 dark:text-gray-main">{{ t('demo.teamManager') }}</p>
+                <div class="hidden h-3.5 w-px bg-gray-light-10 dark:bg-gray-dark-30 xl:block"></div>
+                <p class="text-sm text-gray-dark-25 dark:text-gray-main">{{ t('demo.location') }}</p>
               </div>
             </div>
             <div class="flex items-center order-2 gap-2 grow xl:order-3 xl:justify-end">
               <button
-                class="flex h-11 w-11 items-center justify-center gap-2 rounded-full border border-gray-300/70 bg-white/60 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-gray-800 dark:border-white/15 dark:bg-white/[0.04] dark:text-gray-400 dark:hover:bg-white/[0.03] dark:hover:text-gray-200"
+                class="flex h-11 w-11 items-center justify-center gap-2 rounded-full border border-gray-light-10/70 bg-white/60 text-sm font-medium text-gray-dark-30 hover:bg-gray-light-30 hover:text-gray-dark-30 dark:border-white/15 dark:bg-white/[0.04] dark:text-gray-main dark:hover:bg-white/[0.03] dark:hover:text-gray-light-10"
               >
                 <svg class="fill-current" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <path
@@ -32,7 +32,7 @@
               </button>
 
               <button
-                class="flex h-11 w-11 items-center justify-center gap-2 rounded-full border border-gray-300/70 bg-white/60 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-gray-800 dark:border-white/15 dark:bg-white/[0.04] dark:text-gray-400 dark:hover:bg-white/[0.03] dark:hover:text-gray-200"
+                class="flex h-11 w-11 items-center justify-center gap-2 rounded-full border border-gray-light-10/70 bg-white/60 text-sm font-medium text-gray-dark-30 hover:bg-gray-light-30 hover:text-gray-dark-30 dark:border-white/15 dark:bg-white/[0.04] dark:text-gray-main dark:hover:bg-white/[0.03] dark:hover:text-gray-light-10"
               >
                 <svg class="fill-current" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <path
@@ -43,7 +43,7 @@
               </button>
 
               <button
-                class="flex h-11 w-11 items-center justify-center gap-2 rounded-full border border-gray-300/70 bg-white/60 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-gray-800 dark:border-white/15 dark:bg-white/[0.04] dark:text-gray-400 dark:hover:bg-white/[0.03] dark:hover:text-gray-200"
+                class="flex h-11 w-11 items-center justify-center gap-2 rounded-full border border-gray-light-10/70 bg-white/60 text-sm font-medium text-gray-dark-30 hover:bg-gray-light-30 hover:text-gray-dark-30 dark:border-white/15 dark:bg-white/[0.04] dark:text-gray-main dark:hover:bg-white/[0.03] dark:hover:text-gray-light-10"
               >
                 <svg class="fill-current" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <path
@@ -54,7 +54,7 @@
               </button>
 
               <button
-                class="flex h-11 w-11 items-center justify-center gap-2 rounded-full border border-gray-300/70 bg-white/60 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-gray-800 dark:border-white/15 dark:bg-white/[0.04] dark:text-gray-400 dark:hover:bg-white/[0.03] dark:hover:text-gray-200"
+                class="flex h-11 w-11 items-center justify-center gap-2 rounded-full border border-gray-light-10/70 bg-white/60 text-sm font-medium text-gray-dark-30 hover:bg-gray-light-30 hover:text-gray-dark-30 dark:border-white/15 dark:bg-white/[0.04] dark:text-gray-main dark:hover:bg-white/[0.03] dark:hover:text-gray-light-10"
               >
                 <svg class="fill-current" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <path
@@ -68,7 +68,7 @@
 
           <button
             @click="isProfileInfoModal = true"
-            class="flex w-full items-center justify-center gap-2 rounded-md border border-gray-300/70 bg-white/60 px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-gray-800 dark:border-white/15 dark:bg-white/[0.04] dark:text-gray-400 dark:hover:bg-white/[0.03] dark:hover:text-gray-200 lg:inline-flex lg:w-auto"
+            class="flex w-full items-center justify-center gap-2 rounded-md border border-gray-light-10/70 bg-white/60 px-4 py-3 text-sm font-medium text-gray-dark-30 hover:bg-gray-light-30 hover:text-gray-dark-30 dark:border-white/15 dark:bg-white/[0.04] dark:text-gray-main dark:hover:bg-white/[0.03] dark:hover:text-gray-light-10 lg:inline-flex lg:w-auto"
           >
             <svg class="fill-current" width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path
@@ -86,39 +86,39 @@
       <div class="glass-inset mb-6 rounded-md p-5 lg:p-6">
         <div class="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
           <div>
-            <h4 class="text-lg font-semibold text-gray-800 dark:text-white/90 lg:mb-6">{{ t('demo.personalInformation') }}</h4>
+            <h4 class="text-lg font-semibold text-gray-dark-30 dark:text-white/90 lg:mb-6">{{ t('demo.personalInformation') }}</h4>
 
             <div class="grid grid-cols-1 gap-4 lg:grid-cols-2 lg:gap-7 2xl:gap-x-32">
               <div>
-                <p class="mb-2 text-xs leading-normal text-gray-500 dark:text-gray-400">{{ t('demo.firstName') }}</p>
-                <p class="text-sm font-medium text-gray-800 dark:text-white/90">{{ t('demo.firstNameValue') }}</p>
+                <p class="mb-2 text-xs leading-normal text-gray-dark-25 dark:text-gray-main">{{ t('demo.firstName') }}</p>
+                <p class="text-sm font-medium text-gray-dark-30 dark:text-white/90">{{ t('demo.firstNameValue') }}</p>
               </div>
 
               <div>
-                <p class="mb-2 text-xs leading-normal text-gray-500 dark:text-gray-400">{{ t('demo.lastName') }}</p>
-                <p class="text-sm font-medium text-gray-800 dark:text-white/90">{{ t('demo.lastNameValue') }}</p>
+                <p class="mb-2 text-xs leading-normal text-gray-dark-25 dark:text-gray-main">{{ t('demo.lastName') }}</p>
+                <p class="text-sm font-medium text-gray-dark-30 dark:text-white/90">{{ t('demo.lastNameValue') }}</p>
               </div>
 
               <div>
-                <p class="mb-2 text-xs leading-normal text-gray-500 dark:text-gray-400">{{ t('demo.emailAddress') }}</p>
-                <p class="text-sm font-medium text-gray-800 dark:text-white/90">{{ t('demo.emailValue') }}</p>
+                <p class="mb-2 text-xs leading-normal text-gray-dark-25 dark:text-gray-main">{{ t('demo.emailAddress') }}</p>
+                <p class="text-sm font-medium text-gray-dark-30 dark:text-white/90">{{ t('demo.emailValue') }}</p>
               </div>
 
               <div>
-                <p class="mb-2 text-xs leading-normal text-gray-500 dark:text-gray-400">{{ t('demo.phone') }}</p>
-                <p class="text-sm font-medium text-gray-800 dark:text-white/90">+09 363 398 46</p>
+                <p class="mb-2 text-xs leading-normal text-gray-dark-25 dark:text-gray-main">{{ t('demo.phone') }}</p>
+                <p class="text-sm font-medium text-gray-dark-30 dark:text-white/90">+09 363 398 46</p>
               </div>
 
               <div>
-                <p class="mb-2 text-xs leading-normal text-gray-500 dark:text-gray-400">{{ t('demo.bio') }}</p>
-                <p class="text-sm font-medium text-gray-800 dark:text-white/90">{{ t('demo.teamManager') }}</p>
+                <p class="mb-2 text-xs leading-normal text-gray-dark-25 dark:text-gray-main">{{ t('demo.bio') }}</p>
+                <p class="text-sm font-medium text-gray-dark-30 dark:text-white/90">{{ t('demo.teamManager') }}</p>
               </div>
             </div>
           </div>
 
           <button
             @click="isProfileInfoModal = true"
-            class="flex w-full items-center justify-center gap-2 rounded-md border border-gray-300/70 bg-white/60 px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-gray-800 dark:border-white/15 dark:bg-white/[0.04] dark:text-gray-400 dark:hover:bg-white/[0.03] dark:hover:text-gray-200 lg:inline-flex lg:w-auto"
+            class="flex w-full items-center justify-center gap-2 rounded-md border border-gray-light-10/70 bg-white/60 px-4 py-3 text-sm font-medium text-gray-dark-30 hover:bg-gray-light-30 hover:text-gray-dark-30 dark:border-white/15 dark:bg-white/[0.04] dark:text-gray-main dark:hover:bg-white/[0.03] dark:hover:text-gray-light-10 lg:inline-flex lg:w-auto"
           >
             <svg class="fill-current" width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path
@@ -136,34 +136,34 @@
       <div class="glass-inset rounded-md p-5 lg:p-6">
         <div class="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
           <div>
-            <h4 class="text-lg font-semibold text-gray-800 dark:text-white/90 lg:mb-6">{{ t('demo.address') }}</h4>
+            <h4 class="text-lg font-semibold text-gray-dark-30 dark:text-white/90 lg:mb-6">{{ t('demo.address') }}</h4>
 
             <div class="grid grid-cols-1 gap-4 lg:grid-cols-2 lg:gap-7 2xl:gap-x-32">
               <div>
-                <p class="mb-2 text-xs leading-normal text-gray-500 dark:text-gray-400">{{ t('demo.country') }}</p>
-                <p class="text-sm font-medium text-gray-800 dark:text-white/90">{{ t('demo.countryValue') }}</p>
+                <p class="mb-2 text-xs leading-normal text-gray-dark-25 dark:text-gray-main">{{ t('demo.country') }}</p>
+                <p class="text-sm font-medium text-gray-dark-30 dark:text-white/90">{{ t('demo.countryValue') }}</p>
               </div>
 
               <div>
-                <p class="mb-2 text-xs leading-normal text-gray-500 dark:text-gray-400">{{ t('demo.cityState') }}</p>
-                <p class="text-sm font-medium text-gray-800 dark:text-white/90">{{ t('demo.location') }}</p>
+                <p class="mb-2 text-xs leading-normal text-gray-dark-25 dark:text-gray-main">{{ t('demo.cityState') }}</p>
+                <p class="text-sm font-medium text-gray-dark-30 dark:text-white/90">{{ t('demo.location') }}</p>
               </div>
 
               <div>
-                <p class="mb-2 text-xs leading-normal text-gray-500 dark:text-gray-400">{{ t('demo.postalCode') }}</p>
-                <p class="text-sm font-medium text-gray-800 dark:text-white/90">{{ t('demo.postalCodeValue') }}</p>
+                <p class="mb-2 text-xs leading-normal text-gray-dark-25 dark:text-gray-main">{{ t('demo.postalCode') }}</p>
+                <p class="text-sm font-medium text-gray-dark-30 dark:text-white/90">{{ t('demo.postalCodeValue') }}</p>
               </div>
 
               <div>
-                <p class="mb-2 text-xs leading-normal text-gray-500 dark:text-gray-400">{{ t('demo.taxId') }}</p>
-                <p class="text-sm font-medium text-gray-800 dark:text-white/90">{{ t('demo.taxIdValue') }}</p>
+                <p class="mb-2 text-xs leading-normal text-gray-dark-25 dark:text-gray-main">{{ t('demo.taxId') }}</p>
+                <p class="text-sm font-medium text-gray-dark-30 dark:text-white/90">{{ t('demo.taxIdValue') }}</p>
               </div>
             </div>
           </div>
 
           <button
             @click="isProfileAddressModal = true"
-            class="flex w-full items-center justify-center gap-2 rounded-md border border-gray-300/70 bg-white/60 px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-gray-800 dark:border-white/15 dark:bg-white/[0.04] dark:text-gray-400 dark:hover:bg-white/[0.03] dark:hover:text-gray-200 lg:inline-flex lg:w-auto"
+            class="flex w-full items-center justify-center gap-2 rounded-md border border-gray-light-10/70 bg-white/60 px-4 py-3 text-sm font-medium text-gray-dark-30 hover:bg-gray-light-30 hover:text-gray-dark-30 dark:border-white/15 dark:bg-white/[0.04] dark:text-gray-main dark:hover:bg-white/[0.03] dark:hover:text-gray-light-10 lg:inline-flex lg:w-auto"
           >
             <svg class="fill-current" width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path

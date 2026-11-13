@@ -1,8 +1,8 @@
 <template>
   <main class="relative flex min-h-screen items-center justify-center px-4 py-10">
     <div class="glass-panel w-full max-w-md p-6">
-      <h1 class="mb-2 text-2xl font-semibold text-gray-900 dark:text-white">{{ t('auth.changePasswordTitle') }}</h1>
-      <p class="mb-6 text-sm text-gray-500 dark:text-gray-400">{{ t('auth.changePasswordSubtitle') }}</p>
+      <h1 class="mb-2 text-2xl font-semibold text-gray-dark-40 dark:text-white">{{ t('auth.changePasswordTitle') }}</h1>
+      <p class="mb-6 text-sm text-gray-dark-25 dark:text-gray-main">{{ t('auth.changePasswordSubtitle') }}</p>
 
       <div v-if="errorMessage" role="alert" class="mb-4 rounded-md border border-red-400/50 bg-red-50/80 px-4 py-3 text-sm text-red-700 dark:border-red-500/40 dark:bg-red-950/30 dark:text-red-200">
         {{ errorMessage }}
@@ -13,14 +13,14 @@
         <VTextField v-model="newPassword" :label="t('auth.newPassword')" type="password" autocomplete="new-password" />
         <VTextField v-model="confirmPassword" :label="t('auth.confirmPassword')" type="password" autocomplete="new-password" />
 
-        <p class="text-xs text-gray-500 dark:text-gray-400">{{ t('auth.passwordRule') }}</p>
+        <p class="text-xs text-gray-dark-25 dark:text-gray-main">{{ t('auth.passwordRule') }}</p>
 
         <VButton color="blue" block :disabled="isLoading" @click="onSubmit">
           {{ isLoading ? t('auth.savingPassword') : t('auth.savePassword') }}
         </VButton>
       </form>
 
-      <button type="button" class="mt-4 text-xs text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-white" @click="onLogout">
+      <button type="button" class="mt-4 text-xs text-gray-dark-25 hover:text-gray-dark-30 dark:text-gray-main dark:hover:text-white" @click="onLogout">
         {{ t('header.signOut') }}
       </button>
     </div>

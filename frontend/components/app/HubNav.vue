@@ -1,10 +1,10 @@
 <template>
   <nav class="flex flex-col">
-    <div v-for="(group, index) of groups" :key="group.key ?? group.title" :class="compact && index ? 'mt-2 border-t border-gray-200/60 pt-2 dark:border-white/10' : ''">
+    <div v-for="(group, index) of groups" :key="group.key ?? group.title" :class="compact && index ? 'mt-2 border-t border-gray-light-10/60 pt-2 dark:border-white/10' : ''">
       <button
         v-if="!compact"
         type="button"
-        class="mb-1 flex w-full items-center justify-between rounded-md px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-gray-400 transition hover:text-gray-600 dark:hover:text-gray-200"
+        class="mb-1 flex w-full items-center justify-between rounded-md px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-gray-main transition hover:text-gray-dark-25 dark:hover:text-gray-light-10"
         :aria-expanded="!isCollapsed(group)"
         @click="toggleGroup(group)"
       >

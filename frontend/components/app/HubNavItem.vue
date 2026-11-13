@@ -4,8 +4,8 @@
       class="group relative flex items-center rounded-md transition-colors"
       :class="[
         active
-          ? 'bg-gradient-to-r from-primary/15 via-primary/5 to-transparent text-primary before:absolute before:left-0 before:top-1/2 before:h-5 before:w-0.5 before:-translate-y-1/2 before:rounded-full before:bg-primary'
-          : 'text-gray-600 hover:bg-black/5 dark:text-gray-300 dark:hover:bg-white/5',
+          ? 'bg-gradient-to-r from-cyan-main/15 via-cyan-main/5 to-transparent text-cyan-main before:absolute before:left-0 before:top-1/2 before:h-5 before:w-0.5 before:-translate-y-1/2 before:rounded-full before:bg-cyan-main'
+          : 'text-gray-dark-25 hover:bg-black/5 dark:text-gray-light-10 dark:hover:bg-white/5',
         compact ? 'lg:justify-center lg:px-2' : '',
       ]"
     >
@@ -36,7 +36,7 @@
       <button
         v-if="hasChildren && !compact"
         type="button"
-        class="mr-1 grid size-7 shrink-0 place-items-center rounded text-gray-400 transition hover:text-primary"
+        class="mr-1 grid size-7 shrink-0 place-items-center rounded text-gray-main transition hover:text-cyan-main"
         :aria-expanded="open"
         :aria-label="item.name"
         @click.prevent.stop="toggle"
@@ -47,7 +47,7 @@
 
     <div v-if="hasChildren && !compact" class="nav-collapse" :class="{ open }" :inert="!open">
       <div>
-        <ul class="mt-1 ml-3 space-y-1 border-l border-gray-200/70 pb-1 pl-2 dark:border-white/10">
+        <ul class="mt-1 ml-3 space-y-1 border-l border-gray-light-10/70 pb-1 pl-2 dark:border-white/10">
           <HubNavItem
             v-for="child of item.children"
             :key="`${child.name}:${child.path ?? ''}`"

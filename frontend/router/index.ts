@@ -31,8 +31,8 @@ const appRoutes = [
 addMeta(appRoutes);
 
 const router = createRouter({
-  linkActiveClass: 'text-primary',
-  linkExactActiveClass: 'text-primary',
+  linkActiveClass: 'text-cyan-main',
+  linkExactActiveClass: 'text-cyan-main',
   history: createWebHistory('/'),
   routes: appRoutes,
   scrollBehavior() {

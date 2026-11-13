@@ -3,27 +3,27 @@
     <VBreadcrumb :items="[{ name: t('common.home'), path: '/' }, { name: t('common.dashboard') }]" class="mb-6" />
 
     <div class="mb-6">
-      <h1 class="text-2xl font-semibold text-gray-900 dark:text-white">{{ t('dashboard.title') }}</h1>
-      <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">{{ t('dashboard.subtitle') }}</p>
+      <h1 class="text-2xl font-semibold text-gray-dark-40 dark:text-white">{{ t('dashboard.title') }}</h1>
+      <p class="mt-2 text-sm text-gray-dark-25 dark:text-gray-main">{{ t('dashboard.subtitle') }}</p>
     </div>
 
     <CardMain v-if="!sections.length" :title="t('dashboard.devices')" :loading="isLoading">
-      <p class="text-gray-500 dark:text-gray-400">{{ t('dashboard.empty') }}</p>
+      <p class="text-gray-dark-25 dark:text-gray-main">{{ t('dashboard.empty') }}</p>
     </CardMain>
 
     <template v-else>
       <section v-for="device in sections" :key="device.ip" class="mb-8 last:mb-0">
         <header class="mb-3 flex flex-wrap items-center justify-between gap-2">
           <div class="flex min-w-0 items-center gap-3">
-            <h2 class="truncate text-lg font-semibold text-gray-900 dark:text-white">{{ device.name || device.ip }}</h2>
+            <h2 class="truncate text-lg font-semibold text-gray-dark-40 dark:text-white">{{ device.name || device.ip }}</h2>
 
-            <span class="glass-inset inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium text-gray-600 dark:text-gray-300">
+            <span class="glass-inset inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium text-gray-dark-25 dark:text-gray-light-10">
               <span class="h-2 w-2 rounded-full" :class="statusColor(device.online)"></span>
               {{ statusLabel(device.online) }}
             </span>
           </div>
 
-          <span class="text-xs text-gray-500 dark:text-gray-400">{{ device.ip }}</span>
+          <span class="text-xs text-gray-dark-25 dark:text-gray-main">{{ device.ip }}</span>
         </header>
 
         <div v-if="device.items.length" class="grid grid-cols-[repeat(auto-fill,minmax(130px,1fr))] gap-4">
@@ -40,7 +40,7 @@
           </component>
         </div>
 
-        <p v-else class="text-sm text-gray-500 dark:text-gray-400">{{ t('dashboard.noTiles') }}</p>
+        <p v-else class="text-sm text-gray-dark-25 dark:text-gray-main">{{ t('dashboard.noTiles') }}</p>
       </section>
     </template>
   </main>
@@ -93,7 +93,7 @@ const tileProps = (tile: ResolvedDashboardItem): Omit<ResolvedDashboardItem, 'id
 };
 
 const statusColor = (online: boolean | null): string => {
-  if (online === null) return 'bg-gray-400';
+  if (online === null) return 'bg-gray-main';
   return online ? 'bg-emerald-500' : 'bg-red-500';
 };
 

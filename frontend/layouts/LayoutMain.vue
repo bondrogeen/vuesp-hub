@@ -5,7 +5,7 @@
     <div class="hub-shell flex h-screen overflow-hidden">
       <AppAside :isSidebar="sidebarToggle" @sidebar="sidebarToggle = $event">
         <HubNav :groups="getMenu" :is-sidebar="sidebarToggle" :full-path="route.path" @sidebar="sidebarToggle = $event" />
-        <div class="mt-auto pt-4 text-xs text-gray-400 dark:text-gray-500" :class="sidebarToggle ? 'lg:hidden' : ''">
+        <div class="mt-auto pt-4 text-xs text-gray-main dark:text-gray-dark-25" :class="sidebarToggle ? 'lg:hidden' : ''">
           {{ t('common.appName') }}
         </div>
       </AppAside>
@@ -34,7 +34,7 @@
           @read="appStore.readNotification"
         >
           <template #header="{ isNew }">
-            <div class="sticky top-0 z-20 flex flex-wrap items-center justify-between gap-2 border-b border-gray-200/70 bg-white/75 px-3 py-3 backdrop-blur-xl dark:border-white/10 dark:bg-[#07112c]/80">
+            <div class="sticky top-0 z-20 flex flex-wrap items-center justify-between gap-2 border-b border-gray-light-10/70 bg-white/75 px-3 py-3 backdrop-blur-xl dark:border-white/10 dark:bg-night-main/80">
               <h2 class="font-medium">{{ t('notifications.title') }}</h2>
               <VButton size="sm" color="gray" class="whitespace-nowrap text-xs" :disabled="!isNew" @click="appStore.readAllNotification">
                 {{ t('notifications.markAllRead') }}
