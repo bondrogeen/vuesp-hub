@@ -11,7 +11,7 @@ import { pipeline } from 'node:stream/promises';
 import path from 'node:path';
 import { x as extractTar } from 'tar';
 
-import type { ModuleInfo, ModuleLogEntry, ModuleManifest } from '@root/shared/module.ts';
+import type { IModuleInfo, IModuleLogEntry, IModuleManifest } from '@root/shared/module.ts';
 import { modulePublicRoute, validateModuleRoute } from './publicRoute.ts';
 
 interface ModuleHostOptions {
@@ -24,13 +24,13 @@ interface ModuleHostOptions {
 
 interface Runtime {
   child: ChildProcess;
-  manifest: ModuleManifest;
+  manifest: IModuleManifest;
   directory: string;
   dataDirectory: string;
   running: boolean;
   stopping: boolean;
   httpPort?: number;
-  logs: ModuleLogEntry[];
+  logs: IModuleLogEntry[];
   ready?: { resolve: () => void; reject: (error: Error) => void };
 }
 
@@ -39,10 +39,10 @@ const PLATFORM = `${process.platform}-${process.arch}`;
 const READY_TIMEOUT_MS = 8_000;
 const STOP_TIMEOUT_MS = 4_000;
 
-const readManifest = async (directory: string): Promise<ModuleManifest> => {
+const readManifest = async (directory: string): Promise<IModuleManifest> => {
   const raw = JSON.parse(await readFile(path.join(directory, 'manifest.json'), 'utf8')) as unknown;
   if (!raw || typeof raw !== 'object') throw new Error('manifest.json must be an object');
-  const manifest = raw as Partial<ModuleManifest>;
+  const manifest = raw as Partial<IModuleManifest>;
   if (typeof manifest.id !== 'string' || !ID_PATTERN.test(manifest.id)) throw new Error('Invalid module id');
   if (typeof manifest.name !== 'string' || !manifest.name.trim()) throw new Error('Module name is required');
   if (typeof manifest.version !== 'string' || !manifest.version.trim()) throw new Error('Module version is required');
@@ -58,8 +58,8 @@ const readManifest = async (directory: string): Promise<ModuleManifest> => {
   if (manifest.assets !== undefined && !Array.isArray(manifest.assets)) {
     throw new Error('Module assets must be an array');
   }
-  validateModuleRoute(manifest as ModuleManifest);
-  return manifest as ModuleManifest;
+  validateModuleRoute(manifest as IModuleManifest);
+  return manifest as IModuleManifest;
 };
 
 export const createModuleHost = ({ modulesDirectory, dataDirectory, runnerPath, verifyModuleToken }: ModuleHostOptions) => {
@@ -129,7 +129,7 @@ export const createModuleHost = ({ modulesDirectory, dataDirectory, runnerPath, 
     }
   };
 
-  const installAssets = async (staging: string, manifest: ModuleManifest): Promise<void> => {
+  const installAssets = async (staging: string, manifest: IModuleManifest): Promise<void> => {
     const stagingRoot = path.resolve(staging);
 
     for (const asset of manifest.assets ?? []) {
@@ -213,7 +213,7 @@ export const createModuleHost = ({ modulesDirectory, dataDirectory, runnerPath, 
     }
   };
 
-  const appendLog = (runtime: Runtime, level: ModuleLogEntry['level'], message: string): void => {
+  const appendLog = (runtime: Runtime, level: IModuleLogEntry['level'], message: string): void => {
     const entry = { at: new Date().toISOString(), level, message };
     runtime.logs.push(entry);
     if (runtime.logs.length > 200) runtime.logs.shift();
@@ -256,7 +256,7 @@ export const createModuleHost = ({ modulesDirectory, dataDirectory, runnerPath, 
     }
   };
 
-  const install = async (source: string): Promise<ModuleManifest> => {
+  const install = async (source: string): Promise<IModuleManifest> => {
     const sourceStat = await stat(source);
     const staging = path.join(modulesDirectory, `.staging-${Date.now()}-${Math.random().toString(36).slice(2)}`);
     await mkdir(staging, { recursive: true, mode: 0o700 });
@@ -302,10 +302,10 @@ export const createModuleHost = ({ modulesDirectory, dataDirectory, runnerPath, 
     }
   };
 
-  const list = async (): Promise<ModuleInfo[]> => {
+  const list = async (): Promise<IModuleInfo[]> => {
     await mkdir(modulesDirectory, { recursive: true, mode: 0o700 });
     const entries = await readdir(modulesDirectory, { withFileTypes: true });
-    const modules: ModuleInfo[] = [];
+    const modules: IModuleInfo[] = [];
     for (const entry of entries) {
       if (!entry.isDirectory() || entry.name.startsWith('.')) continue;
       try {
@@ -453,7 +453,7 @@ export const createModuleHost = ({ modulesDirectory, dataDirectory, runnerPath, 
     }
   };
 
-  const logs = (id: string): ModuleLogEntry[] => runtimes.get(id)?.logs ?? [];
+  const logs = (id: string): IModuleLogEntry[] => runtimes.get(id)?.logs ?? [];
 
   /**
    * Proxies a request to the module HTTP listener. `prefix` is the public mount
@@ -572,9 +572,9 @@ export const createModuleHost = ({ modulesDirectory, dataDirectory, runnerPath, 
   /** Resolves a public `/modules/...` path to the owning module and the inner path. */
   const resolve = async (
     pathname: string
-  ): Promise<{ info: ModuleInfo; base: string; relative: string } | undefined> => {
+  ): Promise<{ info: IModuleInfo; base: string; relative: string } | undefined> => {
     const clean = pathname.split('?')[0] ?? '/';
-    let match: { info: ModuleInfo; base: string; relative: string } | undefined;
+    let match: { info: IModuleInfo; base: string; relative: string } | undefined;
 
     for (const info of await list()) {
       const base = modulePublicRoute(info.manifest);
@@ -586,7 +586,7 @@ export const createModuleHost = ({ modulesDirectory, dataDirectory, runnerPath, 
     return match;
   };
 
-  const installFromUrl = async (url: string, sha256: string): Promise<ModuleManifest> => {
+  const installFromUrl = async (url: string, sha256: string): Promise<IModuleManifest> => {
     const cached = await downloadToCache(url, sha256);
     return install(cached);
   };
@@ -603,4 +603,4 @@ export const createModuleHost = ({ modulesDirectory, dataDirectory, runnerPath, 
   return { install, installFromUrl, list, start, stop, startAll, stopAll, logs, proxy, upgrade, resolve, uninstall };
 };
 
-export type ModuleHost = ReturnType<typeof createModuleHost>;
+export type TModuleHost = ReturnType<typeof createModuleHost>;

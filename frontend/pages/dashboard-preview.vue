@@ -23,7 +23,7 @@
         <span class="glass-inset inline-flex items-center gap-2 rounded-full px-3 py-2 text-xs text-gray-dark-25 dark:text-gray-main">
           {{ t('dashboardPreview.tilesCount', { count: tilesCount }) }}
         </span>
-        <span class="text-[11px] text-gray-main dark:text-gray-dark-25">
+        <span class="text-xs text-gray-main dark:text-gray-dark-25">
           {{ saving ? t('dashboardPreview.saving') : t('dashboardPreview.saved') }}
         </span>
 
@@ -34,7 +34,7 @@
           :title="t('dashboardPreview.add')"
           @click="pickerOpen = true"
         >
-          <IconAddLine class="size-5" />
+          <VIcon name="add" class="size-5" />
         </VButton>
         <VButton
           type="icon"
@@ -43,11 +43,11 @@
           :title="locked ? t('dashboardPreview.unlock') : t('dashboardPreview.lock')"
           @click="toggleLock"
         >
-          <IconLockLine
+          <VIcon name="lock"
             v-if="locked"
             class="size-5"
           />
-          <IconLockUnlockLine
+          <VIcon name="lock-open"
             v-else
             class="size-5"
           />
@@ -59,7 +59,7 @@
           :title="t('dashboardPreview.reset')"
           @click="resetOpen = true"
         >
-          <IconRefreshLine class="size-5" />
+          <VIcon name="refresh" class="size-5" />
         </VButton>
       </div>
     </div>
@@ -92,8 +92,8 @@
             class="grid size-10 shrink-0 place-items-center rounded-md"
             :class="`pv-picker-${widget.type}`"
           >
-            <component
-              :is="widget.icon"
+            <VIcon
+              :name="widget.icon"
               class="size-5"
             />
           </span>
@@ -110,10 +110,10 @@
         {{ t('dashboardPreview.resetConfirm') }}
       </p>
       <div class="mt-4 flex flex-wrap justify-end gap-2">
-        <VButton outline color="gray" size="sm" @click="resetOpen = false">
+        <VButton variant="outline" color="gray" size="sm" @click="resetOpen = false">
           {{ t('common.cancel') }}
         </VButton>
-        <VButton color="rose" size="sm" @click="resetLayout">
+        <VButton color="red" size="sm" @click="resetLayout">
           {{ t('dashboardPreview.reset') }}
         </VButton>
       </div>
@@ -122,22 +122,11 @@
 </template>
 
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, reactive, ref, type Component } from 'vue';
+import { onBeforeUnmount, onMounted, reactive, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { BlockBreadcrumb as VBreadcrumb, VButton, VDialog } from 'vuesp-components/components';
+import { BlockBreadcrumb as VBreadcrumb, VButton, VDialog, VIcon } from 'vuesp-components/components';
 import { GridStack, type GridStackNode, type GridStackWidget } from 'gridstack';
 import 'gridstack/dist/gridstack.min.css';
-import IconAddLine from '~icons/ri/add-line';
-import IconBarChartLine from '~icons/ri/bar-chart-line';
-import IconGridLine from '~icons/ri/grid-line';
-import IconLightbulbLine from '~icons/ri/lightbulb-line';
-import IconLockLine from '~icons/ri/lock-line';
-import IconLockUnlockLine from '~icons/ri/lock-unlock-line';
-import IconPlayCircleLine from '~icons/ri/play-circle-line';
-import IconRefreshLine from '~icons/ri/refresh-line';
-import IconSensorLine from '~icons/ri/sensor-line';
-import IconTempHotLine from '~icons/ri/temp-hot-line';
-import IconVideoLine from '~icons/ri/video-line';
 
 type TileType = 'sensor' | 'camera' | 'chart' | 'light' | 'climate' | 'media' | 'group';
 
@@ -146,7 +135,7 @@ interface TileDefinition {
   h: number;
   minW: number;
   minH: number;
-  icon: Component;
+  icon: string;
   label: string;
   text: string;
 }
@@ -173,13 +162,13 @@ const STORAGE_KEY = 'vuesp.hub.dashboardPreview.v1';
 const { t } = useI18n();
 
 const tileDefinitions: Record<TileType, TileDefinition> = {
-  sensor: { w: 4, h: 3, minW: 2, minH: 2, icon: IconSensorLine, label: 'dashboardPreview.types.sensor', text: 'dashboardPreview.typeText.sensor' },
-  camera: { w: 7, h: 4, minW: 3, minH: 3, icon: IconVideoLine, label: 'dashboardPreview.types.camera', text: 'dashboardPreview.typeText.camera' },
-  chart: { w: 5, h: 2, minW: 3, minH: 2, icon: IconBarChartLine, label: 'dashboardPreview.types.chart', text: 'dashboardPreview.typeText.chart' },
-  light: { w: 3, h: 2, minW: 2, minH: 2, icon: IconLightbulbLine, label: 'dashboardPreview.types.light', text: 'dashboardPreview.typeText.light' },
-  climate: { w: 4, h: 2, minW: 3, minH: 2, icon: IconTempHotLine, label: 'dashboardPreview.types.climate', text: 'dashboardPreview.typeText.climate' },
-  media: { w: 5, h: 2, minW: 3, minH: 2, icon: IconPlayCircleLine, label: 'dashboardPreview.types.media', text: 'dashboardPreview.typeText.media' },
-  group: { w: 12, h: 5, minW: 4, minH: 4, icon: IconGridLine, label: 'dashboardPreview.types.group', text: 'dashboardPreview.typeText.group' },
+  sensor: { w: 4, h: 3, minW: 2, minH: 2, icon: 'chart', label: 'dashboardPreview.types.sensor', text: 'dashboardPreview.typeText.sensor' },
+  camera: { w: 7, h: 4, minW: 3, minH: 3, icon: 'video', label: 'dashboardPreview.types.camera', text: 'dashboardPreview.typeText.camera' },
+  chart: { w: 5, h: 2, minW: 3, minH: 2, icon: 'chart', label: 'dashboardPreview.types.chart', text: 'dashboardPreview.typeText.chart' },
+  light: { w: 3, h: 2, minW: 2, minH: 2, icon: 'bulb', label: 'dashboardPreview.types.light', text: 'dashboardPreview.typeText.light' },
+  climate: { w: 4, h: 2, minW: 3, minH: 2, icon: 'therm', label: 'dashboardPreview.types.climate', text: 'dashboardPreview.typeText.climate' },
+  media: { w: 5, h: 2, minW: 3, minH: 2, icon: 'play-circle', label: 'dashboardPreview.types.media', text: 'dashboardPreview.typeText.media' },
+  group: { w: 12, h: 5, minW: 4, minH: 4, icon: 'layout-grid', label: 'dashboardPreview.types.group', text: 'dashboardPreview.typeText.group' },
 };
 
 const widgetList = (Object.entries(tileDefinitions) as Array<[TileType, TileDefinition]>).map(([type, definition]) => ({

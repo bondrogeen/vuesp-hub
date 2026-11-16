@@ -1,45 +1,44 @@
-export type IconName =
-  | 'IconChevron'
-  | 'IconDots'
-  | 'IconSearch'
-  | 'IconUpdate'
-  | 'IconDashboard'
-  | 'IconDevice'
-  | 'IconVideo'
-  | 'IconList'
-  | 'IconHome'
-  | 'IconScript'
-  | 'IconStorage'
-  | 'IconGpio'
-  | 'IconUser'
-  | 'IconSettings'
-  | 'IconPuzzle';
+export type TIconName =
+  | 'more'
+  | 'search'
+  | 'refresh'
+  | 'dashboard'
+  | 'cpu'
+  | 'video'
+  | 'list-check'
+  | 'home'
+  | 'script'
+  | 'storage'
+  | 'gpio'
+  | 'user'
+  | 'settings'
+  | 'box';
 
-export interface MenuChildType {
+export interface IMenuChildType {
   name: string;
-  icon?: IconName;
+  icon?: TIconName;
   path?: string;
   /** Hide the item unless this module is installed and running. */
   moduleId?: string;
-  children?: MenuChildType[];
+  children?: IMenuChildType[];
 }
 
-export interface MenuItemType {
+export interface IMenuItemType {
   name: string;
-  icon: IconName;
+  icon: TIconName;
   path?: string;
   /** Hide the item unless this module is installed and running. */
   moduleId?: string;
-  children?: MenuChildType[];
+  children?: IMenuChildType[];
 }
 
-export interface MenuType {
+export interface IMenuType {
   key?: string;
   title: string;
-  items: MenuItemType[];
+  items: IMenuItemType[];
 }
 
-export interface BreadcrumbType {
+export interface IBreadcrumbType {
   name: string;
   path?: string;
 }

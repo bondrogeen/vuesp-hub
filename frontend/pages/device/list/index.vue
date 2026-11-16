@@ -23,7 +23,7 @@
           :aria-label="isScanning ? t('devices.scanning') : t('devices.scanNetwork')"
           @click="scanDevices"
         >
-          <IconSearch class="size-4" />
+          <VIcon name="search" class="size-4" />
         </VButton>
 
         <VButton
@@ -34,7 +34,7 @@
           :aria-label="t('devices.restartService')"
           @click="restartService"
         >
-          <IconUpdate class="size-4" />
+          <VIcon name="refresh" class="size-4" />
         </VButton>
       </div>
     </div>
@@ -46,7 +46,7 @@
       {{ successMessage }}
     </div>
 
-    <CardMain v-if="hasScanned" :title="t('devices.discovered')" :loading="isScanning" class="mb-6">
+    <VCard v-if="hasScanned" :title="t('devices.discovered')" class="mb-6" hover>
       <div v-if="!foundDevices.length" class="py-8 text-center text-sm text-gray-dark-25 dark:text-gray-main">
         {{ t('devices.noNewDevices') }}
       </div>
@@ -70,7 +70,7 @@
           <VButton color="blue" class="shrink-0" @click="openAddDialog(found)">{{ t('devices.addToHub') }}</VButton>
         </li>
       </ul>
-    </CardMain>
+    </VCard>
 
     <section class="space-y-3">
       <div class="flex justify-end">
@@ -106,7 +106,7 @@
                 <VDropdown left="unset" right="0" top="0">
                   <template #activator="{ on }">
                     <VButton type="icon" color="gray" class="flex" @click.stop="on.click($event)">
-                      <IconDots class="size-5" />
+                      <VIcon name="more" class="size-5" />
                     </VButton>
                   </template>
 
@@ -146,26 +146,24 @@ import { onMounted, ref } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
-import { BlockBreadcrumb as VBreadcrumb, CardMain, VButton, VDropdown, VList, VTable } from 'vuesp-components/components';
+import { BlockBreadcrumb as VBreadcrumb, VButton, VDropdown, VList, VTable, VIcon, VCard } from 'vuesp-components/components';
 
 import AppDialog from '@/components/app/AppDialog.vue';
 import DialogAddDevice from '@/components/device/DialogAddDevice.vue';
-import legacyIcons from '@/components/app/legacyIcons.ts';
 import { useAppStore } from '@/stores/AppStore';
 import { useWebSocketStore } from '@/stores/WebSocketStore';
 import { api } from '@/utils/helpers.ts';
-import type { DeviceFormInput, DeviceRecord, DiscoveredDevice } from '@/types';
-import type { DeviceListMenu, DeviceTableHeader } from './types.ts';
+import type { TDeviceFormInput, IDeviceRecord, IDiscoveredDevice } from '@/types';
+import type { IDeviceListMenu, IDeviceTableHeader } from './types.ts';
 import { DeviceListAction } from './types.ts';
 
 const webSocketStore = useWebSocketStore();
 const appStore = useAppStore();
 const router = useRouter();
 const { t } = useI18n();
-const { IconDots, IconSearch, IconUpdate } = legacyIcons;
 const { devices, serviceRunning } = storeToRefs(webSocketStore);
 
-const headers: DeviceTableHeader[] = [
+const headers: IDeviceTableHeader[] = [
   { key: 'status', name: '', className: 'w-8' },
   { key: 'name', name: t('devices.tableName'), className: '' },
   { key: 'ip', name: t('devices.tableIp'), className: '' },
@@ -173,9 +171,9 @@ const headers: DeviceTableHeader[] = [
   { key: 'action', name: '', className: '' },
 ];
 
-const registeredDevices = ref<DeviceRecord[]>([]);
-const foundDevices = ref<DiscoveredDevice[]>([]);
-const selectedDevice = ref<DiscoveredDevice | null>(null);
+const registeredDevices = ref<IDeviceRecord[]>([]);
+const foundDevices = ref<IDiscoveredDevice[]>([]);
+const selectedDevice = ref<IDiscoveredDevice | null>(null);
 const isLoading = ref(false);
 const isScanning = ref(false);
 const hasScanned = ref(false);
@@ -186,16 +184,16 @@ const successMessage = ref('');
 const formatFirmware = (version: number[]): string =>
   version.length && version.some(value => value !== 0) ? version.join('.') : t('common.unknown');
 
-const isLegacyIdRegistered = (device: DiscoveredDevice): boolean =>
+const isLegacyIdRegistered = (device: IDiscoveredDevice): boolean =>
   registeredDevices.value.some(saved => saved.deviceId === device.deviceId);
 
-const getStatus = (device: DeviceRecord, states: Record<string, unknown>): string => {
+const getStatus = (device: IDeviceRecord, states: Record<string, unknown>): string => {
   const ping = (states[String(device.deviceId)] as { PING?: { delta?: number } } | undefined)?.PING;
   const delta = typeof ping?.delta === 'number' ? ping.delta : Number.POSITIVE_INFINITY;
   return delta > 5000 ? 'bg-red-500' : 'bg-emerald-500';
 };
 
-const getListMenu = (): DeviceListMenu[] => [
+const getListMenu = (): IDeviceListMenu[] => [
   { name: t('common.remove'), type: DeviceListAction.REMOVE },
   { name: t('common.view'), type: DeviceListAction.VIEW },
 ];
@@ -204,7 +202,7 @@ const loadRegistry = async (): Promise<void> => {
   isLoading.value = true;
   errorMessage.value = '';
   try {
-    registeredDevices.value = await api.get<DeviceRecord[]>('/device/');
+    registeredDevices.value = await api.get<IDeviceRecord[]>('/device/');
   } catch (error) {
     errorMessage.value = error instanceof Error ? error.message : t('devices.errors.load');
   } finally {
@@ -218,7 +216,7 @@ const scanDevices = async (): Promise<void> => {
   errorMessage.value = '';
   successMessage.value = '';
   try {
-    const scanned = await api.get<DiscoveredDevice[]>('/device/scan/');
+    const scanned = await api.get<IDiscoveredDevice[]>('/device/scan/');
     const registeredIps = new Set(registeredDevices.value.map(device => device.ip));
     foundDevices.value = scanned.filter(device => !registeredIps.has(device.ip));
   } catch (error) {
@@ -228,7 +226,7 @@ const scanDevices = async (): Promise<void> => {
   }
 };
 
-const openAddDialog = (device: DiscoveredDevice): void => {
+const openAddDialog = (device: IDiscoveredDevice): void => {
   selectedDevice.value = { ...device };
   errorMessage.value = '';
 };
@@ -242,11 +240,11 @@ const restartService = async (): Promise<void> => {
   }
 };
 
-const addDevice = async (device: DeviceFormInput): Promise<void> => {
+const addDevice = async (device: TDeviceFormInput): Promise<void> => {
   errorMessage.value = '';
   successMessage.value = '';
   try {
-    const added = await api.post<DeviceRecord>('/device/', { body: JSON.stringify(device) });
+    const added = await api.post<IDeviceRecord>('/device/', { body: JSON.stringify(device) });
     registeredDevices.value = [...registeredDevices.value, added];
     foundDevices.value = foundDevices.value.filter(found => found.ip !== added.ip);
     selectedDevice.value = null;
@@ -257,7 +255,7 @@ const addDevice = async (device: DeviceFormInput): Promise<void> => {
   }
 };
 
-const removeDevice = async (device: DeviceRecord): Promise<void> => {
+const removeDevice = async (device: IDeviceRecord): Promise<void> => {
   removingId.value = device.id;
   errorMessage.value = '';
   successMessage.value = '';
@@ -273,7 +271,7 @@ const removeDevice = async (device: DeviceRecord): Promise<void> => {
   }
 };
 
-const confirmRemove = (device: DeviceRecord): void => {
+const confirmRemove = (device: IDeviceRecord): void => {
   appStore.setDialog({
     value: true,
     title: t('devices.removeDialog.title'),
@@ -283,7 +281,7 @@ const confirmRemove = (device: DeviceRecord): void => {
   });
 };
 
-const onMenu = (event: DeviceListMenu, device: DeviceRecord): void => {
+const onMenu = (event: IDeviceListMenu, device: IDeviceRecord): void => {
   if (event.type === DeviceListAction.REMOVE) {
     if (removingId.value === null) confirmRemove(device);
     return;

@@ -1,21 +1,21 @@
 import { translate } from '@/i18n/index.ts';
-import type { AccessPage } from './access.ts';
+import type { TAccessPage } from './access.ts';
 
 export const AUTH_TOKEN_KEY = 'vuesp-auth-token';
 
-export type UserRole = 'admin' | 'user' | 'viewer';
+export type TUserRole = 'admin' | 'user' | 'viewer';
 
-export interface AuthUser {
+export interface IAuthUser {
   id: number;
   username: string;
-  role: UserRole;
+  role: TUserRole;
   mustChangePassword: boolean;
-  pages?: AccessPage[] | null;
+  pages?: TAccessPage[] | null;
 }
 
-export interface AuthSession {
+export interface IAuthSession {
   token: string;
-  user: AuthUser;
+  user: IAuthUser;
 }
 
 export const getToken = (): string => {
@@ -55,14 +55,14 @@ const decodeToken = (): AuthTokenPayload | null => {
   }
 };
 
-const isRole = (value: unknown): value is UserRole => value === 'admin' || value === 'user' || value === 'viewer';
+const isRole = (value: unknown): value is TUserRole => value === 'admin' || value === 'user' || value === 'viewer';
 
 export const getUsername = (): string => {
   const parsed = decodeToken();
   return parsed && typeof parsed.sub === 'string' ? parsed.sub : '';
 };
 
-export const getRole = (): UserRole => {
+export const getRole = (): TUserRole => {
   const parsed = decodeToken();
   // Legacy tokens issued before roles existed belong to the local administrator.
   if (!parsed) return 'viewer';
@@ -81,7 +81,7 @@ export const getMustChangePassword = (): boolean => {
 
 export const isAdmin = (): boolean => getRole() === 'admin';
 
-export const login = async (username: string, password: string): Promise<AuthSession> => {
+export const login = async (username: string, password: string): Promise<IAuthSession> => {
   const response = await fetch('/api/v1/auth/login', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -106,7 +106,7 @@ export const login = async (username: string, password: string): Promise<AuthSes
     throw new Error(serverMessage);
   }
 
-  const session = body as AuthSession;
+  const session = body as IAuthSession;
   if (!session?.token) throw new Error(translate('auth.noToken'));
   setToken(session.token);
   return session;

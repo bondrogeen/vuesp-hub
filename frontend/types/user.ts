@@ -1,14 +1,14 @@
-import type { AccessPage } from '@/utils/access.ts';
+import type { TAccessPage } from '@/utils/access.ts';
 
-export type UserRole = 'admin' | 'user' | 'viewer';
+export type TUserRole = 'admin' | 'user' | 'viewer';
 
-export interface ManagedUser {
+export interface IManagedUser {
   id: number;
   username: string;
-  role: UserRole;
+  role: TUserRole;
   /** `null` means the user inherits the role defaults. */
-  pages: AccessPage[] | null;
+  pages: TAccessPage[] | null;
   createdAt: string;
 }
 
-export const userRoles: UserRole[] = ['admin', 'user', 'viewer'];
+export const userRoles: TUserRole[] = ['admin', 'user', 'viewer'];

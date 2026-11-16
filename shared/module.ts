@@ -1,9 +1,9 @@
-export interface ModuleWebNav {
+export interface IModuleWebNav {
   label: string;
   icon?: string;
 }
 
-export interface ModuleGroup {
+export interface IModuleGroup {
   id: string;
   /** Short group name used in the UI and public URL, for example `video`. */
   slug?: string;
@@ -12,16 +12,16 @@ export interface ModuleGroup {
   order?: number;
 }
 
-export interface ModuleWebManifest {
+export interface IModuleWebManifest {
   /** Entry file relative to the module directory, for example `web/entry.js`. */
   entry: string;
   /** Custom element tag registered by the entry bundle. */
   element: string;
   route?: string;
-  nav?: ModuleWebNav;
+  nav?: IModuleWebNav;
 }
 
-export interface ModuleAsset {
+export interface IModuleAsset {
   id: string;
   url: string;
   sha256: string;
@@ -37,7 +37,7 @@ export interface ModuleAsset {
   optional?: boolean;
 }
 
-export interface ModuleManifest {
+export interface IModuleManifest {
   id: string;
   name: string;
   version: string;
@@ -46,37 +46,37 @@ export interface ModuleManifest {
   platforms?: string[];
   permissions?: string[];
   resources?: { memoryMb?: number };
-  web?: string | ModuleWebManifest;
+  web?: string | IModuleWebManifest;
   uiApiVersion?: number;
-  group?: ModuleGroup;
+  group?: IModuleGroup;
   /** Short module name inside its group; also used in the public route. */
   slug?: string;
-  assets?: ModuleAsset[];
+  assets?: IModuleAsset[];
   settings?: unknown[];
   description?: string;
 }
 
-export interface ModuleLogEntry {
+export interface IModuleLogEntry {
   at: string;
   level: 'info' | 'warn' | 'error';
   message: string;
 }
 
-export interface ModuleInfo {
-  manifest: ModuleManifest;
+export interface IModuleInfo {
+  manifest: IModuleManifest;
   directory: string;
   running: boolean;
-  logs: ModuleLogEntry[];
+  logs: IModuleLogEntry[];
 }
 
 /** Public module shape sent to the hub UI. */
-export interface ModuleSummary {
+export interface IModuleSummary {
   id: string;
   name: string;
   version: string;
   description?: string;
   permissions: string[];
-  group?: ModuleGroup;
+  group?: IModuleGroup;
   slug: string;
   /** Public UI route, for example `/modules/video/cameras`. */
   route: string;
@@ -86,7 +86,7 @@ export interface ModuleSummary {
     url: string;
     route: string;
     ws: string;
-    nav?: ModuleWebNav;
+    nav?: IModuleWebNav;
   };
   running: boolean;
 }

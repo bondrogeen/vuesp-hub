@@ -1,6 +1,6 @@
 <template>
   <main class="relative flex min-h-screen items-center justify-center px-4 py-10">
-    <div class="glass-panel w-full max-w-md p-6">
+    <VCard variant="solid" padding="lg" class="w-full max-w-md">
       <h1 class="mb-2 text-2xl font-semibold text-gray-dark-40 dark:text-white">{{ t('auth.signIn') }}</h1>
       <p class="mb-6 text-sm text-gray-dark-25 dark:text-gray-main">{{ t('auth.subtitle') }}</p>
 
@@ -18,7 +18,7 @@
       </form>
 
       <p v-if="showDefaultCredentials" class="mt-4 text-xs text-gray-dark-25 dark:text-gray-main">{{ t('auth.defaultCredentials') }}</p>
-    </div>
+    </VCard>
   </main>
 </template>
 
@@ -28,7 +28,7 @@ import { useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 
 import { withTrailingSlash } from '@/utils/path.ts';
-import { VButton, VTextField } from 'vuesp-components/components';
+import { VButton, VTextField, VCard } from 'vuesp-components/components';
 
 import { login } from '@/utils/auth.ts';
 import { api } from '@/utils/helpers.ts';

@@ -1,9 +1,9 @@
 import type { Server as SocketIOServer } from 'socket.io';
 import type { DeviceRuntime } from '@core/application/deviceRuntime.ts';
 import { parseBroadcastDeviceCommand, parseTargetedDeviceCommand } from '@root/shared/device.ts';
-import type { ServiceSocketAcknowledgement } from '@root/shared/socket.ts';
+import type { TServiceSocketAcknowledgement } from '@root/shared/socket.ts';
 
-const respond = (callback: unknown, payload: ServiceSocketAcknowledgement) => {
+const respond = (callback: unknown, payload: TServiceSocketAcknowledgement) => {
   if (typeof callback === 'function') callback(payload);
 };
 

@@ -17,7 +17,7 @@
       <div class="flex flex-wrap items-center gap-2">
         <VButton
           v-if="isAdmin()"
-          outline
+          variant="outline"
           color="gray"
           size="sm"
           @click="openCatalog()"
@@ -40,7 +40,7 @@
           :title="t('common.refresh')"
           @click="load()"
         >
-          <IconRefreshLine class="size-5" />
+          <VIcon name="refresh" class="size-5" />
         </VButton>
       </div>
     </div>
@@ -50,7 +50,7 @@
       class="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-md border border-red-400/40 bg-red-500/10 px-4 py-3 text-sm text-red-600 dark:text-red-300"
     >
       <span>{{ error }}</span>
-      <VButton outline color="gray" size="sm" @click="load()">
+      <VButton variant="outline" color="gray" size="sm" @click="load()">
         {{ t('common.refresh') }}
       </VButton>
     </div>
@@ -74,11 +74,7 @@
         </h2>
 
         <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          <article
-            v-for="item of section.items"
-            :key="item.id"
-            class="flex flex-col gap-4 rounded-lg border border-gray-light-10/70 bg-white/60 p-4 dark:border-white/10 dark:bg-white/5"
-          >
+          <VCard v-for="item of section.items" :key="item.id" variant="glass" padding="lg" class="flex flex-col gap-4">
             <div class="flex items-start justify-between gap-3">
               <div class="min-w-0">
                 <h2 class="truncate text-base font-semibold text-gray-dark-40 dark:text-white">
@@ -89,7 +85,7 @@
                 </p>
               </div>
               <span
-                class="shrink-0 rounded-full px-2 py-1 text-[10px] font-semibold uppercase tracking-wide"
+                class="shrink-0 rounded-full px-2 py-1 text-xs font-semibold uppercase tracking-wide"
                 :class="item.running
                   ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400'
                   : 'bg-gray-dark-25/15 text-gray-dark-25 dark:text-gray-main'"
@@ -118,7 +114,7 @@
               </VButton>
               <VButton
                 v-if="isAdmin()"
-                outline
+                variant="outline"
                 color="gray"
                 size="sm"
                 :loading="actionId === `${item.id}:toggle`"
@@ -127,7 +123,7 @@
                 {{ item.running ? t('modules.stop') : t('modules.start') }}
               </VButton>
               <VButton
-                outline
+                variant="outline"
                 color="gray"
                 size="sm"
                 @click="openLogs(item)"
@@ -136,7 +132,7 @@
               </VButton>
               <VButton
                 v-if="isAdmin()"
-                outline
+                variant="outline"
                 color="gray"
                 size="sm"
                 :loading="actionId === `${item.id}:remove`"
@@ -145,7 +141,7 @@
                 {{ t('modules.remove') }}
               </VButton>
             </div>
-          </article>
+          </VCard>
         </div>
       </section>
     </div>
@@ -195,7 +191,7 @@
         </details>
 
         <div class="flex justify-end gap-2">
-          <VButton outline color="gray" size="sm" @click="installOpen = false">
+          <VButton variant="outline" color="gray" size="sm" @click="installOpen = false">
             {{ t('common.cancel') }}
           </VButton>
           <VButton
@@ -264,7 +260,7 @@
             </VButton>
             <span
               v-else
-              class="rounded-full bg-emerald-500/15 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-emerald-600 dark:text-emerald-400"
+              class="rounded-full bg-emerald-500/15 px-2 py-1 text-xs font-semibold uppercase tracking-wide text-emerald-600 dark:text-emerald-400"
             >
               {{ t('modules.installed') }}
             </span>
@@ -283,11 +279,11 @@
         {{ t('modules.removeConfirm', { name: removeTarget.name }) }}
       </p>
       <div class="mt-4 flex flex-wrap justify-end gap-2">
-        <VButton outline color="gray" size="sm" @click="removeTarget = null">
+        <VButton variant="outline" color="gray" size="sm" @click="removeTarget = null">
           {{ t('common.cancel') }}
         </VButton>
         <VButton
-          color="rose"
+          color="red"
           size="sm"
           :loading="actionId === `${removeTarget.id}:remove`"
           @click="confirmRemove"
@@ -325,13 +321,12 @@
 import { computed, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 
-import { BlockBreadcrumb as VBreadcrumb, VButton, VDialog, VTextField } from 'vuesp-components/components';
-import IconRefreshLine from '~icons/ri/refresh-line';
+import { BlockBreadcrumb as VBreadcrumb, VButton, VDialog, VTextField, VIcon, VCard } from 'vuesp-components/components';
 
 import { api } from '@/utils/helpers.ts';
 import { isAdmin } from '@/utils/auth.ts';
 import { withTrailingSlash } from '@/utils/path.ts';
-import type { CatalogModule, ModuleLogEntry, ModuleSummary } from '@/types';
+import type { ICatalogModule, IModuleLogEntry, IModuleSummary } from '@/types';
 
 const { t } = useI18n();
 
@@ -339,10 +334,10 @@ interface ModuleSection {
   key: string;
   title: string;
   order: number;
-  items: ModuleSummary[];
+  items: IModuleSummary[];
 }
 
-const modules = ref<ModuleSummary[]>([]);
+const modules = ref<IModuleSummary[]>([]);
 const loading = ref(false);
 const error = ref('');
 const actionId = ref('');
@@ -355,14 +350,14 @@ const selectedFile = ref<File | null>(null);
 
 const logsOpen = ref(false);
 const logsId = ref('');
-const logs = ref<ModuleLogEntry[]>([]);
+const logs = ref<IModuleLogEntry[]>([]);
 
-const removeTarget = ref<ModuleSummary | null>(null);
+const removeTarget = ref<IModuleSummary | null>(null);
 
 const catalogOpen = ref(false);
 const catalogLoading = ref(false);
 const catalogError = ref('');
-const catalog = ref<CatalogModule[]>([]);
+const catalog = ref<ICatalogModule[]>([]);
 const catalogInstalling = ref('');
 
 const sections = computed<ModuleSection[]>(() => {
@@ -391,7 +386,7 @@ const load = async (): Promise<void> => {
   loading.value = true;
   error.value = '';
   try {
-    modules.value = await api.get<ModuleSummary[]>('/modules');
+    modules.value = await api.get<IModuleSummary[]>('/modules');
   } catch (cause) {
     error.value = cause instanceof Error ? cause.message : t('modules.loadError');
   } finally {
@@ -436,7 +431,7 @@ const install = async (): Promise<void> => {
   }
 };
 
-const toggle = async (item: ModuleSummary): Promise<void> => {
+const toggle = async (item: IModuleSummary): Promise<void> => {
   actionId.value = `${item.id}:toggle`;
   error.value = '';
   try {
@@ -450,7 +445,7 @@ const toggle = async (item: ModuleSummary): Promise<void> => {
   }
 };
 
-const remove = (item: ModuleSummary): void => {
+const remove = (item: IModuleSummary): void => {
   removeTarget.value = item;
 };
 
@@ -481,7 +476,7 @@ const loadCatalog = async (): Promise<void> => {
   catalogLoading.value = true;
   catalogError.value = '';
   try {
-    catalog.value = await api.get<CatalogModule[]>('/modules/catalog');
+    catalog.value = await api.get<ICatalogModule[]>('/modules/catalog');
   } catch (cause) {
     catalogError.value = cause instanceof Error ? cause.message : t('modules.catalogUnavailable');
   } finally {
@@ -494,7 +489,7 @@ const openCatalog = (): void => {
   void loadCatalog();
 };
 
-const installCatalog = async (item: CatalogModule): Promise<void> => {
+const installCatalog = async (item: ICatalogModule): Promise<void> => {
   catalogInstalling.value = item.id;
   catalogError.value = '';
   try {
@@ -511,12 +506,12 @@ const installCatalog = async (item: CatalogModule): Promise<void> => {
   }
 };
 
-const openLogs = async (item: ModuleSummary): Promise<void> => {
+const openLogs = async (item: IModuleSummary): Promise<void> => {
   logsId.value = item.id;
   logs.value = [];
   logsOpen.value = true;
   try {
-    logs.value = await api.get<ModuleLogEntry[]>(`/modules/${encodeURIComponent(item.id)}/logs`);
+    logs.value = await api.get<IModuleLogEntry[]>(`/modules/${encodeURIComponent(item.id)}/logs`);
   } catch (cause) {
     error.value = cause instanceof Error ? cause.message : t('modules.actionError');
   }

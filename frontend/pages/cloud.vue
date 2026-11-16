@@ -32,19 +32,19 @@
 					<div class="flex flex-wrap items-start justify-between gap-3">
 						<div class="flex min-w-0 items-center gap-2">
 							<p class="text-sm font-medium text-gray-dark-40 dark:text-white">{{ t('cloud.tilesTitle') }}</p>
-							<IconInformationLine
+							<VIcon name="info"
 								class="size-4 shrink-0 text-gray-main"
 								:title="t('cloud.tilesHint')"
 								:aria-label="t('cloud.tilesHint')"
 							/>
 						</div>
 						<div class="flex items-center gap-2">
-							<span class="rounded-full bg-cyan-main/10 px-2.5 py-1 text-[11px] font-medium text-cyan-main">
+							<span class="rounded-full bg-cyan-main/10 px-2.5 py-1 text-xs font-medium text-cyan-main">
 								{{ t('cloud.tilesSelected', { count: selectedCount, max: maxTiles }) }}
 							</span>
 							<VButton
 								type="icon"
-								outline
+								variant="outline"
 								color="gray"
 								size="sm"
 								:loading="tilesLoading"
@@ -52,7 +52,7 @@
 								:aria-label="t('cloud.tilesRefresh')"
 								@click="loadTiles"
 							>
-								<IconRefreshLine class="size-4" />
+								<VIcon name="refresh" class="size-4" />
 							</VButton>
 						</div>
 					</div>
@@ -65,8 +65,8 @@
 							<section v-for="device of tiles.devices" :key="device.deviceId">
 								<div class="mb-2 flex flex-wrap items-center gap-2">
 									<span class="text-xs font-semibold text-gray-dark-40 dark:text-white">{{ device.name }}</span>
-									<span class="text-[10px] text-gray-main">{{ device.ip }}</span>
-									<span v-if="!device.online" class="rounded bg-gray-dark-25/10 px-1.5 py-0.5 text-[10px] text-gray-main">{{ t('cloud.offline') }}</span>
+									<span class="text-xs text-gray-main">{{ device.ip }}</span>
+									<span v-if="!device.online" class="rounded bg-gray-dark-25/10 px-1.5 py-0.5 text-xs text-gray-main">{{ t('cloud.offline') }}</span>
 								</div>
 								<div v-if="device.tiles.length" class="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
 									<label
@@ -84,16 +84,16 @@
 										/>
 										<span class="min-w-0">
 											<span class="block truncate font-medium text-gray-dark-40 dark:text-white">{{ tile.name }}</span>
-											<span class="block truncate text-[10px] text-gray-dark-25 dark:text-gray-main">{{ displayValue(tile) }}</span>
+											<span class="block truncate text-xs text-gray-dark-25 dark:text-gray-main">{{ displayValue(tile) }}</span>
 										</span>
 									</label>
 								</div>
-								<p v-else class="text-[11px] text-gray-dark-25 dark:text-gray-main">{{ t('cloud.tilesDeviceEmpty') }}</p>
+								<p v-else class="text-xs text-gray-dark-25 dark:text-gray-main">{{ t('cloud.tilesDeviceEmpty') }}</p>
 							</section>
 						</div>
 
 						<div class="mt-4 flex flex-wrap items-center justify-end gap-3">
-							<span v-if="tilesSaved" class="text-[11px] text-emerald-500">{{ t('cloud.tilesSaved') }}</span>
+							<span v-if="tilesSaved" class="text-xs text-emerald-500">{{ t('cloud.tilesSaved') }}</span>
 							<VButton color="blue" size="sm" :loading="savingTiles" @click="saveTiles">{{ t('cloud.tilesSave') }}</VButton>
 						</div>
 					</template>
@@ -111,7 +111,7 @@
 				</div>
 
 				<div class="rounded-md border border-cyan-main/25 bg-cyan-main/5 px-4 py-6 text-center">
-					<p class="text-[10px] uppercase tracking-[0.2em] text-gray-main">{{ t('cloud.code') }}</p>
+					<p class="text-xs uppercase tracking-[0.2em] text-gray-main">{{ t('cloud.code') }}</p>
 					<p class="mt-2 font-mono text-4xl font-black tracking-[0.18em] text-cyan-main">{{ status.code || '—' }}</p>
 					<p class="mt-3 text-xs text-gray-dark-25 dark:text-gray-main">{{ remaining }}</p>
 				</div>
@@ -119,7 +119,7 @@
 				<p v-if="status.lastError" class="rounded-md bg-red-500/10 px-3 py-2 text-xs text-red-600 dark:text-red-300">{{ status.lastError }}</p>
 
 				<div class="flex flex-wrap gap-2">
-					<VButton outline color="gray" size="sm" :loading="action === 'disconnect'" @click="disconnect">{{ t('cloud.cancel') }}</VButton>
+					<VButton variant="outline" color="gray" size="sm" :loading="action === 'disconnect'" @click="disconnect">{{ t('cloud.cancel') }}</VButton>
 				</div>
 			</div>
 
@@ -144,14 +144,12 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { BlockBreadcrumb as VBreadcrumb, VButton } from 'vuesp-components/components';
-import IconInformationLine from '~icons/ri/information-line';
-import IconRefreshLine from '~icons/ri/refresh-line';
+import { BlockBreadcrumb as VBreadcrumb, VButton, VIcon } from 'vuesp-components/components';
 
-import type { CloudTilesResult, PublicDashboardTile } from '../../shared/dashboardTiles.ts';
+import type { ICloudTilesResult, IPublicDashboardTile } from '../../shared/dashboardTiles.ts';
 import { api } from '@/utils/helpers.ts';
 
-interface CloudStatus {
+interface ICloudStatus {
 	state: 'disconnected' | 'pairing' | 'connected' | 'error';
 	connected: boolean;
 	pairing: boolean;
@@ -165,7 +163,7 @@ interface CloudStatus {
 }
 
 const { t } = useI18n();
-const status = ref<CloudStatus | null>(null);
+const status = ref<ICloudStatus | null>(null);
 const loading = ref(true);
 const action = ref('');
 const error = ref('');
@@ -176,7 +174,7 @@ let clock: ReturnType<typeof setInterval> | undefined;
 const formatDate = (value?: string): string => (value ? new Date(value).toLocaleString('ru-RU') : '—');
 const heartbeatTitle = computed(() => `${t('cloud.lastHeartbeat')}: ${formatDate(status.value?.lastHeartbeat)}`);
 
-const tiles = ref<CloudTilesResult | null>(null);
+const tiles = ref<ICloudTilesResult | null>(null);
 const selected = ref<Set<string>>(new Set());
 const tilesLoading = ref(false);
 const tilesError = ref('');
@@ -186,7 +184,7 @@ const tilesSaved = ref(false);
 const maxTiles = computed(() => tiles.value?.max ?? 20);
 const selectedCount = computed(() => selected.value.size);
 
-const displayValue = (tile: PublicDashboardTile): string => {
+const displayValue = (tile: IPublicDashboardTile): string => {
 	const value = tile.valueTo ?? tile.value;
 	if (value === undefined || value === null || value === '') return '—';
 	return String(value);
@@ -198,7 +196,7 @@ const loadTiles = async (): Promise<void> => {
 	tilesLoading.value = true;
 	tilesError.value = '';
 	try {
-		const result = await api.get<CloudTilesResult>('/cloud/tiles');
+		const result = await api.get<ICloudTilesResult>('/cloud/tiles');
 		tiles.value = result;
 		selected.value = new Set(result.selected);
 		tilesSaved.value = false;
@@ -209,7 +207,7 @@ const loadTiles = async (): Promise<void> => {
 	}
 };
 
-const toggleTile = (tile: PublicDashboardTile): void => {
+const toggleTile = (tile: IPublicDashboardTile): void => {
 	if (!tiles.value) return;
 
 	const next = new Set(selected.value);
@@ -269,7 +267,7 @@ const load = async (silent = false): Promise<void> => {
 	if (!silent) loading.value = true;
 	error.value = '';
 	try {
-		status.value = await api.get<CloudStatus>('/cloud');
+		status.value = await api.get<ICloudStatus>('/cloud');
 	} catch (caught) {
 		error.value = caught instanceof Error ? caught.message : t('cloud.loadError');
 	} finally {
@@ -281,7 +279,7 @@ const startPairing = async (): Promise<void> => {
 	action.value = 'pair';
 	error.value = '';
 	try {
-		status.value = await api.post<CloudStatus>('/cloud/pair');
+		status.value = await api.post<ICloudStatus>('/cloud/pair');
 	} catch (caught) {
 		error.value = caught instanceof Error ? caught.message : t('cloud.pairError');
 	} finally {
@@ -293,7 +291,7 @@ const disconnect = async (): Promise<void> => {
 	action.value = 'disconnect';
 	error.value = '';
 	try {
-		status.value = await api.post<CloudStatus>('/cloud/disconnect');
+		status.value = await api.post<ICloudStatus>('/cloud/disconnect');
 	} catch (caught) {
 		error.value = caught instanceof Error ? caught.message : t('cloud.disconnectError');
 	} finally {

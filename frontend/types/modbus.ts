@@ -1,6 +1,6 @@
-import type { SelectOption } from './common.ts';
+import type { ISelectOption } from './common.ts';
 
-export interface SerialConfig {
+export interface ISerialConfig {
   path: string;
   baudRate: number;
   bufferSize: number;
@@ -9,14 +9,14 @@ export interface SerialConfig {
   stopBits: number;
 }
 
-export type SerialSelectOption = SelectOption<string | number>;
+export type TSerialSelectOption = ISelectOption<string | number>;
 
-export interface SerialChangePayload {
-  name: keyof SerialConfig;
+export interface ISerialChangePayload {
+  name: keyof ISerialConfig;
   value: string | number;
 }
 
-export interface SerialStatusPayload {
+export interface ISerialStatusPayload {
   status: boolean;
-  options: SerialConfig;
+  options: ISerialConfig;
 }

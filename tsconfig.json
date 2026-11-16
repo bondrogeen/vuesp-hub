@@ -17,7 +17,7 @@
     "skipLibCheck": true,
     "strict": true,
     "noEmit": true,
-    "types": ["node", "vite/client", "unplugin-icons/types/vue"]
+    "types": ["node", "vite/client"]
   },
   "include": ["**/*.ts", "**/*.vue"],
   "exclude": ["node_modules", ".vite", "out"]

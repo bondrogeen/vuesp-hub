@@ -34,7 +34,7 @@
           <VTable :headers="headers" :items="users">
             <template #username="{ item }">
               <div class="flex items-center gap-3">
-                <span class="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-cyan-main to-[var(--color-blue-main)] text-xs font-semibold uppercase text-white">
+                <span class="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-cyan-main to-blue-main text-xs font-semibold uppercase text-white">
                   {{ item.username.slice(0, 2) }}
                 </span>
                 <span class="font-medium text-gray-dark-40 dark:text-white">{{ item.username }}</span>
@@ -64,7 +64,7 @@
 
         <ul class="divide-y divide-gray-light-10 md:hidden dark:divide-gray-dark-30">
           <li v-for="item in users" :key="item.id" class="flex items-center gap-3 py-4">
-            <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-cyan-main to-[var(--color-blue-main)] text-xs font-semibold uppercase text-white">
+            <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-cyan-main to-blue-main text-xs font-semibold uppercase text-white">
               {{ item.username.slice(0, 2) }}
             </span>
             <div class="min-w-0 flex-1">
@@ -126,7 +126,7 @@
       <p v-if="formError" class="mt-2 text-sm text-red-600 dark:text-red-400">{{ formError }}</p>
 
       <div class="mt-2 flex justify-end gap-3">
-        <VButton outline color="gray" @click="closeDialog">{{ t('admin.cancel') }}</VButton>
+        <VButton variant="outline" color="gray" @click="closeDialog">{{ t('admin.cancel') }}</VButton>
         <VButton color="blue" :loading="isSaving" :disabled="isSaving" @click="save">
           {{ editing ? t('admin.save') : t('admin.create') }}
         </VButton>
@@ -136,7 +136,7 @@
     <VDialog v-if="deleting" :title="t('admin.deleteTitle')" size="sm" @close="deleting = null">
       <p class="text-sm text-gray-dark-25 dark:text-gray-light-10">{{ t('admin.deleteMessage', { username: deleting.username }) }}</p>
       <div class="mt-5 flex justify-end gap-3">
-        <VButton outline color="gray" @click="deleting = null">{{ t('admin.cancel') }}</VButton>
+        <VButton variant="outline" color="gray" @click="deleting = null">{{ t('admin.cancel') }}</VButton>
         <VButton color="red" :loading="isDeleting" :disabled="isDeleting" @click="removeUser">{{ t('common.remove') }}</VButton>
       </div>
     </VDialog>
@@ -147,38 +147,30 @@
 import { computed, onMounted, reactive, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 
-import {
-  BlockBreadcrumb as VBreadcrumb,
-  VButton,
-  VCheckbox,
-  VDialog,
-  VSelect,
-  VTable,
-  VTextField,
-} from 'vuesp-components/components';
+import { BlockBreadcrumb as VBreadcrumb, VButton, VCheckbox, VDialog, VSelect, VTable, VTextField } from 'vuesp-components/components';
 
 import { api } from '@/utils/helpers.ts';
 import { getUserId } from '@/utils/auth.ts';
-import { ACCESS_PAGES, DEFAULT_ROLE_PAGES, type AccessPage } from '@/utils/access.ts';
+import { ACCESS_PAGES, DEFAULT_ROLE_PAGES, type TAccessPage } from '@/utils/access.ts';
 import type { IListItem } from 'vuesp-components/types';
-import type { ManagedUser, UserRole } from '@/types';
+import type { IManagedUser, TUserRole } from '@/types';
 import { userRoles } from '@/types';
 
 const { t } = useI18n();
 
-const users = ref<ManagedUser[]>([]);
+const users = ref<IManagedUser[]>([]);
 const isLoading = ref(false);
 const isSaving = ref(false);
 const isDeleting = ref(false);
 const error = ref('');
 const formError = ref('');
 const dialog = ref(false);
-const editing = ref<ManagedUser | null>(null);
-const deleting = ref<ManagedUser | null>(null);
+const editing = ref<IManagedUser | null>(null);
+const deleting = ref<IManagedUser | null>(null);
 const currentUserId = getUserId();
 const inheritPages = ref(true);
 
-const form = reactive({ username: '', password: '', role: 'user' as UserRole, pages: [] as AccessPage[] });
+const form = reactive({ username: '', password: '', role: 'user' as TUserRole, pages: [] as TAccessPage[] });
 
 const headers = [
   { name: t('admin.username'), key: 'username', className: 'min-w-50' },
@@ -187,30 +179,30 @@ const headers = [
   { name: '', key: 'action', className: 'w-48' },
 ];
 
-const roleOptions = computed<IListItem<UserRole>[]>(() =>
+const roleOptions = computed<IListItem<TUserRole>[]>(() =>
   userRoles.map(role => ({ name: t(`admin.roles.${role}`), value: role })),
 );
 const roleLabel = computed(() => t(`admin.roles.${form.role}`));
 const dialogTitle = computed(() => (editing.value ? t('admin.editUser') : t('admin.addUser')));
 
-const effectivePages = (user: ManagedUser): AccessPage[] => {
+const effectivePages = (user: IManagedUser): TAccessPage[] => {
   if (user.role === 'admin') return ACCESS_PAGES.map(page => page.key);
   return user.pages ?? DEFAULT_ROLE_PAGES[user.role];
 };
 
-const accessLabel = (user: ManagedUser): string => {
+const accessLabel = (user: IManagedUser): string => {
   if (user.role === 'admin') return t('admin.allPages');
   if (user.pages === null) return t('admin.pagesByRole');
   return t('admin.pagesSelected', { count: user.pages.length, total: ACCESS_PAGES.length });
 };
 
-const accessTitle = (user: ManagedUser): string => {
+const accessTitle = (user: IManagedUser): string => {
   const pages = effectivePages(user);
   if (user.role === 'admin') return t('admin.allPages');
   return pages.map(key => t(ACCESS_PAGES.find(page => page.key === key)?.label ?? key)).join(', ');
 };
 
-const roleClass = (role: UserRole) => {
+const roleClass = (role: TUserRole) => {
   if (role === 'admin') return 'bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300';
   if (role === 'user') return 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300';
   return 'bg-gray-light-30 text-gray-dark-25 dark:bg-white/5 dark:text-gray-light-10';
@@ -220,7 +212,7 @@ const load = async () => {
   isLoading.value = true;
   error.value = '';
   try {
-    users.value = await api.get<ManagedUser[]>('/users');
+    users.value = await api.get<IManagedUser[]>('/users');
   } catch (cause) {
     error.value = cause instanceof Error ? cause.message : t('admin.loadFailed');
   } finally {
@@ -239,7 +231,7 @@ const openCreate = () => {
   dialog.value = true;
 };
 
-const openEdit = (user: ManagedUser) => {
+const openEdit = (user: IManagedUser) => {
   editing.value = user;
   form.username = user.username;
   form.password = '';
@@ -260,7 +252,7 @@ const toggleInherit = (value: boolean) => {
   if (value) form.pages = [...DEFAULT_ROLE_PAGES[form.role]];
 };
 
-const togglePage = (page: AccessPage) => {
+const togglePage = (page: TAccessPage) => {
   form.pages = form.pages.includes(page) ? form.pages.filter(item => item !== page) : [...form.pages, page];
 };
 
@@ -292,9 +284,9 @@ const save = async () => {
     if (editing.value) {
       const body: Record<string, unknown> = { username: form.username, role: form.role, pages };
       if (form.password) body.password = form.password;
-      await api.patch<ManagedUser>(`/users/${editing.value.id}`, { body: JSON.stringify(body) });
+      await api.patch<IManagedUser>(`/users/${editing.value.id}`, { body: JSON.stringify(body) });
     } else {
-      await api.post<ManagedUser>('/users', {
+      await api.post<IManagedUser>('/users', {
         body: JSON.stringify({ username: form.username, password: form.password, role: form.role, pages }),
       });
     }
@@ -307,7 +299,7 @@ const save = async () => {
   }
 };
 
-const confirmDelete = (user: ManagedUser) => {
+const confirmDelete = (user: IManagedUser) => {
   deleting.value = user;
 };
 

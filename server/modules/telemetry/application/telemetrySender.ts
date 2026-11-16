@@ -5,9 +5,9 @@ import { hostname } from 'node:os';
 import path from 'node:path';
 import { promisify } from 'node:util';
 
-import type { DeviceRecord } from '@root/shared/device.ts';
+import type { IDeviceRecord } from '@root/shared/device.ts';
 import { isDeviceEventPayload, isRecordValue } from '@root/shared/device.ts';
-import type { PublicDashboardTile } from '@root/shared/dashboardTiles.ts';
+import type { IPublicDashboardTile } from '@root/shared/dashboardTiles.ts';
 
 const execFileAsync = promisify(execFile);
 
@@ -16,18 +16,18 @@ const DEFAULT_DEBOUNCE_MS = 250;
 const DEFAULT_MAX_BACKOFF_MS = 60_000;
 const TIME_SYNC_CACHE_MS = 60_000;
 
-export interface TelemetryEventSource {
+export interface ITelemetryEventSource {
   on(event: 'data', listener: (payload: unknown) => void): unknown;
   off(event: 'data', listener: (payload: unknown) => void): unknown;
 }
 
-export interface TelemetryDeviceModel {
-  getAll(): DeviceRecord[];
+export interface ITelemetryDeviceModel {
+  getAll(): IDeviceRecord[];
 }
 
-export interface TelemetrySenderOptions {
-  runtime: TelemetryEventSource;
-  getDeviceModel: () => Promise<TelemetryDeviceModel>;
+export interface ITelemetrySenderOptions {
+  runtime: ITelemetryEventSource;
+  getDeviceModel: () => Promise<ITelemetryDeviceModel>;
   dataDirectory: string;
   url: string;
   token: string;
@@ -39,27 +39,27 @@ export interface TelemetrySenderOptions {
   /** `null` means the platform cannot prove time sync; the sender then proceeds. */
   timeSyncCheck?: () => Promise<boolean | null>;
   /** Optional transport (WebSocket). When omitted, the sender posts to `url`. */
-  transport?: (payload: TelemetryPayload) => Promise<void>;
+  transport?: (payload: ITelemetryPayload) => Promise<void>;
 }
 
-export interface TelemetryDevicePayload {
+export interface ITelemetryDevicePayload {
   deviceId: string;
   name: string;
   ip: string;
   observedAt: number;
-  state: TelemetryDeviceState;
+  state: ITelemetryDeviceState;
   /** Resolved, safe dashboard tiles for the cloud. Raw expressions never leave the hub. */
-  tiles?: PublicDashboardTile[];
+  tiles?: IPublicDashboardTile[];
 }
 
-export interface TelemetryPayload {
+export interface ITelemetryPayload {
   hubId: string;
   hubName: string;
   observedAt: number;
-  devices: TelemetryDevicePayload[];
+  devices: ITelemetryDevicePayload[];
 }
 
-export interface TelemetryDeviceState {
+export interface ITelemetryDeviceState {
   ports: Record<string, unknown>;
   dallas: Record<string, unknown>;
   slots: Record<string, unknown>;
@@ -67,11 +67,11 @@ export interface TelemetryDeviceState {
 }
 
 interface PendingSnapshot {
-  state: TelemetryDeviceState;
+  state: ITelemetryDeviceState;
   updatedAt: number;
 }
 
-const emptyState = (): TelemetryDeviceState => ({ ports: {}, dallas: {}, slots: {} });
+const emptyState = (): ITelemetryDeviceState => ({ ports: {}, dallas: {}, slots: {} });
 
 const dallasAddress = (data: Record<string, unknown>): string => {
   const { address } = data;
@@ -116,7 +116,7 @@ export class TelemetrySender {
   readonly hubId: string;
   readonly hubName: string;
 
-  readonly #getDeviceModel: TelemetrySenderOptions['getDeviceModel'];
+  readonly #getDeviceModel: ITelemetrySenderOptions['getDeviceModel'];
   readonly #url: string;
   readonly #token: string;
   readonly #debounceMs: number;
@@ -124,7 +124,7 @@ export class TelemetrySender {
   readonly #fetch: typeof fetch;
   readonly #now: () => number;
   readonly #timeSyncCheck: () => Promise<boolean | null>;
-  readonly #transport: TelemetrySenderOptions['transport'];
+  readonly #transport: ITelemetrySenderOptions['transport'];
 
   readonly #states = new Map<string, PendingSnapshot>();
   readonly #dirty = new Set<string>();
@@ -148,7 +148,7 @@ export class TelemetrySender {
     now = Date.now,
     timeSyncCheck = defaultTimeSyncCheck,
     transport,
-  }: TelemetrySenderOptions) {
+  }: ITelemetrySenderOptions) {
     this.#runtime = runtime;
     this.#getDeviceModel = getDeviceModel;
     this.#url = url.replace(/\/+$/, '');
@@ -163,7 +163,7 @@ export class TelemetrySender {
     this.hubName = hubName?.trim() || hostname();
   }
 
-  readonly #runtime: TelemetryEventSource;
+  readonly #runtime: ITelemetryEventSource;
 
   start(): void {
     if (!this.#stopped) return;
@@ -181,7 +181,7 @@ export class TelemetrySender {
   }
 
   /** Latest aggregated state for a device; used to resolve an action on the hub. */
-  getState(ip: string): TelemetryDeviceState | undefined {
+  getState(ip: string): ITelemetryDeviceState | undefined {
     return this.#states.get(ip)?.state;
   }
 
@@ -238,10 +238,10 @@ export class TelemetrySender {
     return value;
   }
 
-  async #collect(pending: Map<string, number>): Promise<TelemetryDevicePayload[]> {
+  async #collect(pending: Map<string, number>): Promise<ITelemetryDevicePayload[]> {
     const model = await this.#getDeviceModel();
     const registry = new Map(model.getAll().map(device => [device.ip, device]));
-    const devices: TelemetryDevicePayload[] = [];
+    const devices: ITelemetryDevicePayload[] = [];
 
     for (const [ip, updatedAt] of pending) {
       const record = registry.get(ip);
@@ -281,7 +281,7 @@ export class TelemetrySender {
         return { sent: 0 };
       }
 
-      const payload: TelemetryPayload = {
+      const payload: ITelemetryPayload = {
         hubId: this.hubId,
         hubName: this.hubName,
         observedAt: Math.max(...devices.map(device => device.observedAt)),

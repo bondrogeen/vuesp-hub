@@ -3,12 +3,12 @@ export enum DeviceListAction {
   VIEW = 2,
 }
 
-export interface DeviceListMenu {
+export interface IDeviceListMenu {
   name: string;
   type?: DeviceListAction;
 }
 
-export interface DeviceTableHeader {
+export interface IDeviceTableHeader {
   key: string;
   name: string;
   className: string;

@@ -1,6 +1,6 @@
 <template>
   <main class="relative flex min-h-screen items-center justify-center px-4 py-10">
-    <div class="glass-panel w-full max-w-md p-6">
+    <VCard variant="solid" padding="lg" class="w-full max-w-md">
       <h1 class="mb-2 text-2xl font-semibold text-gray-dark-40 dark:text-white">{{ t('auth.changePasswordTitle') }}</h1>
       <p class="mb-6 text-sm text-gray-dark-25 dark:text-gray-main">{{ t('auth.changePasswordSubtitle') }}</p>
 
@@ -23,17 +23,17 @@
       <button type="button" class="mt-4 text-xs text-gray-dark-25 hover:text-gray-dark-30 dark:text-gray-main dark:hover:text-white" @click="onLogout">
         {{ t('header.signOut') }}
       </button>
-    </div>
+    </VCard>
   </main>
 </template>
 
 <script setup lang="ts">
 import { ref } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { VButton, VTextField } from 'vuesp-components/components';
+import { VButton, VTextField, VCard } from 'vuesp-components/components';
 
 import { api } from '@/utils/helpers.ts';
-import { logout, setToken, type AuthSession } from '@/utils/auth.ts';
+import { logout, setToken, type IAuthSession } from '@/utils/auth.ts';
 
 const { t } = useI18n();
 
@@ -60,7 +60,7 @@ const onSubmit = async (): Promise<void> => {
 
   isLoading.value = true;
   try {
-    const session = await api.post<AuthSession>('/auth/change-password', {
+    const session = await api.post<IAuthSession>('/auth/change-password', {
       body: JSON.stringify({ currentPassword: currentPassword.value, newPassword: newPassword.value }),
     });
     setToken(session.token);

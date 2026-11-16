@@ -4,34 +4,34 @@ import path from 'node:path';
 
 import { signJwt, verifyJwt } from '@server/modules/auth/domain/jwt.ts';
 import { hashPassword, verifyPassword } from '@server/modules/users/domain/password.ts';
-import type { AccessPage } from '@server/modules/access/domain/access.ts';
-import type { UserRepository } from '@server/modules/users/domain/user.repository.ts';
-import type { UserRole } from '@server/modules/users/domain/user.ts';
+import type { TAccessPage } from '@server/modules/access/domain/access.ts';
+import type { IUserRepository } from '@server/modules/users/domain/user.repository.ts';
+import type { TUserRole } from '@server/modules/users/domain/user.ts';
 import { createJsonUserRepository } from '@server/modules/users/infrastructure/jsonUserRepository.ts';
 
-export interface AuthUser {
+export interface IAuthUser {
   id: number;
   username: string;
-  role: UserRole;
+  role: TUserRole;
   /** Explicit page access; `null` means "inherit the role defaults". */
-  pages: AccessPage[] | null;
+  pages: TAccessPage[] | null;
   mustChangePassword: boolean;
 }
 
-export interface AuthSession {
+export interface IAuthSession {
   token: string;
-  user: AuthUser;
+  user: IAuthUser;
 }
 
-export interface AuthService {
-  login(username: string, password: string): AuthSession | null;
-  verify(token: string | undefined): AuthUser | null;
-  changePassword(id: number, currentPassword: string, newPassword: string): AuthSession | null;
+export interface IAuthService {
+  login(username: string, password: string): IAuthSession | null;
+  verify(token: string | undefined): IAuthUser | null;
+  changePassword(id: number, currentPassword: string, newPassword: string): IAuthSession | null;
   isDefaultAdminPassword(): boolean;
   /** Short-lived token scoped to a single module; never valid as a hub session. */
-  issueModuleToken(user: AuthUser, moduleId: string, ttlSeconds?: number): string;
-  verifyModuleToken(token: string | undefined, moduleId: string): AuthUser | null;
-  users: UserRepository;
+  issueModuleToken(user: IAuthUser, moduleId: string, ttlSeconds?: number): string;
+  verifyModuleToken(token: string | undefined, moduleId: string): IAuthUser | null;
+  users: IUserRepository;
 }
 
 const DEFAULT_TTL_SECONDS = 7 * 24 * 60 * 60;
@@ -56,10 +56,10 @@ const loadSecret = (dataDirectory: string): Buffer => {
 const toAuthUser = (user: {
   id: number;
   username: string;
-  role: UserRole;
-  pages: AccessPage[] | null;
+  role: TUserRole;
+  pages: TAccessPage[] | null;
   mustChangePassword: boolean;
-}): AuthUser => ({
+}): IAuthUser => ({
   id: user.id,
   username: user.username,
   role: user.role,
@@ -77,7 +77,7 @@ export const createAuthService = ({
 }: {
   dataDirectory: string;
   ttlSeconds?: number;
-}): AuthService => {
+}): IAuthService => {
   mkdirSync(dataDirectory, { recursive: true, mode: 0o700 });
 
   const users = createJsonUserRepository({ dataDirectory });
@@ -86,10 +86,10 @@ export const createAuthService = ({
   const sessionFor = (user: {
     id: number;
     username: string;
-    role: UserRole;
-    pages: AccessPage[] | null;
+    role: TUserRole;
+    pages: TAccessPage[] | null;
     mustChangePassword: boolean;
-  }): AuthSession => ({
+  }): IAuthSession => ({
     token: signJwt(user.username, secret, ttlSeconds, {
       role: user.role,
       uid: user.id,

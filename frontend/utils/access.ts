@@ -1,4 +1,4 @@
-import type { UserRole } from './auth.ts';
+import type { TUserRole } from './auth.ts';
 
 export const ACCESS_PAGES = [
   { key: 'dashboard', path: '/dashboard', label: 'access.pages.dashboard' },
@@ -10,18 +10,18 @@ export const ACCESS_PAGES = [
   { key: 'profile', path: '/profile', label: 'access.pages.profile' },
 ] as const;
 
-export type AccessPage = (typeof ACCESS_PAGES)[number]['key'];
+export type TAccessPage = (typeof ACCESS_PAGES)[number]['key'];
 
-export type RolePages = Record<UserRole, AccessPage[]>;
+export type TRolePages = Record<TUserRole, TAccessPage[]>;
 
-export const DEFAULT_ROLE_PAGES: RolePages = {
+export const DEFAULT_ROLE_PAGES: TRolePages = {
   admin: ACCESS_PAGES.map(page => page.key),
   user: ACCESS_PAGES.filter(page => page.key !== 'cloud').map(page => page.key),
   viewer: ['dashboard', 'devices', 'profile'],
 };
 
 /** Most specific paths first: `/device/raw` must win over `/device`. */
-export const pageForPath = (path: string): AccessPage | null => {
+export const pageForPath = (path: string): TAccessPage | null => {
   const normalized = (path.split(/[?#]/)[0] || '/').replace(/\/+$/, '') || '/';
   const match = ACCESS_PAGES.find(page => normalized === page.path || normalized.startsWith(`${page.path}/`));
 
@@ -29,7 +29,7 @@ export const pageForPath = (path: string): AccessPage | null => {
   return match?.key ?? null;
 };
 
-export const canAccess = (role: UserRole, path: string, pages: AccessPage[]): boolean => {
+export const canAccess = (role: TUserRole, path: string, pages: TAccessPage[]): boolean => {
   if (role === 'admin') return true;
   if (path === '/' || path.startsWith('/auth') || path.startsWith('/403')) return true;
   if (path.startsWith('/admin')) return false;

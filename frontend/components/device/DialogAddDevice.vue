@@ -22,12 +22,12 @@ import { VButton, VTextField } from 'vuesp-components/components';
 import { useForm } from 'vuesp-components/composables';
 import { required } from 'vuesp-components/validate';
 
-import type { DeviceFormInput } from '@/types';
-import type { DialogAddDeviceEmits, DialogAddDeviceProps } from './DialogAddDevice.types.ts';
+import type { TDeviceFormInput } from '@/types';
+import type { IDialogAddDeviceEmits, IDialogAddDeviceProps } from './DialogAddDevice.types.ts';
 
-const { device = {} } = defineProps<DialogAddDeviceProps>();
+const { device = {} } = defineProps<IDialogAddDeviceProps>();
 
-const emit = defineEmits<DialogAddDeviceEmits>();
+const emit = defineEmits<IDialogAddDeviceEmits>();
 const { t } = useI18n();
 
 const initialValues: Record<string, unknown> = { id: 0, name: '', username: 'admin', password: 'admin', ip: '', deviceId: 0 };
@@ -51,6 +51,6 @@ const [deviceId] = defineField<string | number>('deviceId');
 validate();
 
 const onAdd = () => {
-  emit('add', { ...values } as unknown as DeviceFormInput);
+  emit('add', { ...values } as unknown as TDeviceFormInput);
 };
 </script>

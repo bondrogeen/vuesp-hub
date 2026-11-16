@@ -15,10 +15,10 @@ import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { VButton, VDialog } from 'vuesp-components/components';
 
-import type { AppDialogEmits, AppDialogProps } from './AppDialog.types.ts';
+import type { IAppDialogEmits, IAppDialogProps } from './AppDialog.types.ts';
 
-const { title, message = '', callback, button, color = 'blue', size = 'sm' } = defineProps<AppDialogProps>();
-const emit = defineEmits<AppDialogEmits>();
+const { title, message = '', callback, button, color = 'blue', size = 'sm' } = defineProps<IAppDialogProps>();
+const emit = defineEmits<IAppDialogEmits>();
 const { t } = useI18n();
 
 const dialogTitle = computed(() => title ?? t('common.attention'));

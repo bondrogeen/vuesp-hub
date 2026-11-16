@@ -18,7 +18,7 @@ server/Electron-часть hub остаётся в репозитории `vuesp
 
 - `vuesp-components/components`: `VButton`, `VTable`, `VSelect`, `VTextField`,
   `VList`, `VDropdown`, `BlockBreadcrumb`, `AppHeader`, `AppNotification`,
-  `CardMain`.
+  `VCard`.
 - `vuesp-components/composables`: `useForm`, `useDialog`, `useSwipeDown`.
 - `vuesp-components/validate`: `required`, `minLen`, `maxLen`, `minVal`,
   `maxVal`, `ip`, `isPort` и др.
@@ -37,7 +37,7 @@ server/Electron-часть hub остаётся в репозитории `vuesp
   - `frontend/composables/usePorts.ts`, `frontend/utils/fs.ts`,
     `frontend/utils/gpio.ts`, `frontend/utils/const.ts`;
   - `frontend/utils/directives/*`;
-  - `frontend/components/app/VCardGray.vue` заменён на `CardMain`;
+  - `frontend/components/app/VCardGray.vue` заменён на `VCard`;
   - неиспользуемая зависимость `electron-json-storage`.
 - `DialogAddDevice` и `BlockModBus` переведены на `useForm` из
   `vuesp-components/composables`.
@@ -53,7 +53,7 @@ server/Electron-часть hub остаётся в репозитории `vuesp
 - `app.use(vuesp)` убран из hub. Для этого `VDropdown` в `vuesp-components`
   импортирует директиву `v-outside` локально, а не через глобальный плагин.
   Требуется `vuesp-components >= 2.2.3`.
-- `CardMain` получил `disabled` (`inert` + `aria-disabled`); `modbus.vue`
+- `VCard` поддерживает `disabled` (`inert` + `aria-disabled`); `modbus.vue`
   использует его вместо локальной обёртки.
 - В `vuesp-components/types` добавлен `IMessageDevice` и он включён в
   `TypeConstMessage`.

@@ -70,7 +70,7 @@ import AppDialog from '@/components/app/AppDialog.vue';
 import HubHeader from '@/components/app/HubHeader.vue';
 import HubNav from '@/components/app/HubNav.vue';
 import { AppAside, AppNotification, VButton } from 'vuesp-components/components';
-import type { DeviceRecord, MenuChildType, MenuItemType, ModuleSummary } from '@/types';
+import type { IDeviceRecord, IMenuChildType, IMenuItemType, IModuleSummary } from '@/types';
 import type { INotification } from 'vuesp-components/types';
 
 const route = useRoute();
@@ -83,17 +83,17 @@ const accessStore = useAccessStore();
 const { menus } = storeToRefs(webSocketStore);
 const { dialog, notifications } = storeToRefs(appStore);
 
-const registry = ref<DeviceRecord[]>([]);
-const installedModules = ref<ModuleSummary[]>([]);
+const registry = ref<IDeviceRecord[]>([]);
+const installedModules = ref<IModuleSummary[]>([]);
 
 const loadRegistry = async (): Promise<void> => {
   try {
-    registry.value = await api.get<DeviceRecord[]>('/device/');
+    registry.value = await api.get<IDeviceRecord[]>('/device/');
   } catch {
     registry.value = [];
   }
   try {
-    installedModules.value = await api.get<ModuleSummary[]>('/modules');
+    installedModules.value = await api.get<IModuleSummary[]>('/modules');
   } catch {
     installedModules.value = [];
   }
@@ -105,15 +105,15 @@ const moduleAvailable = (moduleId?: string): boolean =>
 const getMenu = computed(() => {
   const groups = createDeviceMenu(menus.value, t, registry.value);
 
-  const moduleItems: MenuItemType[] = [];
-  const moduleGroups = new Map<string, { name: string; icon: MenuItemType['icon']; order: number; children: MenuChildType[] }>();
+  const moduleItems: IMenuItemType[] = [];
+  const moduleGroups = new Map<string, { name: string; icon: IMenuItemType['icon']; order: number; children: IMenuChildType[] }>();
 
   for (const item of installedModules.value) {
     if (!item.running || !item.web?.nav) continue;
 
     const child = {
       name: item.web.nav.label || item.name,
-      icon: item.group?.slug === 'video' ? ('IconVideo' as const) : ('IconPuzzle' as const),
+      icon: item.group?.slug === 'video' ? ('video' as const) : ('box' as const),
       path: withTrailingSlash(item.route),
     };
 
@@ -126,7 +126,7 @@ const getMenu = computed(() => {
     if (!group) {
       group = {
         name: item.group.name,
-        icon: item.group.slug === 'video' ? 'IconVideo' : 'IconPuzzle',
+        icon: item.group.slug === 'video' ? 'video' : 'box',
         order: item.group.order ?? 1000,
         children: [],
       };
@@ -143,7 +143,7 @@ const getMenu = computed(() => {
     key: 'modules',
     title: t('common.menuGroups.modules'),
     items: [
-      { name: t('common.modules'), icon: 'IconPuzzle' as const, path: '/modules/' },
+      { name: t('common.modules'), icon: 'box' as const, path: '/modules/' },
       ...moduleItems,
     ],
   });
@@ -153,8 +153,8 @@ const getMenu = computed(() => {
       key: 'users',
       title: t('common.menuGroups.users'),
       items: [
-        { name: t('admin.users'), icon: 'IconUser' as const, path: '/admin/users/' },
-        { name: t('admin.access'), icon: 'IconSettings' as const, path: '/admin/access/' },
+        { name: t('admin.users'), icon: 'user' as const, path: '/admin/users/' },
+        { name: t('admin.access'), icon: 'settings' as const, path: '/admin/access/' },
       ],
     });
   }
@@ -163,7 +163,7 @@ const getMenu = computed(() => {
     key: 'settings',
     title: t('common.menuGroups.settings'),
     items: [
-      { name: t('common.profile'), icon: 'IconUser' as const, path: '/profile/' },
+      { name: t('common.profile'), icon: 'user' as const, path: '/profile/' },
     ],
   });
 

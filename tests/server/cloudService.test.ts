@@ -6,16 +6,16 @@ import path from 'node:path';
 import { test } from 'node:test';
 
 import { WebSocketServer, type WebSocket } from 'ws';
-import type { DashboardItem } from 'vuesp-dashboard-core';
+import type { IDashboardItem } from 'vuesp-dashboard-core';
 
-import { createCloudService, type CloudRuntime } from '@server/modules/cloud/application/cloudService.ts';
-import type { DeviceRecord } from '@root/shared/device.ts';
+import { createCloudService, type ICloudRuntime } from '@server/modules/cloud/application/cloudService.ts';
+import type { IDeviceRecord } from '@root/shared/device.ts';
 
-const records: DeviceRecord[] = [
+const records: IDeviceRecord[] = [
   { id: 1, uuid: 'uuid-1', deviceId: 1, name: 'Lamp', ip: '192.0.2.5', firmware: [], addedAt: '' },
 ];
 
-const button = (id: string): DashboardItem => ({
+const button = (id: string): IDashboardItem => ({
   id,
   name: id,
   type: 'button',
@@ -28,7 +28,7 @@ const button = (id: string): DashboardItem => ({
 class FakeRuntime extends EventEmitter {
   readonly sent: Array<{ target: string; comm: string; data?: Record<string, unknown> }> = [];
 
-  constructor(private readonly list: DashboardItem[]) {
+  constructor(private readonly list: IDashboardItem[]) {
     super();
   }
 
@@ -75,12 +75,12 @@ test('publishes safe resolved tiles and applies an action on the hub', async () 
   });
 
   const dataDirectory = mkdtempSync(path.join(tmpdir(), 'vuesp-cloud-'));
-  const charge: DashboardItem = {
+  const charge: IDashboardItem = {
     ...button('device.status3'),
     name: 'Charge MOSFET',
     set: '({ ...b, output: 2, command: 2 })',
   };
-  const discharge: DashboardItem = {
+  const discharge: IDashboardItem = {
     ...button('device.status3'),
     name: 'Discharge MOSFET',
     set: '({ ...b, output: 4, command: 2 })',
@@ -96,7 +96,7 @@ test('publishes safe resolved tiles and applies an action on the hub', async () 
       encrypt: (value) => Buffer.from(value).toString('base64'),
       decrypt: (value) => Buffer.from(value).toString('base64').toString(),
     },
-    runtime: runtime as unknown as CloudRuntime,
+    runtime: runtime as unknown as ICloudRuntime,
     getDeviceModel: async () => ({ getAll: () => records }),
     bootstrap: { url: `http://127.0.0.1:${port}`, token: 'hub-token', hubName: 'Home' },
   });

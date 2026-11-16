@@ -4,14 +4,14 @@ import express from 'express';
 import { test } from 'node:test';
 
 import { createUserRouter } from '@server/modules/users/api/userRoutes.ts';
-import type { StoreModel } from '@shared/stores/types.ts';
+import type { IStoreModel } from '@shared/stores/types.ts';
 
 interface TestUser {
   id: number;
   [key: string]: unknown;
 }
 
-const createModel = (): StoreModel => {
+const createModel = (): IStoreModel => {
   let users: TestUser[] = [{ id: 1, name: 'Admin' }];
   return {
     getAll: async () => users,
@@ -36,7 +36,7 @@ const createModel = (): StoreModel => {
   };
 };
 
-const startApi = async (model: StoreModel) => {
+const startApi = async (model: IStoreModel) => {
   const app = express();
   app.use(express.json());
   app.use('/api/v1/user', createUserRouter(() => model));

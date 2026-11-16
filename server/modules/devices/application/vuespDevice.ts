@@ -3,7 +3,7 @@ import WebSocket from 'ws';
 import AxiosDigestAuth from '@mhoc/axios-digest-auth';
 import { parseLegacyDashboard } from '@server/modules/devices/domain/legacyDashboard.ts';
 import { LegacyDeviceProtocol } from '@server/modules/devices/domain/protocols/legacyDeviceProtocol.ts';
-import type { DeviceCommandPayload } from '@root/shared/device.ts';
+import type { TDeviceCommandPayload } from '@root/shared/device.ts';
 
 interface WebSocketClient {
   readyState: number;
@@ -411,7 +411,7 @@ class VuespDevice extends EventEmitter {
     return true;
   }
 
-  send(comm: string, data: DeviceCommandPayload = {}) {
+  send(comm: string, data?: TDeviceCommandPayload) {
     if (this.#isConnect && this.#ws) {
       const buffer = this.#protocol.encode(comm, data);
       if (buffer) {

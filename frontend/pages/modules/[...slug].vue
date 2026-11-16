@@ -17,7 +17,7 @@
         <p v-if="module" class="mt-2 text-sm text-gray-dark-25 dark:text-gray-main">
           {{ module.id }} · v{{ module.version }}
           <span
-            class="ml-2 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide"
+            class="ml-2 rounded-full px-2 py-0.5 text-xs font-semibold uppercase tracking-wide"
             :class="module.running
               ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400'
               : 'bg-gray-dark-25/15 text-gray-dark-25 dark:text-gray-main'"
@@ -29,7 +29,7 @@
       <div class="flex flex-wrap items-center gap-2">
         <VButton
           v-if="isAdmin() && module"
-          outline
+          variant="outline"
           color="gray"
           size="sm"
           :loading="starting"
@@ -38,7 +38,7 @@
           {{ module.running ? t('common.refresh') : t('modules.start') }}
         </VButton>
         <VButton
-          outline
+          variant="outline"
           color="gray"
           size="sm"
           :to="'/modules/'"
@@ -91,7 +91,7 @@ import { BlockBreadcrumb as VBreadcrumb, VButton } from 'vuesp-components/compon
 
 import { api } from '@/utils/helpers.ts';
 import { getToken, isAdmin } from '@/utils/auth.ts';
-import type { ModuleSummary } from '@/types';
+import type { IModuleSummary } from '@/types';
 
 const { t } = useI18n();
 const route = useRoute();
@@ -99,7 +99,7 @@ const route = useRoute();
 const normalizePath = (value: string): string => value.replace(/\/+$/, '') || '/';
 const path = computed(() => normalizePath(route.path));
 const label = computed(() => path.value.split('/').filter(Boolean).at(-1) ?? path.value);
-const module = ref<ModuleSummary>();
+const module = ref<IModuleSummary>();
 const container = ref<HTMLElement>();
 /** Modules with their own UI already have a title and controls; keep the header for fallbacks. */
 const showHeader = computed(() => !module.value?.web || !module.value.running);
@@ -151,7 +151,7 @@ const load = async (): Promise<void> => {
   loading.value = true;
   error.value = '';
   try {
-    const modules = await api.get<ModuleSummary[]>('/modules');
+    const modules = await api.get<IModuleSummary[]>('/modules');
     module.value = modules.find(item => normalizePath(item.route) === path.value || item.id === path.value.replace(/^\/modules\//, ''));
   } catch (cause) {
     error.value = cause instanceof Error ? cause.message : t('modules.loadError');

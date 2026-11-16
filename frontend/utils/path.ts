@@ -1,5 +1,5 @@
 /**
- * Hub URLs always end with a trailing slash. Returns the value unchanged when
+ * IHub URLs always end with a trailing slash. Returns the value unchanged when
  * it is already normalized, preserving an optional query string and hash.
  */
 export const withTrailingSlash = (value: string): string => {

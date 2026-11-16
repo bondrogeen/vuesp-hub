@@ -4,7 +4,7 @@ import { mkdirSync } from 'node:fs';
 import path from 'node:path';
 
 import { createDeviceRepository } from '@server/modules/devices/infrastructure/deviceRepository.ts';
-import type { SecretProvider } from '@shared/secrets/secretProvider.ts';
+import type { ISecretProvider } from '@shared/secrets/secretProvider.ts';
 
 interface LegacyDevice {
   id?: number;
@@ -22,7 +22,7 @@ interface LegacyStore {
 
 let repositoryPromise: ReturnType<typeof createDeviceRepository> | undefined;
 
-export const secretProvider: SecretProvider = {
+export const secretProvider: ISecretProvider = {
   encrypt(value) {
     if (!safeStorage.isEncryptionAvailable()) {
       throw new Error('Secure credential storage is unavailable. Configure an OS keyring before saving device credentials.');

@@ -1,14 +1,14 @@
 import type { Response } from 'express';
-import type { ApiErrorResponse } from '@root/shared/api.ts';
+import type { IApiErrorResponse } from '@root/shared/api.ts';
 
 export const sendApiError = (
-  response: Response<ApiErrorResponse>,
+  response: Response<IApiErrorResponse>,
   status: number,
   message: string,
 ) => response.status(status).json({ error: message });
 
 export const sendApiFailure = (
-  response: Response<ApiErrorResponse>,
+  response: Response<IApiErrorResponse>,
   error: unknown,
   operation: string,
   { conflictMessage = 'Conflict' }: { conflictMessage?: string } = {},

@@ -1,7 +1,7 @@
 import { chmodSync, existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
 import { dirname } from 'node:path';
 
-import type { StoreEntity, StoreModel, StoreModelFactory } from './types.ts';
+import type { IStoreEntity, IStoreModel, TStoreModelFactory } from './types.ts';
 
 type JsonRecord = Record<string, unknown>;
 
@@ -24,25 +24,25 @@ const writeJson = (filePath: string, value: JsonRecord) => {
   chmodSync(filePath, 0o600);
 };
 
-export interface JsonSettingsStore {
+export interface IJsonSettingsStore {
   get<T>(key: string, defaultValue?: T): T | undefined;
   set(key: string, value: unknown): void;
 }
 
 /** File-backed replacement for electron-store used by the headless server. */
-export const createJsonStoreModel = (filePath: string): StoreModelFactory => {
-  const readList = (key: string): StoreEntity[] => {
+export const createJsonStoreModel = (filePath: string): TStoreModelFactory => {
+  const readList = (key: string): IStoreEntity[] => {
     const value = readJson(filePath)[key];
-    return Array.isArray(value) ? (value as StoreEntity[]) : [];
+    return Array.isArray(value) ? (value as IStoreEntity[]) : [];
   };
 
-  const writeList = (key: string, value: StoreEntity[]) => {
+  const writeList = (key: string, value: IStoreEntity[]) => {
     const data = readJson(filePath);
     data[key] = value;
     writeJson(filePath, data);
   };
 
-  return (key: string): StoreModel => ({
+  return (key: string): IStoreModel => ({
     getAll: async () => readList(key),
 
     getById: async id => readList(key).find(item => item.id === id),
@@ -75,7 +75,7 @@ export const createJsonStoreModel = (filePath: string): StoreModelFactory => {
   });
 };
 
-export const createJsonSettingsStore = (filePath: string): JsonSettingsStore => ({
+export const createJsonSettingsStore = (filePath: string): IJsonSettingsStore => ({
   get<T>(key: string, defaultValue?: T): T | undefined {
     const value = readJson(filePath)[key];
     return value === undefined ? defaultValue : (value as T);

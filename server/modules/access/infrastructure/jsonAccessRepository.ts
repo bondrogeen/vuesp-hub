@@ -5,17 +5,17 @@ import {
   ACCESS_PAGES,
   DEFAULT_ROLE_ACCESS,
   isAccessPage,
-  type AccessPage,
-  type RoleAccess,
+  type TAccessPage,
+  type TRoleAccess,
 } from '@server/modules/access/domain/access.ts';
-import type { UserRole } from '@server/modules/users/domain/user.ts';
+import type { TUserRole } from '@server/modules/users/domain/user.ts';
 
-export interface AccessRepository {
-  get(): RoleAccess;
-  update(next: Partial<RoleAccess>): RoleAccess;
+export interface IAccessRepository {
+  get(): TRoleAccess;
+  update(next: Partial<TRoleAccess>): TRoleAccess;
 }
 
-const ROLES: UserRole[] = ['admin', 'user', 'viewer'];
+const ROLES: TUserRole[] = ['admin', 'user', 'viewer'];
 
 const writeJson = (filePath: string, value: unknown): void => {
   mkdirSync(path.dirname(filePath), { recursive: true, mode: 0o700 });
@@ -25,9 +25,9 @@ const writeJson = (filePath: string, value: unknown): void => {
   chmodSync(filePath, 0o600);
 };
 
-const normalize = (value: unknown): RoleAccess => {
+const normalize = (value: unknown): TRoleAccess => {
   const source = typeof value === 'object' && value !== null ? (value as Record<string, unknown>) : {};
-  const result = {} as RoleAccess;
+  const result = {} as TRoleAccess;
 
   for (const role of ROLES) {
     const raw = Array.isArray(source[role]) ? source[role] : DEFAULT_ROLE_ACCESS[role];
@@ -38,9 +38,9 @@ const normalize = (value: unknown): RoleAccess => {
   return result;
 };
 
-export const createJsonAccessRepository = ({ dataDirectory }: { dataDirectory: string }): AccessRepository => {
+export const createJsonAccessRepository = ({ dataDirectory }: { dataDirectory: string }): IAccessRepository => {
   const filePath = path.join(dataDirectory, 'access.json');
-  let current: RoleAccess;
+  let current: TRoleAccess;
 
   if (existsSync(filePath)) {
     try {
@@ -54,13 +54,13 @@ export const createJsonAccessRepository = ({ dataDirectory }: { dataDirectory: s
   }
 
   return {
-    get: () => ({ ...current, admin: [...ACCESS_PAGES] } as RoleAccess),
+    get: () => ({ ...current, admin: [...ACCESS_PAGES] } as TRoleAccess),
     update: next => {
       current = normalize({ ...current, ...next });
       writeJson(filePath, current);
-      return { ...current, admin: [...ACCESS_PAGES] } as RoleAccess;
+      return { ...current, admin: [...ACCESS_PAGES] } as TRoleAccess;
     },
   };
 };
 
-export type { AccessPage, RoleAccess };
+export type { TAccessPage, TRoleAccess };

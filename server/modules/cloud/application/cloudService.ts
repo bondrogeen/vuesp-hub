@@ -5,12 +5,12 @@ import path from 'node:path';
 
 import WebSocket from 'ws';
 
-import { readOrCreateHubId, TelemetrySender, type TelemetryDeviceModel, type TelemetryDevicePayload, type TelemetryEventSource, type TelemetryPayload } from '@server/modules/telemetry/application/telemetrySender.ts';
-import type { SecretProvider } from '@shared/secrets/secretProvider.ts';
-import { buildTileCommands, resolvePublicTiles, type CloudTileGroup, type CloudTilesResult, type PublicDashboardTile } from '@root/shared/dashboardTiles.ts';
+import { readOrCreateHubId, TelemetrySender, type ITelemetryDeviceModel, type ITelemetryDevicePayload, type ITelemetryEventSource, type ITelemetryPayload } from '@server/modules/telemetry/application/telemetrySender.ts';
+import type { ISecretProvider } from '@shared/secrets/secretProvider.ts';
+import { buildTileCommands, resolvePublicTiles, type ICloudTileGroup, type ICloudTilesResult, type IPublicDashboardTile } from '@root/shared/dashboardTiles.ts';
 import { isRecordValue } from '@root/shared/device.ts';
-import type { DashboardItem } from 'vuesp-dashboard-core';
-import { createCloudConfigStore, type CloudConfig, type CloudConfigStore } from '../infrastructure/cloudConfigStore.ts';
+import type { IDashboardItem } from 'vuesp-dashboard-core';
+import { createCloudConfigStore, type ICloudConfig, type ICloudConfigStore } from '../infrastructure/cloudConfigStore.ts';
 
 const DEFAULT_CLOUD_URL = 'https://api.vuesp.ru';
 const PAIR_POLL_MS = 2000;
@@ -24,10 +24,10 @@ const RECONNECT_MAX_MS = 60_000;
  */
 export const MAX_PUBLISHED_TILES = 20;
 
-export type CloudState = 'disconnected' | 'pairing' | 'connected' | 'error';
+export type TCloudState = 'disconnected' | 'pairing' | 'connected' | 'error';
 
-export interface CloudStatus {
-  state: CloudState;
+export interface ICloudStatus {
+  state: TCloudState;
   connected: boolean;
   pairing: boolean;
   hubId: string | null;
@@ -39,33 +39,33 @@ export interface CloudStatus {
   lastHeartbeat?: string;
 }
 
-export interface CloudService {
-  status(): CloudStatus;
+export interface ICloudService {
+  status(): ICloudStatus;
   start(): void;
   stop(): Promise<void>;
-  startPairing(): Promise<CloudStatus>;
-  disconnect(): Promise<CloudStatus>;
+  startPairing(): Promise<ICloudStatus>;
+  disconnect(): Promise<ICloudStatus>;
   /** All resolvable tiles plus the current publication selection. */
-  listTiles(): Promise<CloudTilesResult>;
+  listTiles(): Promise<ICloudTilesResult>;
   /** Replaces the allowlist of published tile keys. */
-  setPublishedTiles(keys: string[]): Promise<CloudStatus>;
+  setPublishedTiles(keys: string[]): Promise<ICloudStatus>;
   /** Verifies a Vuesp user token and returns a long-lived LAN token. */
-  mobileSession(accessToken: string): Promise<MobileSession>;
+  mobileSession(accessToken: string): Promise<IMobileSession>;
   /** Verifies a LAN token issued by this hub. */
-  verifyMobileToken(token: string): MobileTokenRecord | null;
-  /** Hub data for a paired mobile client. */
-  mobileHub(): Promise<MobileHub>;
+  verifyMobileToken(token: string): IMobileTokenRecord | null;
+  /** IHub data for a paired mobile client. */
+  mobileHub(): Promise<IMobileHub>;
   /** Applies a tile action without a cloud WebSocket round-trip. */
   action(deviceId: string, tileId: string, tileKey: string, value: unknown): Promise<{ ok: boolean; error?: string; at?: number }>;
 }
 
-export interface MobileSession {
+export interface IMobileSession {
   token: string;
   hubId: string | null;
   name: string | null;
 }
 
-export interface MobileHub {
+export interface IMobileHub {
   id: string | null;
   name: string | null;
   status: 'active';
@@ -81,38 +81,38 @@ export interface MobileHub {
     name: string;
     ip: string;
     state: Record<string, unknown>;
-    tiles: PublicDashboardTile[];
+    tiles: IPublicDashboardTile[];
     observedAt: string;
     receivedAt: string;
   }>;
 }
 
-export interface MobileTokenRecord {
+export interface IMobileTokenRecord {
   tokenHash: string;
   userId: string;
   userName: string;
   createdAt: string;
 }
 
-export interface CloudServiceOptions {
+export interface ICloudServiceOptions {
   dataDirectory: string;
-  secretProvider: SecretProvider;
-  runtime: CloudRuntime;
-  getDeviceModel: () => Promise<TelemetryDeviceModel>;
+  secretProvider: ISecretProvider;
+  runtime: ICloudRuntime;
+  getDeviceModel: () => Promise<ITelemetryDeviceModel>;
   bootstrap?: { url: string; token: string; hubName?: string };
   fetchImpl?: typeof fetch;
 }
 
 /** The cloud channel needs the runtime's event stream plus device list/commands. */
-export interface CloudRuntime extends TelemetryEventSource {
+export interface ICloudRuntime extends ITelemetryEventSource {
   getList(): unknown[];
   send(target: string, command: string, data?: Record<string, unknown>): boolean;
   sendAll(command: string, data?: Record<string, unknown>): boolean;
 }
 
 /** Outbound snapshot: tiles only, never the raw device state. */
-type CloudDevicePayload = Omit<TelemetryDevicePayload, 'state'> & { tiles: PublicDashboardTile[] };
-type CloudPayload = Omit<TelemetryPayload, 'devices'> & { devices: CloudDevicePayload[] };
+type CloudDevicePayload = Omit<ITelemetryDevicePayload, 'state'> & { tiles: IPublicDashboardTile[] };
+type CloudPayload = Omit<ITelemetryPayload, 'devices'> & { devices: CloudDevicePayload[] };
 
 interface PairingState {
   sessionId: string;
@@ -140,12 +140,12 @@ export const createCloudService = ({
   getDeviceModel,
   bootstrap,
   fetchImpl = fetch,
-}: CloudServiceOptions): CloudService => {
-  const store: CloudConfigStore = createCloudConfigStore({ dataDirectory, secretProvider });
+}: ICloudServiceOptions): ICloudService => {
+  const store: ICloudConfigStore = createCloudConfigStore({ dataDirectory, secretProvider });
   const localHubId = readOrCreateHubId(dataDirectory);
   const baseUrl = (bootstrap?.url ?? DEFAULT_CLOUD_URL).replace(/\/+$/, '');
 
-  let config: CloudConfig | null = null;
+  let config: ICloudConfig | null = null;
   let pairing: PairingState | null = null;
   let sender: TelemetrySender | null = null;
   let socket: WebSocket | null = null;
@@ -153,18 +153,18 @@ export const createCloudService = ({
   let reconnect: ReturnType<typeof setTimeout> | undefined;
   let reconnectDelay = RECONNECT_MIN_MS;
   let stopped = true;
-  let state: CloudState = 'disconnected';
+  let state: TCloudState = 'disconnected';
   let lastError = '';
   let lastHeartbeat = '';
 
   const mobileFilePath = path.join(dataDirectory, 'mobile.json');
-  const readMobileTokens = (): MobileTokenRecord[] => {
+  const readMobileTokens = (): IMobileTokenRecord[] => {
     try {
       if (!existsSync(mobileFilePath)) return [];
       const parsed = JSON.parse(readFileSync(mobileFilePath, 'utf8')) as { tokens?: unknown };
       if (!Array.isArray(parsed.tokens)) return [];
       return parsed.tokens.filter(
-        (token): token is MobileTokenRecord =>
+        (token): token is IMobileTokenRecord =>
           isRecordValue(token) &&
           typeof token.tokenHash === 'string' &&
           typeof token.userId === 'string' &&
@@ -175,14 +175,14 @@ export const createCloudService = ({
       return [];
     }
   };
-  const writeMobileTokens = (tokens: MobileTokenRecord[]): void => {
+  const writeMobileTokens = (tokens: IMobileTokenRecord[]): void => {
     mkdirSync(dataDirectory, { recursive: true, mode: 0o700 });
     writeFileSync(mobileFilePath, JSON.stringify({ tokens }, null, 2), { mode: 0o600 });
     chmodSync(mobileFilePath, 0o600);
   };
   const hashMobileToken = (token: string): string => createHash('sha256').update(token).digest('hex');
 
-  const status = (): CloudStatus => ({
+  const status = (): ICloudStatus => ({
     state,
     connected: state === 'connected',
     pairing: state === 'pairing',
@@ -245,8 +245,8 @@ export const createCloudService = ({
    * allowlist). Registry and tile order are stable, so the same tiles are
    * selected on each flush. Only resolved presentation data leaves the hub.
    */
-  const buildPublishedTiles = async (): Promise<Map<string, PublicDashboardTile[]>> => {
-    const selected = new Map<string, PublicDashboardTile[]>();
+  const buildPublishedTiles = async (): Promise<Map<string, IPublicDashboardTile[]>> => {
+    const selected = new Map<string, IPublicDashboardTile[]>();
     const list = readDeviceList();
     const records = (await getDeviceModel()).getAll();
 
@@ -265,11 +265,11 @@ export const createCloudService = ({
     return selected;
   };
 
-  const listTiles = async (): Promise<CloudTilesResult> => {
+  const listTiles = async (): Promise<ICloudTilesResult> => {
     const list = readDeviceList();
     const records = (await getDeviceModel()).getAll();
 
-    const devices: CloudTileGroup[] = records.map(record => ({
+    const devices: ICloudTileGroup[] = records.map(record => ({
       deviceId: record.uuid,
       name: record.name || record.ip,
       ip: record.ip,
@@ -288,7 +288,7 @@ export const createCloudService = ({
     };
   };
 
-  const setPublishedTiles = async (keys: string[]): Promise<CloudStatus> => {
+  const setPublishedTiles = async (keys: string[]): Promise<ICloudStatus> => {
     if (!config) throw new Error('Cloud is not connected');
 
     const unique = [...new Set(keys.map(key => key.trim()).filter(Boolean))];
@@ -362,7 +362,7 @@ export const createCloudService = ({
       }
       if (!isRecordValue(item)) return { ok: false, error: 'Unknown tile' };
 
-      const commands = buildTileCommands(item as unknown as DashboardItem, value, sender?.getState(record.ip) ?? {});
+      const commands = buildTileCommands(item as unknown as IDashboardItem, value, sender?.getState(record.ip) ?? {});
       if (!commands.length) return { ok: false, error: 'This tile cannot be changed' };
 
       let ok = true;
@@ -392,7 +392,7 @@ export const createCloudService = ({
     sendActionResult(target, requestId, result.ok, result.error, result.at);
   };
 
-  const mobileSession = async (accessToken: string): Promise<MobileSession> => {
+  const mobileSession = async (accessToken: string): Promise<IMobileSession> => {
     if (!config) throw new Error('Cloud is not connected');
     const token = accessToken.trim();
     if (!token) throw new Error('Access token is required');
@@ -412,7 +412,7 @@ export const createCloudService = ({
     const data = (await response.json()) as { hubId?: unknown; user?: { id?: unknown; name?: unknown } };
     const hubId = typeof data.hubId === 'string' ? data.hubId : config.hubId || null;
     const mobileToken = randomBytes(32).toString('base64url');
-    const record: MobileTokenRecord = {
+    const record: IMobileTokenRecord = {
       tokenHash: hashMobileToken(mobileToken),
       userId: typeof data.user?.id === 'string' ? data.user.id : '',
       userName: typeof data.user?.name === 'string' ? data.user.name : '',
@@ -423,14 +423,14 @@ export const createCloudService = ({
     return { token: mobileToken, hubId, name: config.name ?? null };
   };
 
-  const verifyMobileToken = (token: string): MobileTokenRecord | null => {
+  const verifyMobileToken = (token: string): IMobileTokenRecord | null => {
     const value = token.trim();
     if (!value) return null;
     const hash = hashMobileToken(value);
     return readMobileTokens().find(record => record.tokenHash === hash) ?? null;
   };
 
-  const mobileHub = async (): Promise<MobileHub> => {
+  const mobileHub = async (): Promise<IMobileHub> => {
     const tiles = await listTiles();
     const selected = new Set(tiles.selected);
     const hubId = config?.hubId || null;
@@ -460,13 +460,13 @@ export const createCloudService = ({
       lastSeenAt: now,
       lastSnapshotAt: now,
       installedAt: null,
-      platform: 'Vuesp Hub · LAN',
+      platform: 'Vuesp IHub · LAN',
       installationId: null,
       devicesList,
     };
   };
 
-  const sendPayload = async (payload: TelemetryPayload): Promise<void> => {
+  const sendPayload = async (payload: ITelemetryPayload): Promise<void> => {
     if (!config) return;
 
     const published = await buildPublishedTiles();
@@ -630,7 +630,7 @@ export const createCloudService = ({
     }
   };
 
-  const startPairing = async (): Promise<CloudStatus> => {
+  const startPairing = async (): Promise<ICloudStatus> => {
     if (pairing) return status();
     stopReconnect();
     stopSender();
@@ -657,7 +657,7 @@ export const createCloudService = ({
     }
   };
 
-  const disconnect = async (): Promise<CloudStatus> => {
+  const disconnect = async (): Promise<ICloudStatus> => {
     stopPairing();
     stopReconnect();
     stopSender();

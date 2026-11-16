@@ -6,10 +6,10 @@ import { DatabaseSync } from 'node:sqlite';
 import {
   parseDeviceCreateInput,
   parseDeviceUpdateInput,
-  type DeviceConnectionRecord,
-  type DeviceRecord,
+  type IDeviceConnectionRecord,
+  type IDeviceRecord,
 } from '@root/shared/device.ts';
-import type { SecretProvider } from '@shared/secrets/secretProvider.ts';
+import type { ISecretProvider } from '@shared/secrets/secretProvider.ts';
 
 type SqliteInputValue = null | number | bigint | string | NodeJS.ArrayBufferView;
 type SqliteOutputValue = null | number | bigint | string | NodeJS.NonSharedUint8Array;
@@ -39,7 +39,7 @@ const parseFirmware = (value: string): number[] => {
 
 const toDevice = (
   row: Record<string, SqliteOutputValue>,
-): DeviceRecord => ({
+): IDeviceRecord => ({
   id: Number(row.id),
   uuid: String(row.uuid),
   deviceId: Number(row.device_id),
@@ -49,14 +49,14 @@ const toDevice = (
   addedAt: String(row.added_at),
 });
 
-export interface DeviceRepository {
-  getAll(): DeviceRecord[];
-  getAll(options: { includeCredentials: true }): DeviceConnectionRecord[];
-  getById(id: number | string): DeviceRecord | null;
-  getById(id: number | string, options: { includeCredentials: true }): DeviceConnectionRecord | null;
-  create(input: unknown): DeviceRecord;
-  update(id: number | string, input: unknown): DeviceRecord | null;
-  delete(id: number | string): DeviceRecord | null;
+export interface IDeviceRepository {
+  getAll(): IDeviceRecord[];
+  getAll(options: { includeCredentials: true }): IDeviceConnectionRecord[];
+  getById(id: number | string): IDeviceRecord | null;
+  getById(id: number | string, options: { includeCredentials: true }): IDeviceConnectionRecord | null;
+  create(input: unknown): IDeviceRecord;
+  update(id: number | string, input: unknown): IDeviceRecord | null;
+  delete(id: number | string): IDeviceRecord | null;
   close(): void;
 }
 
@@ -67,8 +67,8 @@ export const createDeviceRepository = async ({
 }: {
   databasePath: string;
   legacyDevices?: LegacyDevice[];
-  secretProvider: SecretProvider;
-}): Promise<DeviceRepository> => {
+  secretProvider: ISecretProvider;
+}): Promise<IDeviceRepository> => {
   if (!databasePath) throw new TypeError('databasePath is required');
   if (
     typeof secretProvider?.encrypt !== 'function' ||
@@ -150,7 +150,7 @@ export const createDeviceRepository = async ({
     throw error;
   }
 
-  const withCredentials = (row: Record<string, SqliteOutputValue>): DeviceConnectionRecord => {
+  const withCredentials = (row: Record<string, SqliteOutputValue>): IDeviceConnectionRecord => {
     let password = '';
 
     if (row.password) {
@@ -172,18 +172,18 @@ export const createDeviceRepository = async ({
     };
   };
 
-  function getAll(): DeviceRecord[];
-  function getAll(options: { includeCredentials: true }): DeviceConnectionRecord[];
-  function getAll(options?: { includeCredentials?: boolean }): DeviceRecord[] | DeviceConnectionRecord[] {
+  function getAll(): IDeviceRecord[];
+  function getAll(options: { includeCredentials: true }): IDeviceConnectionRecord[];
+  function getAll(options?: { includeCredentials?: boolean }): IDeviceRecord[] | IDeviceConnectionRecord[] {
     const records = rows('SELECT * FROM devices ORDER BY added_at, id');
     return options?.includeCredentials
       ? records.map(withCredentials)
       : records.map(toDevice);
   }
 
-  function getById(id: number | string): DeviceRecord | null;
-  function getById(id: number | string, options: { includeCredentials: true }): DeviceConnectionRecord | null;
-  function getById(id: number | string, options?: { includeCredentials?: boolean }): DeviceRecord | DeviceConnectionRecord | null {
+  function getById(id: number | string): IDeviceRecord | null;
+  function getById(id: number | string, options: { includeCredentials: true }): IDeviceConnectionRecord | null;
+  function getById(id: number | string, options?: { includeCredentials?: boolean }): IDeviceRecord | IDeviceConnectionRecord | null {
     const row = rows('SELECT * FROM devices WHERE id = ?', [Number(id)])[0];
     if (!row) return null;
     return options?.includeCredentials ? withCredentials(row) : toDevice(row);

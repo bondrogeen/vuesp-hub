@@ -2,7 +2,7 @@ import { createCipheriv, createDecipheriv, randomBytes, scryptSync } from 'node:
 import { chmodSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname } from 'node:path';
 
-import type { SecretProvider } from './secretProvider.ts';
+import type { ISecretProvider } from './secretProvider.ts';
 
 const FORMAT_PREFIX = 'v1:';
 const SALT_BYTES = 16;
@@ -25,7 +25,7 @@ const loadSalt = (saltPath: string): Buffer => {
  * random salt is persisted. Without a key the provider refuses to encrypt or
  * decrypt instead of falling back to plaintext.
  */
-export const createAesSecretProvider = ({ passphrase, saltPath }: { passphrase?: string; saltPath: string }): SecretProvider => {
+export const createAesSecretProvider = ({ passphrase, saltPath }: { passphrase?: string; saltPath: string }): ISecretProvider => {
   if (!passphrase) {
     const message = 'Secure credential storage is unavailable. Set VUESP_SECRET_KEY or pass --secret-key.';
     return {

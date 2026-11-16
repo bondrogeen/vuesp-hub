@@ -1,6 +1,6 @@
 import Struct from 'c-struct-to-json';
 import { isIP } from 'node:net';
-import { isDiscoveredDevice, type DiscoveredDevice } from '@root/shared/device.ts';
+import { isDiscoveredDevice, type IDiscoveredDevice } from '@root/shared/device.ts';
 
 const discoveryStruct = [
   { name: 'command', type: 'uint8_t' },
@@ -12,7 +12,7 @@ const discoveryStruct = [
 export const createDiscoveryQuery = (): Buffer =>
   Buffer.from(new Uint8Array(new Struct(discoveryStruct).setObject({ command: 99 }).getBuffer()));
 
-export const decodeDiscoveryMessage = (message: Buffer, address: string): DiscoveredDevice | null => {
+export const decodeDiscoveryMessage = (message: Buffer, address: string): IDiscoveredDevice | null => {
   if (!Buffer.isBuffer(message) || message.length < 28 || isIP(address) === 0) return null;
   const buffer = new ArrayBuffer(message.byteLength);
   new Uint8Array(buffer).set(message);
@@ -37,7 +37,7 @@ export const decodeDiscoveryMessage = (message: Buffer, address: string): Discov
  * (packet type 0x01 + big-endian device id) on the same UDP port.
  * Identity beyond the id is obtained over WebSocket after the device is added.
  */
-export const decodeVuespAnnouncement = (message: Buffer, address: string): DiscoveredDevice | null => {
+export const decodeVuespAnnouncement = (message: Buffer, address: string): IDiscoveredDevice | null => {
   if (!Buffer.isBuffer(message) || message.length !== 5 || message[0] !== 0x01 || isIP(address) === 0) return null;
 
   const deviceId = message.readUInt32BE(1);

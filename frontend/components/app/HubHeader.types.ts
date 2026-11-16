@@ -1,10 +1,10 @@
 import type { INotification } from 'vuesp-components/types';
 
-export interface HubHeaderProps {
+export interface IHubHeaderProps {
   notifications?: INotification[];
 }
 
-export interface HubHeaderEmits {
+export interface IHubHeaderEmits {
   sidebar: [value: Event];
   notif: [value: Event];
 }

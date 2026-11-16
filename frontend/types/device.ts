@@ -1,49 +1,49 @@
-import type { DashboardItem } from 'vuesp-dashboard-core';
+import type { IDashboardItem } from 'vuesp-dashboard-core';
 
-import type { DeviceCreateInput, DeviceRecord } from '../../shared/device.ts';
+import type { IDeviceCreateInput, IDeviceRecord } from '../../shared/device.ts';
 
 export type {
-  DeviceCommand,
-  DeviceCommandPayload,
-  DeviceCreateInput,
-  DeviceEventPayload,
-  DeviceRecord,
-  DeviceUiSession,
-  DeviceUpdateInput,
-  DiscoveredDevice,
-  TargetedDeviceCommand,
+  IDeviceCommand,
+  TDeviceCommandPayload,
+  IDeviceCreateInput,
+  IDeviceEventPayload,
+  IDeviceRecord,
+  IDeviceUiSession,
+  IDeviceUpdateInput,
+  IDiscoveredDevice,
+  TTargetedDeviceCommand,
 } from '../../shared/device.ts';
 
-export interface DeviceMenuItem {
+export interface IDeviceMenuItem {
   name: string;
   icon?: string;
   path?: string;
-  children?: DeviceMenuItem[];
+  children?: IDeviceMenuItem[];
 }
 
-export interface DeviceMenu {
+export interface IDeviceMenu {
   id?: number;
   recordId?: number;
   ip: string;
   name: string;
-  menu?: DeviceMenuItem[];
+  menu?: IDeviceMenuItem[];
 }
 
-export interface DeviceListItem {
+export interface IDeviceListItem {
   id?: number;
   ip: string;
   name: string;
-  list?: DeviceListEntry[];
+  list?: IDeviceListEntry[];
 }
 
-export interface DeviceListEntry extends DashboardItem {
+export interface IDeviceListEntry extends IDashboardItem {
   value?: unknown;
   valueTo?: unknown;
 }
 
-export type DeviceFormInput = DeviceCreateInput & {
+export type TDeviceFormInput = IDeviceCreateInput & {
   id?: number;
   command?: number;
 };
 
-export type RegisteredDevice = DeviceRecord;
+export type TRegisteredDevice = IDeviceRecord;

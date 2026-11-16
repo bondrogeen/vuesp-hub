@@ -1,4 +1,4 @@
-export interface ModbusFunction {
+export interface IModbusFunction {
   key: string;
   name: string;
   type: string;
@@ -6,7 +6,7 @@ export interface ModbusFunction {
   value: number;
 }
 
-export const functionList: ModbusFunction[] = [
+export const functionList: IModbusFunction[] = [
   { key: 'readCoils', name: 'Read Coil Status 0x01', type: '', access: 'read', value: 0x01 },
   { key: 'readInputs', name: 'Read Input Status 0x02', type: '', access: 'read', value: 0x02 },
   { key: 'readHoldingRegisters', name: 'Read Holding Registers 0x03', type: '', access: 'read', value: 0x03 },

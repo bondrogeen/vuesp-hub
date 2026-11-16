@@ -4,14 +4,14 @@ import os from 'node:os';
 import path from 'node:path';
 import express from 'express';
 
-import { requireRole, type AuthenticatedRequest } from '@server/modules/auth/api/middleware.ts';
-import type { AuthService } from '@server/modules/auth/application/authService.ts';
-import type { ModuleCatalog } from '@server/modules/modules/application/moduleCatalog.ts';
-import type { ModuleHost } from '@server/module-host/moduleHost.ts';
-import type { ModuleInfo, ModuleSummary } from '@root/shared/module.ts';
+import { requireRole, type IAuthenticatedRequest } from '@server/modules/auth/api/middleware.ts';
+import type { IAuthService } from '@server/modules/auth/application/authService.ts';
+import type { TModuleCatalog } from '@server/modules/modules/application/moduleCatalog.ts';
+import type { TModuleHost } from '@server/module-host/moduleHost.ts';
+import type { IModuleInfo, IModuleSummary } from '@root/shared/module.ts';
 import { modulePublicRoute, moduleSlug } from '@server/module-host/publicRoute.ts';
 
-const toSummary = (info: ModuleInfo): ModuleSummary => {
+const toSummary = (info: IModuleInfo): IModuleSummary => {
   const { manifest } = info;
   const web = manifest.web;
   const entry = typeof web === 'string' ? web : web?.entry;
@@ -49,9 +49,9 @@ export const createModuleRouter = ({
   auth,
   catalog,
 }: {
-  moduleHost: ModuleHost;
-  auth?: AuthService;
-  catalog?: ModuleCatalog;
+  moduleHost: TModuleHost;
+  auth?: IAuthService;
+  catalog?: TModuleCatalog;
 }) => {
   const platform = `${process.platform}-${process.arch}`;
   const router = express.Router();
@@ -113,7 +113,7 @@ export const createModuleRouter = ({
     }
   );
 
-  router.get('/:id/token', async (request: AuthenticatedRequest, response) => {
+  router.get('/:id/token', async (request: IAuthenticatedRequest, response) => {
     const id = String(request.params.id);
     const modules = await moduleHost.list();
     const info = modules.find(item => item.manifest.id === id);

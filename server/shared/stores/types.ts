@@ -1,14 +1,14 @@
-export interface StoreEntity {
+export interface IStoreEntity {
   id: number;
   [key: string]: unknown;
 }
 
-export interface StoreModel {
-  getAll(): Promise<StoreEntity[]>;
-  getById(id: number): Promise<StoreEntity | undefined>;
-  create(data: Omit<StoreEntity, 'id'>): Promise<StoreEntity>;
-  update(id: number, data: Partial<StoreEntity>): Promise<StoreEntity | null>;
-  delete(id: number): Promise<StoreEntity | undefined>;
+export interface IStoreModel {
+  getAll(): Promise<IStoreEntity[]>;
+  getById(id: number): Promise<IStoreEntity | undefined>;
+  create(data: Omit<IStoreEntity, 'id'>): Promise<IStoreEntity>;
+  update(id: number, data: Partial<IStoreEntity>): Promise<IStoreEntity | null>;
+  delete(id: number): Promise<IStoreEntity | undefined>;
 }
 
-export type StoreModelFactory = (key: string) => StoreModel;
+export type TStoreModelFactory = (key: string) => IStoreModel;

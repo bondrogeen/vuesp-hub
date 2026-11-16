@@ -1,11 +1,11 @@
 import type { NextFunction, Request, RequestHandler, Response } from 'express';
 import type { Socket } from 'socket.io';
 
-import type { AuthService, AuthUser } from '@server/modules/auth/application/authService.ts';
-import type { UserRole } from '@server/modules/users/domain/user.ts';
+import type { IAuthService, IAuthUser } from '@server/modules/auth/application/authService.ts';
+import type { TUserRole } from '@server/modules/users/domain/user.ts';
 
-export interface AuthenticatedRequest extends Request {
-  auth?: AuthUser;
+export interface IAuthenticatedRequest extends Request {
+  auth?: IAuthUser;
 }
 
 export const bearerToken = (value: string | undefined): string | undefined => {
@@ -14,7 +14,7 @@ export const bearerToken = (value: string | undefined): string | undefined => {
   return scheme?.toLowerCase() === 'bearer' && token ? token : undefined;
 };
 
-export const requireAuth = (auth: AuthService): RequestHandler => (request: AuthenticatedRequest, response: Response, next: NextFunction) => {
+export const requireAuth = (auth: IAuthService): RequestHandler => (request: IAuthenticatedRequest, response: Response, next: NextFunction) => {
   const user = auth.verify(bearerToken(request.headers.authorization));
   if (!user) {
     response.status(401).json({ error: 'Unauthorized' });
@@ -24,7 +24,7 @@ export const requireAuth = (auth: AuthService): RequestHandler => (request: Auth
   next();
 };
 
-export const socketAuth = (auth: AuthService) => (socket: Socket, next: (error?: Error) => void) => {
+export const socketAuth = (auth: IAuthService) => (socket: Socket, next: (error?: Error) => void) => {
   const token =
     bearerToken(socket.handshake.headers.authorization) ??
     (typeof socket.handshake.auth?.token === 'string' ? socket.handshake.auth.token : undefined);
@@ -41,7 +41,7 @@ export const socketAuth = (auth: AuthService) => (socket: Socket, next: (error?:
   next();
 };
 
-export const requirePasswordChanged: RequestHandler = (request: AuthenticatedRequest, response: Response, next: NextFunction) => {
+export const requirePasswordChanged: RequestHandler = (request: IAuthenticatedRequest, response: Response, next: NextFunction) => {
   if (request.auth?.mustChangePassword) {
     response.status(403).json({ error: 'Password change required', code: 'PASSWORD_CHANGE_REQUIRED' });
     return;
@@ -49,7 +49,7 @@ export const requirePasswordChanged: RequestHandler = (request: AuthenticatedReq
   next();
 };
 
-export const requireRole = (...roles: UserRole[]): RequestHandler => (request: AuthenticatedRequest, response: Response, next: NextFunction) => {
+export const requireRole = (...roles: TUserRole[]): RequestHandler => (request: IAuthenticatedRequest, response: Response, next: NextFunction) => {
   if (!request.auth || !roles.includes(request.auth.role)) {
     response.status(403).json({ error: 'Forbidden' });
     return;

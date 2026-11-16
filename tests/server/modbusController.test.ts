@@ -5,10 +5,10 @@ import { test } from 'node:test';
 
 import {
   createModbusController,
-  type ModbusSerial,
+  type TModbusSerial,
 } from '@server/modules/serial/application/modbusController.ts';
 
-const startApi = async (serial: ModbusSerial) => {
+const startApi = async (serial: TModbusSerial) => {
   const app = express();
   const controller = createModbusController(serial);
   app.get('/api/v1/modbus/send', controller.send);

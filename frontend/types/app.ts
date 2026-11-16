@@ -1,4 +1,4 @@
-export interface AppNotification {
+export interface IAppNotification {
   id: number | string;
   timeout?: number;
   message?: string;
@@ -9,7 +9,7 @@ export interface AppNotification {
   date?: number;
 }
 
-export interface AppDialogState {
+export interface IAppDialogState {
   value: boolean;
   [key: string]: unknown;
 }

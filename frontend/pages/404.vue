@@ -8,7 +8,7 @@
 
       <router-link
         to="/"
-        class="inline-flex items-center justify-center rounded-md border border-gray-light-10/70 bg-white/60 px-5 py-3.5 text-sm font-medium text-gray-dark-30 backdrop-blur transition hover:border-[var(--color-blue-main)] hover:text-[var(--color-blue-main)] dark:border-white/15 dark:bg-white/[0.04] dark:text-gray-light-10 dark:hover:border-[var(--color-blue-main)] dark:hover:text-blue-300"
+        class="inline-flex items-center justify-center rounded-md border border-gray-light-10/70 bg-white/60 px-5 py-3.5 text-sm font-medium text-gray-dark-30 backdrop-blur transition hover:border-blue-main hover:text-blue-main dark:border-white/15 dark:bg-white/[0.04] dark:text-gray-light-10 dark:hover:border-blue-main dark:hover:text-blue-300"
       >
         {{ t('notFound.backHome') }}
       </router-link>

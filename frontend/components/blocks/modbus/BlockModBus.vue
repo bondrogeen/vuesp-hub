@@ -3,7 +3,7 @@
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-[100px_300px_100px_100px] gap-4">
       <VTextField v-model="slaveID" v-bind="slaveIDAttrs" :label="t('modbus.slaveId')" />
 
-      <VSelect :model-value="codeLabel" class="" :label="t('modbus.functionCode')" :items="functionOptions" @change="onFunction" />
+      <VSelect :model-value="codeLabel" :label="t('modbus.functionCode')" :items="functionOptions" @change="onFunction" />
 
       <VTextField v-model="address" v-bind="addressAttrs" :label="t('modbus.address')" />
 
@@ -54,14 +54,14 @@ import { useI18n } from 'vue-i18n';
 import { VButton, VSelect, VTextField } from 'vuesp-components/components';
 import { useForm } from 'vuesp-components/composables';
 
-import { CRC, getInt16Bytes, functionList, intToHex, type ModbusFunction } from './modbus.ts';
-import type { BlockModBusEmits, BlockModBusProps } from './BlockModBus.types.ts';
+import { CRC, getInt16Bytes, functionList, intToHex, type IModbusFunction } from './modbus.ts';
+import type { IBlockModBusEmits, IBlockModBusProps } from './BlockModBus.types.ts';
 
-const { data = [] } = defineProps<BlockModBusProps>();
-const emit = defineEmits<BlockModBusEmits>();
+const { data = [] } = defineProps<IBlockModBusProps>();
+const emit = defineEmits<IBlockModBusEmits>();
 const { t } = useI18n();
 
-const code = ref<ModbusFunction>({ ...functionList[3] });
+const code = ref<IModbusFunction>({ ...functionList[3] });
 const functionOptions = computed(() => functionList.map(item => ({
   ...item,
   name: t(`modbus.functions.${item.key}`),
@@ -105,7 +105,7 @@ const onSend = () => {
 };
 const getDataByte = (i: number) => data[i] || 0;
 
-const onFunction = (item: ModbusFunction): void => {
+const onFunction = (item: IModbusFunction): void => {
   code.value = item;
 };
 </script>

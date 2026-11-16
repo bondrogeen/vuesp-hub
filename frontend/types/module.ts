@@ -1,4 +1,4 @@
-export interface ModuleGroupInfo {
+export interface IModuleGroupInfo {
   id: string;
   slug?: string;
   name: string;
@@ -6,7 +6,7 @@ export interface ModuleGroupInfo {
   order?: number;
 }
 
-export interface ModuleWebInfo {
+export interface IModuleWebInfo {
   entry: string;
   element: string;
   url: string;
@@ -18,25 +18,25 @@ export interface ModuleWebInfo {
   };
 }
 
-export interface ModuleSummary {
+export interface IModuleSummary {
   id: string;
   name: string;
   version: string;
   description?: string;
   permissions: string[];
-  group?: ModuleGroupInfo;
+  group?: IModuleGroupInfo;
   slug: string;
   route: string;
-  web?: ModuleWebInfo;
+  web?: IModuleWebInfo;
   running: boolean;
 }
 
-export interface CatalogModule {
+export interface ICatalogModule {
   id: string;
   name: string;
   version: string;
   description?: string;
-  group?: ModuleGroupInfo;
+  group?: IModuleGroupInfo;
   slug?: string;
   permissions?: string[];
   platforms?: string[];
@@ -49,7 +49,7 @@ export interface CatalogModule {
   running?: boolean;
 }
 
-export interface ModuleLogEntry {
+export interface IModuleLogEntry {
   at: string;
   level: 'info' | 'warn' | 'error';
   message: string;

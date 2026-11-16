@@ -1,4 +1,4 @@
-export interface LegacyDashboardItem {
+export interface ILegacyDashboardItem {
   id: string;
   name: string;
   type: string;
@@ -27,9 +27,9 @@ const isPath = (value: unknown): value is string =>
 const optionalNumber = (value: unknown): number | undefined =>
   typeof value === 'number' && Number.isFinite(value) ? value : undefined;
 
-const sanitizeOptions = (value: unknown): LegacyDashboardItem['opts'] | undefined => {
+const sanitizeOptions = (value: unknown): ILegacyDashboardItem['opts'] | undefined => {
   if (!isRecord(value)) return undefined;
-  const opts: NonNullable<LegacyDashboardItem['opts']> = {};
+  const opts: NonNullable<ILegacyDashboardItem['opts']> = {};
 
   for (const key of ['disabled', 'min', 'max', 'step'] as const) {
     const number = optionalNumber(value[key]);
@@ -47,7 +47,7 @@ const sanitizeOptions = (value: unknown): LegacyDashboardItem['opts'] | undefine
   return opts;
 };
 
-const sanitizeItem = (value: unknown): LegacyDashboardItem | null => {
+const sanitizeItem = (value: unknown): ILegacyDashboardItem | null => {
   if (!isRecord(value)) return null;
   const { id, name, type, icon, args, set, get, getTo } = value;
   if (
@@ -82,7 +82,7 @@ const sanitizeItem = (value: unknown): LegacyDashboardItem | null => {
   };
 };
 
-export const parseLegacyDashboard = (value: unknown): LegacyDashboardItem[] | null => {
+export const parseLegacyDashboard = (value: unknown): ILegacyDashboardItem[] | null => {
   if (typeof value === 'string') {
     if (value.length > 256_000) return null;
     try {
@@ -95,7 +95,7 @@ export const parseLegacyDashboard = (value: unknown): LegacyDashboardItem[] | nu
   const entries = Array.isArray(value) ? value : isRecord(value) ? value.dashboard : null;
   if (!Array.isArray(entries) || entries.length > 100) return null;
 
-  const items: LegacyDashboardItem[] = [];
+  const items: ILegacyDashboardItem[] = [];
   for (const entry of entries) {
     const item = sanitizeItem(entry);
     if (!item) return null;

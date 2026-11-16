@@ -1,6 +1,6 @@
 <template>
   <main class="relative flex min-h-screen items-center justify-center px-4 py-10">
-    <div class="glass-panel w-full max-w-xl p-6">
+    <VCard variant="solid" padding="lg" class="w-full max-w-xl">
       <router-link to="/auth/login/" class="mb-6 inline-flex items-center gap-2 text-sm text-gray-dark-25 transition hover:text-gray-dark-40 dark:text-gray-main dark:hover:text-white">
         {{ t('auth.backToDashboard') }}
       </router-link>
@@ -26,16 +26,16 @@
 
       <p class="mt-4 text-sm text-gray-dark-25 dark:text-gray-main">
         {{ t('auth.alreadyHaveAccount') }}
-        <router-link to="/auth/login/" class="font-medium text-[var(--color-blue-main)] hover:underline">{{ t('auth.signInLink') }}</router-link>
+        <router-link to="/auth/login/" class="font-medium text-blue-main hover:underline">{{ t('auth.signInLink') }}</router-link>
       </p>
-    </div>
+    </VCard>
   </main>
 </template>
 
 <script setup lang="ts">
 import { ref } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { VButton, VTextField } from 'vuesp-components/components';
+import { VButton, VTextField, VCard } from 'vuesp-components/components';
 
 const { t } = useI18n();
 

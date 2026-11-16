@@ -1,18 +1,18 @@
 import VuespStruct from 'vuesp-struct';
 
-export interface LegacyProtocolField {
+export interface ILegacyProtocolField {
   type: string;
   name: string;
   length?: number;
   byteOffset?: number;
 }
 
-export interface LegacyProtocolDefinition {
+export interface ILegacyProtocolDefinition {
   keys?: string[];
-  structs?: Record<string, LegacyProtocolField[]>;
+  structs?: Record<string, ILegacyProtocolField[]>;
 }
 
-export interface LegacyProtocolMessage {
+export interface ILegacyProtocolMessage {
   key: string;
   object: Record<string, unknown>;
 }
@@ -20,14 +20,14 @@ export interface LegacyProtocolMessage {
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
 
-const isProtocolField = (value: unknown): value is LegacyProtocolField =>
+const isProtocolField = (value: unknown): value is ILegacyProtocolField =>
   isRecord(value) &&
   typeof value.type === 'string' &&
   typeof value.name === 'string' &&
   (value.length === undefined || (Number.isSafeInteger(value.length) && Number(value.length) > 0)) &&
   (value.byteOffset === undefined || (Number.isSafeInteger(value.byteOffset) && Number(value.byteOffset) >= 0));
 
-const parseProtocolDefinition = (value: unknown): LegacyProtocolDefinition => {
+const parseProtocolDefinition = (value: unknown): ILegacyProtocolDefinition => {
   if (!isRecord(value)) throw new TypeError('Legacy protocol definition must be an object');
   if (value.keys !== undefined && (!Array.isArray(value.keys) || !value.keys.every(key => typeof key === 'string'))) {
     throw new TypeError('Legacy protocol keys must be an array of strings');
@@ -54,11 +54,11 @@ export class LegacyDeviceProtocol {
     this.#codec.init(parseProtocolDefinition(definition));
   }
 
-  encode(command: string, data: Record<string, unknown> = {}): ArrayBuffer | null | false {
+  encode(command: string, data?: Record<string, unknown>): ArrayBuffer | null | false {
     return this.#codec.set(command, data);
   }
 
-  decode(frame: ArrayBuffer): LegacyProtocolMessage | null {
+  decode(frame: ArrayBuffer): ILegacyProtocolMessage | null {
     const message = this.#codec.get(frame);
     if (!message) return null;
     return message;

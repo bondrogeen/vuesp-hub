@@ -1,7 +1,7 @@
-export interface BlockModBusProps {
+export interface IBlockModBusProps {
   data?: number[];
 }
 
-export interface BlockModBusEmits {
+export interface IBlockModBusEmits {
   send: [value: number[]];
 }

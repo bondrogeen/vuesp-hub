@@ -4,15 +4,15 @@ import express from 'express';
 import { test } from 'node:test';
 
 import { createVuespRouter } from '@server/modules/devices/api/vuespRoutes.ts';
-import { createDeviceRepository, type DeviceRepository } from '@server/modules/devices/infrastructure/deviceRepository.ts';
-import type { SecretProvider } from '@shared/secrets/secretProvider.ts';
+import { createDeviceRepository, type IDeviceRepository } from '@server/modules/devices/infrastructure/deviceRepository.ts';
+import type { ISecretProvider } from '@shared/secrets/secretProvider.ts';
 
-const secretProvider: SecretProvider = {
+const secretProvider: ISecretProvider = {
   encrypt: value => `encrypted:${value}`,
   decrypt: value => value.replace('encrypted:', ''),
 };
 
-const startApi = async (getModel: () => Promise<DeviceRepository>) => {
+const startApi = async (getModel: () => Promise<IDeviceRepository>) => {
   const app = express();
   app.use(express.json());
   app.use('/api/v1/device', createVuespRouter(getModel));
@@ -93,7 +93,7 @@ test('device API rejects malformed record IDs with the shared validation error s
 
 test('device API hides internal failures and returns the shared error response shape', async () => {
   const repository = await createDeviceRepository({ databasePath: ':memory:', secretProvider });
-  const failingRepository: DeviceRepository = new Proxy(repository, {
+  const failingRepository: IDeviceRepository = new Proxy(repository, {
     get(target, property, receiver) {
       if (property === 'getAll') {
         return () => {

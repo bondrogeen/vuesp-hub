@@ -26,14 +26,14 @@
       {{ errorMessage }}
     </div>
 
-    <CardMain v-if="!rows.length" :title="t('common.devices')" :loading="isLoading">
+    <VCard v-if="!rows.length" :title="t('common.devices')" hover>
       <p class="py-8 text-center text-sm text-gray-dark-25 dark:text-gray-main">
         {{ t('raw.empty') }}
       </p>
-    </CardMain>
+    </VCard>
 
     <div v-else class="flex flex-col gap-6">
-      <CardMain v-for="row in rows" :key="row.id" :title="row.name" :loading="isLoading">
+      <VCard v-for="row in rows" :key="row.id" :title="row.name" hover>
         <template #header>
           <span class="flex items-center gap-1.5 text-xs text-gray-dark-25 dark:text-gray-main">
             <span class="h-2 w-2 rounded-full" :class="statusColor(row.state)"></span>
@@ -91,7 +91,7 @@
             </tbody>
           </table>
         </div>
-      </CardMain>
+      </VCard>
     </div>
   </main>
 </template>
@@ -100,23 +100,23 @@
 import { computed, onMounted, ref } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useI18n } from 'vue-i18n';
-import { BlockBreadcrumb as VBreadcrumb, CardMain, VButton } from 'vuesp-components/components';
+import { BlockBreadcrumb as VBreadcrumb, VButton, VCard } from 'vuesp-components/components';
 
 import { useWebSocketStore } from '@/stores/WebSocketStore';
 import { api } from '@/utils/helpers.ts';
-import type { DeviceRecord } from '@/types';
-import type { RawDeviceRow, RawEvent } from './raw.types.ts';
+import type { IDeviceRecord } from '@/types';
+import type { IRawDeviceRow, TRawEvent } from './raw.types.ts';
 
 const { t } = useI18n();
 const webSocketStore = useWebSocketStore();
 const { devices, events, serviceRunning } = storeToRefs(webSocketStore);
 
-const registry = ref<DeviceRecord[]>([]);
+const registry = ref<IDeviceRecord[]>([]);
 const isLoading = ref(false);
 const errorMessage = ref('');
 
-const rows = computed<RawDeviceRow[]>(() => {
-  const result: RawDeviceRow[] = [];
+const rows = computed<IRawDeviceRow[]>(() => {
+  const result: IRawDeviceRow[] = [];
   const seen = new Set<string>();
 
   for (const device of registry.value) {
@@ -167,8 +167,8 @@ const statusColor = (state: Record<string, unknown>): string => {
 
 const pretty = (state: Record<string, unknown>): string => JSON.stringify(state, null, 2);
 
-const eventsByDevice = computed<Record<string, RawEvent[]>>(() => {
-  const map: Record<string, RawEvent[]> = {};
+const eventsByDevice = computed<Record<string, TRawEvent[]>>(() => {
+  const map: Record<string, TRawEvent[]> = {};
   for (const event of events.value) {
     const id = String(event.id);
     (map[id] ??= []).push(event);
@@ -176,7 +176,7 @@ const eventsByDevice = computed<Record<string, RawEvent[]>>(() => {
   return map;
 });
 
-const eventsFor = (id: string): RawEvent[] => (eventsByDevice.value[id] ?? []).slice(-30).reverse();
+const eventsFor = (id: string): TRawEvent[] => (eventsByDevice.value[id] ?? []).slice(-30).reverse();
 
 const formatTime = (at: number): string => new Date(at).toLocaleTimeString();
 
@@ -193,7 +193,7 @@ const loadRegistry = async (): Promise<void> => {
   isLoading.value = true;
   errorMessage.value = '';
   try {
-    registry.value = await api.get<DeviceRecord[]>('/device/');
+    registry.value = await api.get<IDeviceRecord[]>('/device/');
   } catch (error) {
     errorMessage.value = error instanceof Error ? error.message : t('raw.errors.load');
   } finally {

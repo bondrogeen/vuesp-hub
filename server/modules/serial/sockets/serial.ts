@@ -8,12 +8,12 @@ const key = 'serial';
 
 type SerialOptions = Parameters<InstanceType<typeof Serial>['connection']>[0];
 type Ack = (response: { status?: string | boolean; message?: string; data?: unknown; options?: unknown }) => void;
-interface SettingsStore {
+interface ISettingsStore {
     get<T>(key: string, defaultValue?: T): T | undefined;
     set(key: string, value: unknown): void;
 }
 
-export const socketSerial = (io: Server, store: SettingsStore) => {
+export const socketSerial = (io: Server, store: ISettingsStore) => {
     let savedOptions: unknown = store.get(key) ?? {};
 
     io.on('connection', (socket: Socket) => {

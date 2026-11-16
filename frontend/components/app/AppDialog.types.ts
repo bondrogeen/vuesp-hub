@@ -1,13 +1,13 @@
-export interface AppDialogProps {
+export interface IAppDialogProps {
   value?: boolean;
   title?: string;
   message?: string;
   callback?: () => void;
   button?: string;
-  color?: 'blue' | 'rose';
+  color?: 'blue' | 'red';
   size?: 'sm' | 'md' | 'lg' | 'full';
 }
 
-export interface AppDialogEmits {
+export interface IAppDialogEmits {
   close: [];
 }

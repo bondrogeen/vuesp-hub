@@ -1,22 +1,22 @@
 import { Router } from 'express';
 import type { Request, Response } from 'express';
 
-import type { AuthService } from '@server/modules/auth/application/authService.ts';
-import { requireRole, type AuthenticatedRequest } from '@server/modules/auth/api/middleware.ts';
+import type { IAuthService } from '@server/modules/auth/application/authService.ts';
+import { requireRole, type IAuthenticatedRequest } from '@server/modules/auth/api/middleware.ts';
 import {
   isAccessPage,
   resolveUserPages,
-  type AccessPage,
+  type TAccessPage,
 } from '@server/modules/access/domain/access.ts';
-import type { AccessRepository } from '@server/modules/access/infrastructure/jsonAccessRepository.ts';
+import type { IAccessRepository } from '@server/modules/access/infrastructure/jsonAccessRepository.ts';
 
-const parsePages = (value: unknown): AccessPage[] | null => {
+const parsePages = (value: unknown): TAccessPage[] | null => {
   if (!Array.isArray(value)) return null;
   const pages = value.filter(isAccessPage);
   return pages.length === value.length ? [...new Set(pages)] : null;
 };
 
-export const createAccessRouter = (access: AccessRepository, auth: AuthService) => {
+export const createAccessRouter = (access: IAccessRepository, auth: IAuthService) => {
   const router = Router();
 
   router.get('/', (_request: Request, response: Response) => {
@@ -24,7 +24,7 @@ export const createAccessRouter = (access: AccessRepository, auth: AuthService) 
   });
 
   /** Effective page access for the authenticated user (per-user override or role defaults). */
-  router.get('/me', (request: AuthenticatedRequest, response: Response) => {
+  router.get('/me', (request: IAuthenticatedRequest, response: Response) => {
     const user = request.auth;
     if (!user) {
       response.status(401).json({ error: 'Unauthorized' });

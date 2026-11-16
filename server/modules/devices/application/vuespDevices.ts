@@ -1,6 +1,6 @@
 import { EventEmitter } from 'node:events';
 import Device from './vuespDevice.ts';
-import type { DeviceCommandPayload, DeviceConnectionRecord } from '@root/shared/device.ts';
+import type { TDeviceCommandPayload, IDeviceConnectionRecord } from '@root/shared/device.ts';
 
 interface DeviceEvent {
   event: string;
@@ -8,10 +8,10 @@ interface DeviceEvent {
 }
 
 class VuespDevices extends EventEmitter {
-  #list: DeviceConnectionRecord[];
+  #list: IDeviceConnectionRecord[];
   #devices: Device[];
   #isConnected: boolean;
-  constructor(list: DeviceConnectionRecord[]) {
+  constructor(list: IDeviceConnectionRecord[]) {
     super();
     this.#list = list;
     this.#devices = [];
@@ -89,14 +89,14 @@ class VuespDevices extends EventEmitter {
     return list
   }
 
-  onSend(find: string, comm: string, data?: DeviceCommandPayload) {
+  onSend(find: string, comm: string, data?: TDeviceCommandPayload) {
     const device = this.#devices.find(device => device.name === find || device.ip === find);
     if (device) {
       return device.send(comm, data);
     }
     return false
   }
-  onSendAll(comm: string, data?: DeviceCommandPayload) {
+  onSendAll(comm: string, data?: TDeviceCommandPayload) {
     this.#devices.forEach(device => {
       device.send(comm, data);
     });

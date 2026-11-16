@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia';
 import { changeTheme, localGet, localSet } from '@/utils/helpers.ts';
-import type { AppDialogState, AppNotification } from '@/types';
+import type { IAppDialogState, IAppNotification } from '@/types';
 
 export const useAppStore = defineStore('app', {
   state: () => ({
@@ -8,10 +8,10 @@ export const useAppStore = defineStore('app', {
     theme: localGet('theme') || 'dark',
     dialog: {
       value: false,
-    } as AppDialogState,
+    } as IAppDialogState,
     notifications: (() => {
       const saved = localGet('notifications', true);
-      return (Array.isArray(saved) ? saved : []) as AppNotification[];
+      return (Array.isArray(saved) ? saved : []) as IAppNotification[];
     })(),
     struct: {},
   }),
@@ -24,13 +24,13 @@ export const useAppStore = defineStore('app', {
       this.theme = this.theme === 'light' ? 'dark' : 'light';
       changeTheme(this.theme);
     },
-    setDialog(data: AppDialogState): void {
+    setDialog(data: IAppDialogState): void {
       this.dialog = data;
     },
-    setNotification(notification: Omit<AppNotification, 'id'> & { id?: number | string }): void {
+    setNotification(notification: Omit<IAppNotification, 'id'> & { id?: number | string }): void {
       const id = notification.id ?? Date.now();
       const item = this.notifications.find(current => current.id === id);
-      const updated: AppNotification = {
+      const updated: IAppNotification = {
         ...item,
         ...notification,
         id,
@@ -47,7 +47,7 @@ export const useAppStore = defineStore('app', {
       }
       localSet('notifications', this.notifications);
     },
-    readNotification(notification: Pick<AppNotification, 'date'>): void {
+    readNotification(notification: Pick<IAppNotification, 'date'>): void {
       this.notifications = this.notifications.map(item =>
         item.date === notification.date ? { ...item, isNew: 0 } : item,
       );
@@ -57,7 +57,7 @@ export const useAppStore = defineStore('app', {
       this.notifications = this.notifications.map(item => ({ ...item, isNew: 0 }));
       localSet('notifications', this.notifications);
     },
-    removeNotification(notification: Pick<AppNotification, 'date'>): void {
+    removeNotification(notification: Pick<IAppNotification, 'date'>): void {
       this.notifications = this.notifications.filter(item => item.date !== notification.date);
       localSet('notifications', this.notifications);
     },

@@ -41,10 +41,10 @@ import { BlockBreadcrumb as VBreadcrumb, VLoader } from 'vuesp-components/compon
 import { useAppStore } from '@/stores/AppStore';
 import { useWebSocketStore } from '@/stores/WebSocketStore';
 import { SUPPORTED_LOCALES, getLocale as getHubLocale, setLocale as setHubLocale } from '@/i18n/index.ts';
-import type { SupportedLocale } from '@/i18n/index.ts';
+import type { TSupportedLocale } from '@/i18n/index.ts';
 import { api } from '@/utils/helpers.ts';
 import { getDeviceMenuLabel, normalizeDeviceMenuPath } from '@/utils/deviceMenu.ts';
-import type { BreadcrumbType, DeviceRecord, DeviceUiSession } from '@/types';
+import type { IBreadcrumbType, IDeviceRecord, IDeviceUiSession } from '@/types';
 
 const route = useRoute();
 const router = useRouter();
@@ -55,7 +55,7 @@ const { menus } = storeToRefs(webSocketStore);
 
 const deviceFrame = useTemplateRef<HTMLIFrameElement>('deviceFrame');
 
-const registry = ref<DeviceRecord[]>([]);
+const registry = ref<IDeviceRecord[]>([]);
 const frameSrc = ref('');
 const frameOrigin = ref('');
 const frameReady = ref(false);
@@ -87,7 +87,7 @@ const currentMenuItem = computed(() => (runtimeDevice.value?.menu ?? []).find(
 ));
 
 const breadcrumbs = computed(() => {
-  const items: BreadcrumbType[] = [
+  const items: IBreadcrumbType[] = [
     { name: t('common.devices'), path: '/device/list/' },
     { name: deviceName.value, path: `/device/${encodeURIComponent(deviceIp.value)}/` },
   ];
@@ -137,7 +137,7 @@ const onFrameLoad = (): void => {
   window.setTimeout(sendRoute, 700);
 };
 
-const primeDeviceAuth = async ({ origin, authorization }: DeviceUiSession): Promise<void> => {
+const primeDeviceAuth = async ({ origin, authorization }: IDeviceUiSession): Promise<void> => {
   if (!authorization) return;
 
   const controller = new AbortController();
@@ -171,7 +171,7 @@ const prepareFrame = async (): Promise<void> => {
   frameOrigin.value = '';
 
   try {
-    const session = await api.get<DeviceUiSession>(`/device/${id}/ui/`);
+    const session = await api.get<IDeviceUiSession>(`/device/${id}/ui/`);
     if (requestId !== sessionRequest) return;
 
     await primeDeviceAuth(session);
@@ -202,7 +202,7 @@ const onMessage = (event: MessageEvent): void => {
   if (payload?.type === 'locale') {
     const value = payload.value;
     if (typeof value === 'string' && value !== locale.value && (SUPPORTED_LOCALES as readonly string[]).includes(value)) {
-      setHubLocale(value as SupportedLocale);
+      setHubLocale(value as TSupportedLocale);
     }
     return;
   }
@@ -223,7 +223,7 @@ const onMessage = (event: MessageEvent): void => {
 
 const loadRegistry = async (): Promise<void> => {
   try {
-    registry.value = await api.get<DeviceRecord[]>('/device/');
+    registry.value = await api.get<IDeviceRecord[]>('/device/');
   } catch {
     // The runtime menu still lets us resolve the device when the registry is unavailable.
   }

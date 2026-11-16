@@ -1,23 +1,23 @@
 import { isRecordValue } from './device.ts';
 
-export type DeviceSocketAcknowledgement =
+export type TDeviceSocketAcknowledgement =
   | { status: 'success'; message?: string }
   | { status: 'failed' | 'error'; message?: string }
   | { status: 'success'; menus: unknown[] }
   | { status: 'success'; list: unknown[] };
 
-export interface ServiceStatusPayload {
+export interface IServiceStatusPayload {
   running: boolean;
 }
 
-export const isServiceStatusPayload = (value: unknown): value is ServiceStatusPayload =>
+export const isServiceStatusPayload = (value: unknown): value is IServiceStatusPayload =>
   isRecordValue(value) && typeof value.running === 'boolean';
 
-export type ServiceSocketAcknowledgement =
-  | DeviceSocketAcknowledgement
-  | ServiceStatusPayload;
+export type TServiceSocketAcknowledgement =
+  | TDeviceSocketAcknowledgement
+  | IServiceStatusPayload;
 
-export type DeviceSocketClientEvent =
+export type TDeviceSocketClientEvent =
   | 'service:start'
   | 'service:stop'
   | 'service:get-status'
@@ -26,6 +26,6 @@ export type DeviceSocketClientEvent =
   | 'device:menus'
   | 'device:list';
 
-export type DeviceSocketServerEvent =
+export type TDeviceSocketServerEvent =
   | 'service:status'
   | 'device:data';

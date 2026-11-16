@@ -5,7 +5,7 @@ import type WebSocket from 'ws';
 import VuespStruct from 'vuesp-struct';
 
 import Device from '@server/modules/devices/application/vuespDevice.ts';
-import type { DeviceEventPayload } from '@root/shared/device.ts';
+import type { IDeviceEventPayload } from '@root/shared/device.ts';
 
 const devices: Device[] = [];
 
@@ -98,6 +98,7 @@ test('device transport encodes INFO and forwards declared legacy state without i
   const definition = {
     keys: ['INFO', 'CUSTOM'],
     structs: {
+      Init: [{ type: 'uint8_t', name: 'key' }],
       Info: [
         { type: 'uint8_t', name: 'key' },
         { type: 'uint32_t', name: 'id' },
@@ -123,7 +124,7 @@ test('device transport encodes INFO and forwards declared legacy state without i
     },
   );
   devices.push(device);
-  const events: DeviceEventPayload[] = [];
+  const events: IDeviceEventPayload[] = [];
   device.on('*', payload => {
     if (payload.event === 'message') events.push(payload);
   });
@@ -135,12 +136,8 @@ test('device transport encodes INFO and forwards declared legacy state without i
 
   assert.equal(socket.sent.length, 1);
   assert.ok(socket.sent[0] instanceof ArrayBuffer);
-  const decoder = new VuespStruct();
-  decoder.init(definition);
-  assert.deepEqual(decoder.get(socket.sent[0] as ArrayBuffer), {
-    key: 'INFO',
-    object: { key: 0, id: 0, firmware: [0, 0, 0] },
-  });
+  // Запрос — только ключ: полная структура означала бы запись в устройство.
+  assert.deepEqual([...(new Uint8Array(socket.sent[0] as ArrayBuffer))], [0]);
 
   const encoder = new VuespStruct();
   encoder.init(definition);
@@ -182,7 +179,7 @@ test('device transport retries after a socket error and ignores later events fro
     },
   );
   devices.push(device);
-  const messages: DeviceEventPayload[] = [];
+  const messages: IDeviceEventPayload[] = [];
   const reconnects: number[] = [];
   device.on('*', payload => {
     if (payload.event === 'message') messages.push(payload);
@@ -296,7 +293,7 @@ test('loads the device dashboard into tile list and tags events with ip and name
     },
   );
   devices.push(device);
-  const events: DeviceEventPayload[] = [];
+  const events: IDeviceEventPayload[] = [];
   device.on('*', payload => events.push(payload));
 
   device.connect();

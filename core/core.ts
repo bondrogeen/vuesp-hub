@@ -1,37 +1,37 @@
 import { EventEmitter } from 'node:events';
 import ScriptRunnerModule from './modules/script/vuesp.script.ts';
 
-export interface CoreLogEntry {
+export interface ICoreLogEntry {
   timestamp: string;
   level: string;
   message: string;
 }
 
-export interface CoreModule {
+export interface ICoreModule {
   init(): Promise<void>;
   destroy(): Promise<void>;
 }
 
-export type CoreModuleFactory = (core: Core) => CoreModule;
+export type TCoreModuleFactory = (core: Core) => ICoreModule;
 
-export interface CoreOptions {
-  modules?: CoreModuleFactory[];
+export interface ICoreOptions {
+  modules?: TCoreModuleFactory[];
   workerScriptPath?: string;
 }
 
-export interface CoreHookHandlers {
+export interface ICoreHookHandlers {
   startup: Array<() => void | Promise<void>>;
   shutdown: Array<() => void | Promise<void>>;
 }
 
 export default class Core extends EventEmitter {
-  private readonly modules = new Map<string, CoreModule>();
+  private readonly modules = new Map<string, ICoreModule>();
   private readonly services = new Map<string, unknown>();
-  private readonly hooks: CoreHookHandlers = { startup: [], shutdown: [] };
-  private readonly logs: CoreLogEntry[] = [];
-  private readonly moduleFactories: CoreModuleFactory[];
+  private readonly hooks: ICoreHookHandlers = { startup: [], shutdown: [] };
+  private readonly logs: ICoreLogEntry[] = [];
+  private readonly moduleFactories: TCoreModuleFactory[];
 
-  constructor({ modules, workerScriptPath }: CoreOptions = {}) {
+  constructor({ modules, workerScriptPath }: ICoreOptions = {}) {
     super();
     this.moduleFactories = modules ?? [
       core => {
@@ -66,18 +66,18 @@ export default class Core extends EventEmitter {
     return this.services.get(name) as T | undefined;
   }
 
-  addHook(type: keyof CoreHookHandlers, handler: () => void | Promise<void>): void {
+  addHook(type: keyof ICoreHookHandlers, handler: () => void | Promise<void>): void {
     this.hooks[type].push(handler);
   }
 
-  private async runHooks(type: keyof CoreHookHandlers): Promise<void> {
+  private async runHooks(type: keyof ICoreHookHandlers): Promise<void> {
     for (const handler of this.hooks[type]) {
       await handler();
     }
   }
 
   log(message: string, level = 'info'): void {
-    const entry: CoreLogEntry = {
+    const entry: ICoreLogEntry = {
       timestamp: new Date().toISOString(),
       level,
       message,
@@ -88,7 +88,7 @@ export default class Core extends EventEmitter {
     console.log(`[${level.toUpperCase()}] ${entry.timestamp} ${message}`);
   }
 
-  getLogs(filter: { level?: string; search?: string } = {}): CoreLogEntry[] {
+  getLogs(filter: { level?: string; search?: string } = {}): ICoreLogEntry[] {
     return this.logs.filter(entry => {
       if (filter.level && entry.level !== filter.level) return false;
       if (filter.search && !entry.message.includes(filter.search)) return false;

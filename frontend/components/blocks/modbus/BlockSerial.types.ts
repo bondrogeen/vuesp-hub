@@ -1,17 +1,17 @@
-import type { SerialChangePayload, SerialConfig, SerialSelectOption } from '@/types';
+import type { ISerialChangePayload, ISerialConfig, TSerialSelectOption } from '@/types';
 
-export interface BlockSerialProps {
+export interface IBlockSerialProps {
   path?: string;
   baudRate?: number;
   bufferSize?: number;
   dataBits?: number;
   parity?: string;
   stopBits?: number;
-  list?: SerialSelectOption[];
+  list?: TSerialSelectOption[];
   isConnect?: boolean;
 }
 
-export interface BlockSerialEmits {
-  connect: [value: SerialConfig];
-  change: [value: SerialChangePayload];
+export interface IBlockSerialEmits {
+  connect: [value: ISerialConfig];
+  change: [value: ISerialChangePayload];
 }

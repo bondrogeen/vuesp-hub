@@ -1,11 +1,11 @@
 import { Router } from 'express';
 import type { Request, Response } from 'express';
 
-import { isAccessPage, type AccessPage } from '@server/modules/access/domain/access.ts';
+import { isAccessPage, type TAccessPage } from '@server/modules/access/domain/access.ts';
 import { hashPassword } from '@server/modules/users/domain/password.ts';
-import { isUserRole, type UserRole } from '@server/modules/users/domain/user.ts';
-import type { AuthService } from '@server/modules/auth/application/authService.ts';
-import { requireRole, type AuthenticatedRequest } from '@server/modules/auth/api/middleware.ts';
+import { isUserRole, type TUserRole } from '@server/modules/users/domain/user.ts';
+import type { IAuthService } from '@server/modules/auth/application/authService.ts';
+import { requireRole, type IAuthenticatedRequest } from '@server/modules/auth/api/middleware.ts';
 
 interface UserParams {
   id: string;
@@ -28,12 +28,12 @@ const parsePassword = (value: unknown): string | null => {
   return value.length >= 6 && value.length <= 128 ? value : null;
 };
 
-const parseRole = (value: unknown): UserRole | null => (isUserRole(value) ? value : null);
+const parseRole = (value: unknown): TUserRole | null => (isUserRole(value) ? value : null);
 
 const INVALID_PAGES = Symbol('invalid-pages');
 
 /** `null` resets to role defaults, `undefined` leaves the value unchanged. */
-const parsePages = (value: unknown): AccessPage[] | null | undefined | typeof INVALID_PAGES => {
+const parsePages = (value: unknown): TAccessPage[] | null | undefined | typeof INVALID_PAGES => {
   if (value === undefined) return undefined;
   if (value === null) return null;
   if (!Array.isArray(value)) return INVALID_PAGES;
@@ -41,7 +41,7 @@ const parsePages = (value: unknown): AccessPage[] | null | undefined | typeof IN
   return pages.length === value.length ? [...new Set(pages)] : INVALID_PAGES;
 };
 
-export const createUserAdminRouter = (auth: AuthService) => {
+export const createUserAdminRouter = (auth: IAuthService) => {
   const router = Router();
   router.use(requireRole('admin'));
 
@@ -75,7 +75,7 @@ export const createUserAdminRouter = (auth: AuthService) => {
     response.status(201).json(user);
   });
 
-  router.patch('/:id', (request: Request<UserParams> & AuthenticatedRequest, response: Response) => {
+  router.patch('/:id', (request: Request<UserParams> & IAuthenticatedRequest, response: Response) => {
     const id = parseId(request.params.id);
     if (id === null) {
       response.status(400).json({ error: 'Invalid user id' });
@@ -84,7 +84,7 @@ export const createUserAdminRouter = (auth: AuthService) => {
 
     const current = auth.users.findById(id);
     if (!current) {
-      response.status(404).json({ error: 'User not found' });
+      response.status(404).json({ error: 'IUser not found' });
       return;
     }
 
@@ -116,7 +116,7 @@ export const createUserAdminRouter = (auth: AuthService) => {
     response.json(user);
   });
 
-  router.delete('/:id', (request: Request<UserParams> & AuthenticatedRequest, response: Response) => {
+  router.delete('/:id', (request: Request<UserParams> & IAuthenticatedRequest, response: Response) => {
     const id = parseId(request.params.id);
     if (id === null) {
       response.status(400).json({ error: 'Invalid user id' });
@@ -125,7 +125,7 @@ export const createUserAdminRouter = (auth: AuthService) => {
 
     const current = auth.users.findById(id);
     if (!current) {
-      response.status(404).json({ error: 'User not found' });
+      response.status(404).json({ error: 'IUser not found' });
       return;
     }
     if (request.auth?.id === id) {

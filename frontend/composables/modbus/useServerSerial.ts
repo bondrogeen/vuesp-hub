@@ -4,13 +4,13 @@ import { io, type Socket } from 'socket.io-client';
 import { getToken } from '@/utils/auth.ts';
 import { detectBrowser } from '@/utils/helpers.ts';
 import { translate } from '@/i18n/index.ts';
-import type { SerialConfig, SerialSelectOption, SerialStatusPayload } from '@/types';
+import type { ISerialConfig, TSerialSelectOption, ISerialStatusPayload } from '@/types';
 
 export const useServerSerial = (
   onSend: (data: Uint8Array) => void,
-  onStatus: (data: SerialStatusPayload) => void,
+  onStatus: (data: ISerialStatusPayload) => void,
 ) => {
-  const listPort = ref<SerialSelectOption[]>([]);
+  const listPort = ref<TSerialSelectOption[]>([]);
   let serial: Socket | null = null;
 
   const init = (): void => {
@@ -19,7 +19,7 @@ export const useServerSerial = (
 
     socket.on('connect', () => {
       socket.emit('serial:list', {}, (response: { data?: Array<{ path: string }> }) => {
-        const list: SerialSelectOption[] = (response.data ?? []).map(item => ({
+        const list: TSerialSelectOption[] = (response.data ?? []).map(item => ({
           name: item.path,
           value: item.path,
         }));
@@ -34,7 +34,7 @@ export const useServerSerial = (
       socket.emit('serial:status', {}, () => undefined);
     });
 
-    socket.on('serial:status', (data: SerialStatusPayload) => onStatus(data));
+    socket.on('serial:status', (data: ISerialStatusPayload) => onStatus(data));
 
     socket.on('serial:data', (payload: { data: ArrayBuffer }) => {
       onSend(new Uint8Array(payload.data));
@@ -45,7 +45,7 @@ export const useServerSerial = (
     });
   };
 
-  const connectServer = (options: SerialConfig): void => {
+  const connectServer = (options: ISerialConfig): void => {
     serial?.emit('serial:start', options, console.error);
   };
 

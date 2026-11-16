@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { scanDevices } from './vuespController.ts';
-import type { DeviceUiSession, DiscoveredDevice } from '@root/shared/device.ts';
-import type { DeviceRepository } from '@server/modules/devices/infrastructure/deviceRepository.ts';
+import type { IDeviceUiSession, IDiscoveredDevice } from '@root/shared/device.ts';
+import type { IDeviceRepository } from '@server/modules/devices/infrastructure/deviceRepository.ts';
 import { sendApiError, sendApiFailure } from '@shared/http/apiResponse.ts';
 
 const parseDeviceRecordId = (value: string): number => {
@@ -16,9 +16,9 @@ const sendDeviceFailure = (response: Parameters<typeof sendApiFailure>[0], error
     conflictMessage: 'A device at this IP address is already registered',
   });
 
-export const createVuespRouter = (getDeviceModel: () => Promise<DeviceRepository>) => {
+export const createVuespRouter = (getDeviceModel: () => Promise<IDeviceRepository>) => {
   const router = Router();
-  let activeScan: Promise<DiscoveredDevice[]> | undefined;
+  let activeScan: Promise<IDiscoveredDevice[]> | undefined;
 
   router.get('/scan/', async (_req, res) => {
     try {
@@ -53,7 +53,7 @@ export const createVuespRouter = (getDeviceModel: () => Promise<DeviceRepository
         ? `Basic ${Buffer.from(credentials).toString('base64')}`
         : '';
       const host = device.ip.includes(':') ? `[${device.ip}]` : device.ip;
-      const session: DeviceUiSession = { origin: `http://${host}`, authorization };
+      const session: IDeviceUiSession = { origin: `http://${host}`, authorization };
       return res.json(session);
     } catch (error) {
       return sendDeviceFailure(res, error);

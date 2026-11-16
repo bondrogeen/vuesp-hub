@@ -2,15 +2,15 @@ import { readFile, stat } from 'node:fs/promises';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 
-import type { ModuleGroup } from '@root/shared/module.ts';
+import type { IModuleGroup } from '@root/shared/module.ts';
 
-export interface ModuleCatalogEntry {
+export interface IModuleCatalogEntry {
   id: string;
   name: string;
   version: string;
   description?: string;
   slug?: string;
-  group?: ModuleGroup;
+  group?: IModuleGroup;
   permissions?: string[];
   platforms?: string[];
   artifact: string;
@@ -19,7 +19,7 @@ export interface ModuleCatalogEntry {
   releasedAt?: string;
 }
 
-interface RawCatalogEntry extends Omit<ModuleCatalogEntry, 'artifact'> {
+interface RawCatalogEntry extends Omit<IModuleCatalogEntry, 'artifact'> {
   artifact?: string;
   url?: string;
 }
@@ -53,7 +53,7 @@ const resolveSource = (value: string): { base: URL; file?: string } => {
 
 export const createModuleCatalog = ({ url }: { url: string }) => {
   const source = resolveSource(url);
-  let cache: { at: number; modules: ModuleCatalogEntry[] } | undefined;
+  let cache: { at: number; modules: IModuleCatalogEntry[] } | undefined;
 
   const readPayload = async (): Promise<unknown> => {
     if (source.file) return JSON.parse(await readFile(source.file, 'utf8'));
@@ -62,7 +62,7 @@ export const createModuleCatalog = ({ url }: { url: string }) => {
     return response.json();
   };
 
-  const load = async (): Promise<ModuleCatalogEntry[]> => {
+  const load = async (): Promise<IModuleCatalogEntry[]> => {
     if (cache && Date.now() - cache.at < CACHE_TTL_MS) return cache.modules;
 
     const payload = (await readPayload()) as { modules?: RawCatalogEntry[] } | RawCatalogEntry[];
@@ -92,4 +92,4 @@ export const createModuleCatalog = ({ url }: { url: string }) => {
   return { load };
 };
 
-export type ModuleCatalog = ReturnType<typeof createModuleCatalog>;
+export type TModuleCatalog = ReturnType<typeof createModuleCatalog>;

@@ -9,7 +9,7 @@ import { createAuthService } from '@server/modules/auth/application/authService.
 import { createJsonAccessRepository } from '@server/modules/access/infrastructure/jsonAccessRepository.ts';
 import { createDeviceRepository } from '@server/modules/devices/infrastructure/deviceRepository.ts';
 import { createJsonSettingsStore, createJsonStoreModel } from '@server/shared/stores/jsonStore.ts';
-import type { DeviceRepository } from '@server/modules/devices/infrastructure/deviceRepository.ts';
+import type { IDeviceRepository } from '@server/modules/devices/infrastructure/deviceRepository.ts';
 import { createAesSecretProvider } from '@server/shared/secrets/aesSecretProvider.ts';
 
 const defaultDataDirectory = () => {
@@ -72,7 +72,7 @@ export const main = async () => {
   });
   migrateLegacyAlisaData(dataDirectory, secretProvider);
 
-  let repositoryPromise: Promise<DeviceRepository> | undefined;
+  let repositoryPromise: Promise<IDeviceRepository> | undefined;
   const getDeviceModel = () => {
     repositoryPromise ??= createDeviceRepository({
       databasePath: path.join(dataDirectory, 'vuesp.sqlite'),

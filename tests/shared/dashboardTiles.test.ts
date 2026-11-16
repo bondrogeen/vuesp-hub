@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
 import { buildTileCommands, resolvePublicTiles, resolveTiles } from '../../shared/dashboardTiles.ts';
-import type { DashboardItem } from 'vuesp-dashboard-core';
+import type { IDashboardItem } from 'vuesp-dashboard-core';
 
 const state = {
   device: { key: 6, output: 1, command: 0 },
@@ -10,7 +10,7 @@ const state = {
   dallas: { '280102': { address: [40, 1, 2], value: 20 } },
 };
 
-const button: DashboardItem = {
+const button: IDashboardItem = {
   id: 'device.output.1',
   name: 'output.1',
   type: 'button',
@@ -20,7 +20,7 @@ const button: DashboardItem = {
   set: '({...b, output: v ? (b.output &= ~1) : (b.output |= 1), command: 2 })',
 };
 
-const dimmer: DashboardItem = {
+const dimmer: IDashboardItem = {
   id: 'ports.25',
   name: 'port.25',
   type: 'dimmer',
@@ -44,7 +44,7 @@ test('publishes only presentation fields and never dashboard expressions', () =>
   assert.equal(published.value, 0);
   assert.equal(published.valueTo, 'OFF');
   assert.equal(published.entityType, 'switch');
-  assert.equal(published.viewIcon, 'sun');
+  assert.equal(published.viewIcon, 'bulb');
 
   for (const forbidden of ['args', 'get', 'getTo', 'set', 'meta']) {
     assert.equal(forbidden in published, false, `${forbidden} must be stripped`);
@@ -74,7 +74,7 @@ test('ignores the numeric protocol key from the device state when choosing a mes
 });
 
 test('prefers an explicit key/object pair and falls back to the args root', () => {
-  const explicit: DashboardItem = {
+  const explicit: IDashboardItem = {
     id: 'settings.foo',
     name: 'foo',
     type: 'input',
@@ -85,7 +85,7 @@ test('prefers an explicit key/object pair and falls back to the args root', () =
     { comm: 'SETTINGS', data: { foo: 'abc' } },
   ]);
 
-  const dallas: DashboardItem = {
+  const dallas: IDashboardItem = {
     id: 'dallas.0',
     name: 'dallas',
     type: 'info',
@@ -98,9 +98,9 @@ test('prefers an explicit key/object pair and falls back to the args root', () =
 });
 
 test('ignores tiles without a command payload', () => {
-  const info: DashboardItem = { id: 'plain', name: 'plain', type: 'info', args: ['device.output'] };
+  const info: IDashboardItem = { id: 'plain', name: 'plain', type: 'info', args: ['device.output'] };
   assert.deepEqual(buildTileCommands(info, 1, state), []);
 
-  const primitive: DashboardItem = { id: 'value', name: 'value', type: 'input', args: ['settings.foo'], set: 'v' };
+  const primitive: IDashboardItem = { id: 'value', name: 'value', type: 'input', args: ['settings.foo'], set: 'v' };
   assert.deepEqual(buildTileCommands(primitive, 1, state), []);
 });

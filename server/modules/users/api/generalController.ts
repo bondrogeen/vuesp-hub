@@ -1,6 +1,6 @@
 import type { Request, Response } from 'express';
-import type { ApiErrorResponse } from '@root/shared/api.ts';
-import type { StoreModel } from '@shared/stores/types.ts';
+import type { IApiErrorResponse } from '@root/shared/api.ts';
+import type { IStoreModel } from '@shared/stores/types.ts';
 import { sendApiError, sendApiFailure } from '@shared/http/apiResponse.ts';
 
 interface ResourceParams {
@@ -24,14 +24,14 @@ const parseResourceData = (value: unknown): Record<string, unknown> => {
   return value;
 };
 
-export default (model: StoreModel) => ({
+export default (model: IStoreModel) => ({
   async getById(req: Request<ResourceParams>, res: Response) {
     try {
       const user = await model.getById(parseResourceId(req.params.id));
       if (user) return res.json(user);
       return sendApiError(res, 404, 'Not found');
     } catch (error) {
-      return sendApiFailure(res, error, 'User API request');
+      return sendApiFailure(res, error, 'IUser API request');
     }
   },
 
@@ -39,7 +39,7 @@ export default (model: StoreModel) => ({
     try {
       return res.json(await model.getAll());
     } catch (error) {
-      return sendApiFailure(res, error, 'User API request');
+      return sendApiFailure(res, error, 'IUser API request');
     }
   },
 
@@ -48,7 +48,7 @@ export default (model: StoreModel) => ({
       const newUser = await model.create(parseResourceData(req.body));
       return res.status(201).json(newUser);
     } catch (error) {
-      return sendApiFailure(res, error, 'User API request');
+      return sendApiFailure(res, error, 'IUser API request');
     }
   },
 
@@ -61,7 +61,7 @@ export default (model: StoreModel) => ({
       if (updatedUser) return res.json(updatedUser);
       return sendApiError(res, 404, 'Not found');
     } catch (error) {
-      return sendApiFailure(res, error, 'User API request');
+      return sendApiFailure(res, error, 'IUser API request');
     }
   },
 
@@ -71,7 +71,7 @@ export default (model: StoreModel) => ({
       if (deletedUser) return res.status(200).json(deletedUser);
       return sendApiError(res, 404, 'Not found');
     } catch (error) {
-      return sendApiFailure(res, error, 'User API request');
+      return sendApiFailure(res, error, 'IUser API request');
     }
   },
 });

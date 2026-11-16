@@ -5,13 +5,13 @@ import { createUserAdminRouter } from '@server/modules/users/api/userAdminRoutes
 import { createVuespRouter } from '@server/modules/devices/api/vuespRoutes.ts';
 import { createCloudRouter } from '@server/modules/cloud/api/cloudRoutes.ts';
 import { createModuleRouter } from '@server/modules/modules/api/moduleRoutes.ts';
-import type { ModuleHost } from '@server/module-host/moduleHost.ts';
-import type { ModuleCatalog } from '@server/modules/modules/application/moduleCatalog.ts';
+import type { TModuleHost } from '@server/module-host/moduleHost.ts';
+import type { TModuleCatalog } from '@server/modules/modules/application/moduleCatalog.ts';
 import modbusRoutes from '@server/modules/serial/api/modbusRoutes.ts';
-import type { DeviceRepository } from '@server/modules/devices/infrastructure/deviceRepository.ts';
-import type { StoreModelFactory } from '@shared/stores/types.ts';
-import type { AuthService } from '@server/modules/auth/application/authService.ts';
-import type { CloudService } from '@server/modules/cloud/application/cloudService.ts';
+import type { IDeviceRepository } from '@server/modules/devices/infrastructure/deviceRepository.ts';
+import type { TStoreModelFactory } from '@shared/stores/types.ts';
+import type { IAuthService } from '@server/modules/auth/application/authService.ts';
+import type { ICloudService } from '@server/modules/cloud/application/cloudService.ts';
 
 export const createRouter = ({
   getDeviceModel,
@@ -21,12 +21,12 @@ export const createRouter = ({
   moduleHost,
   moduleCatalog,
 }: {
-  getDeviceModel: () => Promise<DeviceRepository>;
-  storeModel: StoreModelFactory;
-  auth?: AuthService;
-  cloud?: CloudService;
-  moduleHost?: ModuleHost;
-  moduleCatalog?: ModuleCatalog;
+  getDeviceModel: () => Promise<IDeviceRepository>;
+  storeModel: TStoreModelFactory;
+  auth?: IAuthService;
+  cloud?: ICloudService;
+  moduleHost?: TModuleHost;
+  moduleCatalog?: TModuleCatalog;
 }) => {
   const router = express.Router();
 

@@ -1,26 +1,26 @@
 import { EventEmitter } from 'node:events';
-import { isDeviceEventPayload, type DeviceCommandPayload } from '@root/shared/device.ts';
+import { isDeviceEventPayload, type TDeviceCommandPayload } from '@root/shared/device.ts';
 
-export interface DeviceConnectionManager {
+export interface IDeviceConnectionManager {
   on(event: string, listener: (payload: unknown) => void): this;
   off(event: string, listener: (payload: unknown) => void): this;
   connection(): Promise<void> | void;
   disconnection(): void;
   getMenu(): unknown[];
   getList(): unknown[];
-  onSend(target: string, command: string, data?: DeviceCommandPayload): boolean;
-  onSendAll(command: string, data?: DeviceCommandPayload): boolean;
+  onSend(target: string, command: string, data?: TDeviceCommandPayload): boolean;
+  onSendAll(command: string, data?: TDeviceCommandPayload): boolean;
 }
 
-export interface DeviceRuntimeOptions<TDevice> {
+export interface IDeviceRuntimeOptions<TDevice> {
   loadDevices(): Promise<TDevice[]>;
-  createConnections(devices: TDevice[]): DeviceConnectionManager;
+  createConnections(devices: TDevice[]): IDeviceConnectionManager;
 }
 
 export class DeviceRuntime<TDevice> extends EventEmitter {
-  private readonly loadDevices: DeviceRuntimeOptions<TDevice>['loadDevices'];
-  private readonly createConnections: DeviceRuntimeOptions<TDevice>['createConnections'];
-  private manager: DeviceConnectionManager | undefined;
+  private readonly loadDevices: IDeviceRuntimeOptions<TDevice>['loadDevices'];
+  private readonly createConnections: IDeviceRuntimeOptions<TDevice>['createConnections'];
+  private manager: IDeviceConnectionManager | undefined;
   private startPromise: Promise<boolean> | undefined;
   private readonly latestEvents = new Map<string, unknown>();
   private readonly onDeviceData = (payload: unknown) => {
@@ -30,7 +30,7 @@ export class DeviceRuntime<TDevice> extends EventEmitter {
     this.emit('data', payload);
   };
 
-  constructor({ loadDevices, createConnections }: DeviceRuntimeOptions<TDevice>) {
+  constructor({ loadDevices, createConnections }: IDeviceRuntimeOptions<TDevice>) {
     super();
     this.loadDevices = loadDevices;
     this.createConnections = createConnections;
@@ -83,11 +83,11 @@ export class DeviceRuntime<TDevice> extends EventEmitter {
     return true;
   }
 
-  send(target: string, command: string, data?: DeviceCommandPayload): boolean {
+  send(target: string, command: string, data?: TDeviceCommandPayload): boolean {
     return this.manager?.onSend(target, command, data) ?? false;
   }
 
-  sendAll(command: string, data?: DeviceCommandPayload): boolean {
+  sendAll(command: string, data?: TDeviceCommandPayload): boolean {
     return this.manager?.onSendAll(command, data) ?? false;
   }
 

@@ -1,11 +1,11 @@
 <template>
-  <div class="">
+  <div>
     <VBreadcrumb :items="[{ name: t('common.home'), path: '/' }, { name: t('demo.title') }]" />
 
-    <div class="glass-panel rounded-[10px] p-5 lg:p-6">
+    <VCard variant="glass" padding="lg">
       <h3 class="mb-5 text-lg font-semibold text-gray-dark-30 dark:text-white/90 lg:mb-7">{{ t('demo.title') }}</h3>
 
-      <div class="glass-inset mb-6 rounded-md p-5 lg:p-6">
+      <VCard variant="outline" padding="lg" class="mb-6">
         <div class="flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between">
           <div class="flex flex-col items-center w-full gap-6 xl:flex-row">
             <div class="w-20 h-20 overflow-hidden border border-gray-light-10/70 rounded-full dark:border-white/10">
@@ -81,9 +81,9 @@
             {{ t('demo.edit') }}
           </button>
         </div>
-      </div>
+      </VCard>
 
-      <div class="glass-inset mb-6 rounded-md p-5 lg:p-6">
+      <VCard variant="outline" padding="lg" class="mb-6">
         <div class="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
           <div>
             <h4 class="text-lg font-semibold text-gray-dark-30 dark:text-white/90 lg:mb-6">{{ t('demo.personalInformation') }}</h4>
@@ -131,9 +131,9 @@
             {{ t('demo.edit') }}
           </button>
         </div>
-      </div>
+      </VCard>
 
-      <div class="glass-inset rounded-md p-5 lg:p-6">
+      <VCard variant="outline" padding="lg">
         <div class="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
           <div>
             <h4 class="text-lg font-semibold text-gray-dark-30 dark:text-white/90 lg:mb-6">{{ t('demo.address') }}</h4>
@@ -176,15 +176,15 @@
             {{ t('demo.edit') }}
           </button>
         </div>
-      </div>
-    </div>
+      </VCard>
+    </VCard>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { BlockBreadcrumb as VBreadcrumb } from 'vuesp-components/components';
+import { BlockBreadcrumb as VBreadcrumb, VCard } from 'vuesp-components/components';
 
 const { t } = useI18n();
 const isProfileInfoModal = ref(false);

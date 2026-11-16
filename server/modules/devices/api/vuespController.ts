@@ -1,5 +1,5 @@
 import dgram from 'node:dgram';
-import type { DiscoveredDevice } from '@root/shared/device.ts';
+import type { IDiscoveredDevice } from '@root/shared/device.ts';
 import { createDiscoveryQuery, decodeDiscoveryMessage, decodeVuespAnnouncement } from '@server/modules/devices/domain/protocols/vuespDiscovery.ts';
 
 const BROADCAST_PORT = 12345;
@@ -7,9 +7,9 @@ const BROADCAST_ADDR = '255.255.255.255';
 export { decodeDiscoveryMessage } from '@server/modules/devices/domain/protocols/vuespDiscovery.ts';
 
 export const scanDevices = ({ duration = 9000, interval = 3000 }: { duration?: number; interval?: number } = {}) =>
-  new Promise<DiscoveredDevice[]>((resolve, reject) => {
+  new Promise<IDiscoveredDevice[]>((resolve, reject) => {
     const socket = dgram.createSocket({ type: 'udp4', reuseAddr: true });
-    const devices = new Map<string, DiscoveredDevice>();
+    const devices = new Map<string, IDiscoveredDevice>();
     let sendTimer: ReturnType<typeof setInterval> | undefined;
     let scanTimer: ReturnType<typeof setTimeout> | undefined;
     let finished = false;

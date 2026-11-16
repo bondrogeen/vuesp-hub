@@ -1,4 +1,4 @@
-export interface DeviceRecord {
+export interface IDeviceRecord {
   id: number;
   uuid: string;
   deviceId: number;
@@ -8,17 +8,17 @@ export interface DeviceRecord {
   addedAt: string;
 }
 
-export interface DeviceConnectionRecord extends DeviceRecord {
+export interface IDeviceConnectionRecord extends IDeviceRecord {
   username: string;
   password: string;
 }
 
-export interface DeviceUiSession {
+export interface IDeviceUiSession {
   origin: string;
   authorization: string;
 }
 
-export interface DiscoveredDevice {
+export interface IDiscoveredDevice {
   command: 98;
   firmware: [number, number, number];
   deviceId: number;
@@ -27,7 +27,7 @@ export interface DiscoveredDevice {
   source?: 'legacy' | 'announce';
 }
 
-export interface DeviceCreateInput {
+export interface IDeviceCreateInput {
   deviceId: number;
   name: string;
   ip: string;
@@ -36,23 +36,23 @@ export interface DeviceCreateInput {
   password?: string;
 }
 
-export interface DeviceUpdateInput {
+export interface IDeviceUpdateInput {
   name?: string;
   ip?: string;
   username?: string;
   password?: string;
 }
 
-export type DeviceCommandPayload = Record<string, unknown>;
+export type TDeviceCommandPayload = Record<string, unknown>;
 
-export interface DeviceCommand {
+export interface IDeviceCommand {
   comm: string;
-  data?: DeviceCommandPayload;
+  data?: TDeviceCommandPayload;
 }
 
-export type TargetedDeviceCommand = DeviceCommand & ({ ip: string; name?: string } | { ip?: string; name: string });
+export type TTargetedDeviceCommand = IDeviceCommand & ({ ip: string; name?: string } | { ip?: string; name: string });
 
-export interface DeviceEventPayload {
+export interface IDeviceEventPayload {
   event: string;
   id: string | number;
   key?: string;
@@ -85,7 +85,7 @@ const optionalCredential = (input: Record<string, unknown>, key: string, maxLeng
   return optionalString(input, key, maxLength);
 };
 
-const commandFields = (value: unknown): DeviceCommand => {
+const commandFields = (value: unknown): IDeviceCommand => {
   if (!isRecord(value)) throw new TypeError('Command data must be an object');
   const comm = value.comm;
   if (typeof comm !== 'string' || !/^[A-Za-z0-9_.:-]{1,64}$/.test(comm)) {
@@ -98,7 +98,7 @@ const commandFields = (value: unknown): DeviceCommand => {
   return { comm, ...(isRecord(data) ? { data } : {}) };
 };
 
-export const parseDeviceCreateInput = (value: unknown): DeviceCreateInput => {
+export const parseDeviceCreateInput = (value: unknown): IDeviceCreateInput => {
   if (!isRecord(value)) throw new TypeError('Device data must be an object');
 
   const { firmware } = value;
@@ -131,7 +131,7 @@ export const parseDeviceCreateInput = (value: unknown): DeviceCreateInput => {
   };
 };
 
-export const parseDeviceUpdateInput = (value: unknown): DeviceUpdateInput => {
+export const parseDeviceUpdateInput = (value: unknown): IDeviceUpdateInput => {
   if (!isRecord(value)) throw new TypeError('Device data must be an object');
   return {
     ...(value.name === undefined ? {} : { name: optionalString(value, 'name', 64) }),
@@ -141,7 +141,7 @@ export const parseDeviceUpdateInput = (value: unknown): DeviceUpdateInput => {
   };
 };
 
-export const parseTargetedDeviceCommand = (value: unknown): TargetedDeviceCommand => {
+export const parseTargetedDeviceCommand = (value: unknown): TTargetedDeviceCommand => {
   if (!isRecord(value)) throw new TypeError('Command request must be an object');
   const command = commandFields(value);
   const ip = optionalString(value, 'ip', 45)?.trim();
@@ -152,9 +152,9 @@ export const parseTargetedDeviceCommand = (value: unknown): TargetedDeviceComman
   return { ...command, name };
 };
 
-export const parseBroadcastDeviceCommand = (value: unknown): DeviceCommand => commandFields(value);
+export const parseBroadcastDeviceCommand = (value: unknown): IDeviceCommand => commandFields(value);
 
-export const isDeviceEventPayload = (value: unknown): value is DeviceEventPayload => {
+export const isDeviceEventPayload = (value: unknown): value is IDeviceEventPayload => {
   if (!isRecord(value)) return false;
   return (
     typeof value.event === 'string' &&
@@ -166,7 +166,7 @@ export const isDeviceEventPayload = (value: unknown): value is DeviceEventPayloa
   );
 };
 
-export const isDiscoveredDevice = (value: unknown): value is DiscoveredDevice => {
+export const isDiscoveredDevice = (value: unknown): value is IDiscoveredDevice => {
   if (!isRecord(value)) return false;
   return (
     value.command === 98 &&

@@ -7,15 +7,15 @@
         :aria-label="t('header.toggleSidebar')"
         @click="emit('sidebar', $event)"
       >
-        <IconMenu class="size-5" />
+        <VIcon name="menu" class="size-5" />
       </button>
 
       <router-link to="/" class="flex items-center lg:hidden">
-        <IconLogoMini class="h-7 text-cyan-main" />
+        <VIconLogoMini class="h-7 text-cyan-main" />
       </router-link>
 
       <div class="hidden items-center gap-2 text-xs text-gray-dark-25 dark:text-gray-main lg:flex">
-        <span class="h-2 w-2 rounded-full bg-emerald-500 shadow-[var(--shadow-green-ring)]"></span>
+        <span class="h-2 w-2 rounded-full bg-emerald-500 shadow-green-ring"></span>
         <span>{{ t('header.localHub') }}</span>
       </div>
 
@@ -36,8 +36,8 @@
         :aria-label="t('header.toggleTheme')"
         @click="appStore.changeTheme()"
       >
-        <IconSun v-if="theme === 'dark'" class="size-5" />
-        <IconMoon v-else class="size-5" />
+        <VIcon name="sun" v-if="theme === 'dark'" class="size-5" />
+        <VIcon name="moon" v-else class="size-5" />
       </button>
 
       <button
@@ -47,7 +47,7 @@
         @click="emit('notif', $event)"
       >
         <span v-if="hasUnread" class="absolute right-2 top-2 h-2 w-2 rounded-full bg-orange-400 ring-2 ring-white/80 dark:ring-night-light-10"></span>
-        <IconBell class="size-5" />
+        <VIcon name="noti" class="size-5" />
       </button>
 
       <div class="mx-1 h-6 w-px bg-gray-light-10/70 dark:bg-white/10"></div>
@@ -59,7 +59,7 @@
             class="flex items-center gap-2 rounded-md p-1.5 pr-2 text-left transition hover:bg-gray-light-30 dark:hover:bg-white/5"
             @click="on.click($event)"
           >
-            <span class="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-cyan-main to-[var(--color-blue-main)] text-xs font-semibold uppercase text-white shadow-sm">
+            <span class="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-cyan-main to-blue-main text-xs font-semibold uppercase text-white shadow-sm">
               {{ initials }}
             </span>
 
@@ -68,7 +68,7 @@
               <span class="block text-xs text-gray-dark-25 dark:text-gray-main">{{ roleLabel }}</span>
             </span>
 
-            <IconChevron class="hidden size-4 rotate-90 text-gray-main sm:block" />
+            <VIcon name="chevron-down" class="hidden size-4 text-gray-main sm:block" />
           </button>
         </template>
 
@@ -85,7 +85,7 @@
                 class="flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-left text-sm text-gray-dark-30 transition hover:bg-gray-light-30 dark:text-gray-light-10 dark:hover:bg-white/5"
                 @click="goProfile(hide)"
               >
-                <IconUser class="size-4 text-gray-main" />
+                <VIcon name="user" class="size-4 text-gray-main" />
                 {{ t('header.profile') }}
               </button>
 
@@ -94,7 +94,7 @@
                 class="flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-left text-sm text-red-600 transition hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950/40"
                 @click="onLogout(hide)"
               >
-                <IconLogout class="size-4" />
+                <VIcon name="logout" class="size-4" />
                 {{ t('header.signOut') }}
               </button>
             </div>
@@ -110,25 +110,22 @@ import { computed } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
-import { VDropdown } from 'vuesp-components/components';
+import { VDropdown, VIcon, VIconLogoMini } from 'vuesp-components/components';
 import type { INotification } from 'vuesp-components/types';
 
 import { useAppStore } from '@/stores/AppStore';
 import { getRole, getUsername, logout } from '@/utils/auth.ts';
-import legacyIcons from '@/components/app/legacyIcons.ts';
 import { setLocale } from '@/i18n/index.ts';
-import type { HubHeaderEmits, HubHeaderProps } from './HubHeader.types.ts';
+import type { IHubHeaderEmits, IHubHeaderProps } from './HubHeader.types.ts';
 
-const { notifications = [] } = defineProps<HubHeaderProps>();
-const emit = defineEmits<HubHeaderEmits>();
+const { notifications = [] } = defineProps<IHubHeaderProps>();
+const emit = defineEmits<IHubHeaderEmits>();
 
 const { t, locale } = useI18n();
 
 const router = useRouter();
 const appStore = useAppStore();
 const { theme } = storeToRefs(appStore);
-
-const { IconBell, IconChevron, IconLogout, IconLogoMini, IconMenu, IconMoon, IconSun, IconUser } = legacyIcons;
 
 const username = computed(() => getUsername() || 'admin');
 const roleLabel = computed(() => t(`admin.roles.${getRole()}`));

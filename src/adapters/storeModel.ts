@@ -1,12 +1,12 @@
 import Store from 'electron-store';
 
-import type { StoreEntity } from '@shared/stores/types.ts';
+import type { IStoreEntity } from '@shared/stores/types.ts';
 
-export type { StoreEntity, StoreModel, StoreModelFactory } from '@shared/stores/types.ts';
+export type { IStoreEntity, IStoreModel, TStoreModelFactory } from '@shared/stores/types.ts';
 
-const store = new Store<Record<string, StoreEntity[]>>();
+const store = new Store<Record<string, IStoreEntity[]>>();
 
-const storeModel = <T extends StoreEntity = StoreEntity>(key: string) => ({
+const storeModel = <T extends IStoreEntity = IStoreEntity>(key: string) => ({
     getAll: async (): Promise<T[]> => store.get(key, []) as T[],
 
     getById(id: number): Promise<T | undefined> {

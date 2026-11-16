@@ -1,6 +1,6 @@
 import { createHmac, timingSafeEqual } from 'node:crypto';
 
-export interface JwtPayload {
+export interface IJwtPayload {
   sub: string;
   role?: string;
   uid?: number;
@@ -35,7 +35,7 @@ export const signJwt = (
   return `${header}.${payload}.${signature}`;
 };
 
-export const verifyJwt = (token: string | undefined, secret: Buffer): JwtPayload | null => {
+export const verifyJwt = (token: string | undefined, secret: Buffer): IJwtPayload | null => {
   if (!token) return null;
   const parts = token.split('.');
   if (parts.length !== 3) return null;
@@ -53,7 +53,7 @@ export const verifyJwt = (token: string | undefined, secret: Buffer): JwtPayload
   }
   if (actual.length !== expected.length || !timingSafeEqual(actual, expected)) return null;
 
-  const data = decode<JwtPayload>(payload);
+  const data = decode<IJwtPayload>(payload);
   if (!data || typeof data.sub !== 'string' || typeof data.exp !== 'number') return null;
   if (data.exp <= Math.floor(Date.now() / 1000)) return null;
   return data;

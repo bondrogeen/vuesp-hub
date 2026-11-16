@@ -1,6 +1,6 @@
-import type { DeviceEventPayload } from '@/types';
+import type { IDeviceEventPayload } from '@/types';
 
-export interface RawDeviceRow {
+export interface IRawDeviceRow {
   id: string;
   name: string;
   ip: string;
@@ -9,4 +9,4 @@ export interface RawDeviceRow {
   state: Record<string, unknown>;
 }
 
-export type RawEvent = DeviceEventPayload & { at: number };
+export type TRawEvent = IDeviceEventPayload & { at: number };

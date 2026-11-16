@@ -8,7 +8,7 @@ export default {
       users: 'Users',
       settings: 'Settings',
     },
-    appName: 'Vuesp Hub',
+    appName: 'Vuesp IHub',
     home: 'Home',
     devices: 'Devices',
     dashboard: 'Dashboard',
@@ -260,7 +260,7 @@ export default {
   },
   landing: {
     badge: 'Local-first',
-    title: 'Vuesp Hub',
+    title: 'Vuesp IHub',
     subtitle: 'A local control center for Vuesp devices: telemetry, scripts, cameras and users stay inside your network. No cloud account is required.',
     openDevices: 'Open devices',
     openDashboard: 'Open dashboard',
@@ -324,7 +324,7 @@ export default {
     tilesSaved: 'Selection saved and sent to the cloud.',
     tilesError: 'Could not save the selection',
     tilesLoadError: 'Could not load the tile list',
-    hub: 'Hub',
+    hub: 'IHub',
     lastHeartbeat: 'Last heartbeat',
     error: 'Connection error',
     retry: 'Try again',
@@ -587,7 +587,7 @@ export default {
     saveFailed: 'Failed to save access settings.',
     roles: {
       admin: 'Administrator',
-      user: 'User',
+      user: 'IUser',
       viewer: 'Viewer',
     },
     pages: {
@@ -626,7 +626,7 @@ export default {
     pagesRequired: 'Select at least one section.',
     roles: {
       admin: 'Administrator',
-      user: 'User',
+      user: 'IUser',
       viewer: 'Viewer',
     },
     create: 'Create',
@@ -694,7 +694,7 @@ export default {
   notFound: {
     message: 'We can’t seem to find the page you are looking for!',
     backHome: 'Back to Home Page',
-    footer: '© {year} — Vuesp Hub',
+    footer: '© {year} — Vuesp IHub',
   },
   demo: {
     title: 'Profile',

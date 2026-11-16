@@ -1,17 +1,17 @@
 import { chmodSync, existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 
-import { isAccessPage, type AccessPage } from '@server/modules/access/domain/access.ts';
+import { isAccessPage, type TAccessPage } from '@server/modules/access/domain/access.ts';
 import { hashPassword } from '@server/modules/users/domain/password.ts';
 import type {
-  CreateUserData,
-  UpdateUserData,
-  UserRepository,
+  ICreateUserData,
+  IUpdateUserData,
+  IUserRepository,
 } from '@server/modules/users/domain/user.repository.ts';
-import { toPublicUser, type UserWithPassword } from '@server/modules/users/domain/user.ts';
+import { toPublicUser, type IUserWithPassword } from '@server/modules/users/domain/user.ts';
 
 interface UsersFile {
-  users: UserWithPassword[];
+  users: IUserWithPassword[];
 }
 
 interface LegacyAuthRecord {
@@ -27,7 +27,7 @@ const writeJson = (filePath: string, value: unknown): void => {
   chmodSync(filePath, 0o600);
 };
 
-const readUsers = (filePath: string): UserWithPassword[] | null => {
+const readUsers = (filePath: string): IUserWithPassword[] | null => {
   if (!existsSync(filePath)) return null;
   const parsed: unknown = JSON.parse(readFileSync(filePath, 'utf8'));
   if (typeof parsed !== 'object' || parsed === null || !Array.isArray((parsed as UsersFile).users)) {
@@ -64,13 +64,13 @@ export const createJsonUserRepository = ({
   dataDirectory,
 }: {
   dataDirectory: string;
-}): UserRepository => {
+}): IUserRepository => {
   const filePath = path.join(dataDirectory, 'users.json');
-  let users: UserWithPassword[] = readUsers(filePath) ?? [];
+  let users: IUserWithPassword[] = readUsers(filePath) ?? [];
 
   if (!users.length) {
     const legacy = readLegacyAdmin(path.join(dataDirectory, 'auth.json'));
-    const admin: UserWithPassword = {
+    const admin: IUserWithPassword = {
       id: 1,
       username: normalizeUsername(legacy?.username ?? 'admin'),
       passwordHash: legacy?.passwordHash ?? hashPassword('admin'),
@@ -83,7 +83,7 @@ export const createJsonUserRepository = ({
     writeJson(filePath, { users });
   }
 
-  const save = (next: UserWithPassword[]): void => writeJson(filePath, { users: next });
+  const save = (next: IUserWithPassword[]): void => writeJson(filePath, { users: next });
 
   return {
     list: () => users.map(toPublicUser),
@@ -98,8 +98,8 @@ export const createJsonUserRepository = ({
     existsByUsername: username => users.some(item => item.username === normalizeUsername(username)),
     count: () => users.length,
     countByRole: role => users.filter(item => item.role === role).length,
-    create: (data: CreateUserData) => {
-      const user: UserWithPassword = {
+    create: (data: ICreateUserData) => {
+      const user: IUserWithPassword = {
         id: users.length ? Math.max(...users.map(item => item.id)) + 1 : 1,
         username: normalizeUsername(data.username),
         passwordHash: data.passwordHash,
@@ -112,10 +112,10 @@ export const createJsonUserRepository = ({
       save(users);
       return toPublicUser(user);
     },
-    update: (id: number, data: UpdateUserData) => {
+    update: (id: number, data: IUpdateUserData) => {
       const index = users.findIndex(item => item.id === id);
       if (index === -1) return null;
-      const updated: UserWithPassword = {
+      const updated: IUserWithPassword = {
         ...users[index],
         ...data,
         username: data.username ? normalizeUsername(data.username) : users[index].username,

@@ -1,14 +1,14 @@
 import { buildDashboardCommands, resolveDashboardItem } from 'vuesp-dashboard-core';
 import type {
-  DashboardEvaluator,
-  DashboardItem,
-  DashboardItemOptions,
-  ResolvedDashboardItem,
+  TDashboardEvaluator,
+  IDashboardItem,
+  IDashboardItemOptions,
+  IResolvedDashboardItem,
 } from 'vuesp-dashboard-core';
 
 import { isRecordValue } from './device.ts';
 
-export interface DashboardCommand {
+export interface IDashboardCommand {
   comm: string;
   data: Record<string, unknown>;
 }
@@ -22,7 +22,7 @@ export interface DashboardCommand {
  * device dashboard (`device.status3` appears twice on the BMS), so the hub
  * derives a stable key from the device id and the item index.
  */
-export interface PublicDashboardTile {
+export interface IPublicDashboardTile {
   key: string;
   id: string;
   name: string;
@@ -31,21 +31,21 @@ export interface PublicDashboardTile {
   icon?: string;
   /** Icon name from the shared VisionIcon set, used identically by hub and LK. */
   viewIcon: string;
-  opts?: DashboardItemOptions;
+  opts?: IDashboardItemOptions;
   value?: unknown;
   valueTo?: unknown;
 }
 
-export interface CloudTileGroup {
+export interface ICloudTileGroup {
   deviceId: string;
   name: string;
   ip: string;
   online: boolean;
-  tiles: PublicDashboardTile[];
+  tiles: IPublicDashboardTile[];
 }
 
-export interface CloudTilesResult {
-  devices: CloudTileGroup[];
+export interface ICloudTilesResult {
+  devices: ICloudTileGroup[];
   selected: string[];
   max: number;
 }
@@ -55,35 +55,9 @@ export interface CloudTilesResult {
  * `VisionIcon`, and the same value is published as `viewIcon` so LK (and any
  * other client) renders exactly the same glyph.
  */
-const viewIcons: Record<string, string> = {
-  shut: 'bolt',
-  bulb: 'sun',
-  light: 'sun',
-  video: 'click',
-  camera: 'click',
-  windy: 'wifi',
-  tv: 'box',
-  therm: 'chart',
-  store: 'box',
-  socket: 'bolt',
-  plug: 'bolt',
-  noti: 'bell',
-  lock: 'settings',
-  chart: 'chart',
-  battery: 'bolt',
-  ram: 'box',
-  map: 'home',
-  speaker: 'bell',
-  timer: 'calendar',
-  snow: 'sun',
-  blaze: 'sun',
-  door: 'home',
-  plant: 'sun',
-};
+export const tileViewIcon = (icon?: string): string => icon || 'box';
 
-export const tileViewIcon = (icon?: string): string => (icon && viewIcons[icon]) || 'box';
-
-const evaluate: DashboardEvaluator = (body, scope) => {
+const evaluate: TDashboardEvaluator = (body, scope) => {
   const fn = new Function(...Object.keys(scope), body);
 
   return fn(...Object.values(scope));
@@ -103,22 +77,22 @@ const messageKeys: Record<string, string> = {
   slots: 'MESSAGE',
 };
 
-export const resolveTiles = (items: DashboardItem[], main: unknown): ResolvedDashboardItem[] =>
+export const resolveTiles = (items: IDashboardItem[], main: unknown): IResolvedDashboardItem[] =>
   items.map(item => resolveDashboardItem(item, main, evaluate));
 
 /**
  * Resolves dashboard items for publication. A single broken expression must
  * not hide the whole device dashboard, so bad tiles are skipped individually.
  */
-export const resolvePublicTiles = (items: unknown, main: unknown, deviceId = ''): PublicDashboardTile[] => {
+export const resolvePublicTiles = (items: unknown, main: unknown, deviceId = ''): IPublicDashboardTile[] => {
   if (!Array.isArray(items)) return [];
 
-  const tiles: PublicDashboardTile[] = [];
+  const tiles: IPublicDashboardTile[] = [];
   items.forEach((item, index) => {
     if (!isRecordValue(item)) return;
     try {
       const key = `${deviceId}:${index}`;
-      tiles.push(toPublicTile(resolveDashboardItem(item as unknown as DashboardItem, main, evaluate), key));
+      tiles.push(toPublicTile(resolveDashboardItem(item as unknown as IDashboardItem, main, evaluate), key));
     } catch {
       // Skip a tile that cannot be resolved against the current state.
     }
@@ -126,8 +100,8 @@ export const resolvePublicTiles = (items: unknown, main: unknown, deviceId = '')
   return tiles;
 };
 
-export const toPublicTile = (tile: ResolvedDashboardItem, key?: string): PublicDashboardTile => {
-  const result: PublicDashboardTile = {
+export const toPublicTile = (tile: IResolvedDashboardItem, key?: string): IPublicDashboardTile => {
+  const result: IPublicDashboardTile = {
     key: key ?? tile.id,
     id: tile.id,
     name: tile.name,
@@ -150,7 +124,7 @@ const isMessageKey = (value: unknown): value is string =>
  * id). `set` expressions spread that state, so a numeric key in the result is
  * device state, not a message name: it must be ignored.
  */
-const commandKey = (item: DashboardItem, result: Record<string, unknown>): string => {
+const commandKey = (item: IDashboardItem, result: Record<string, unknown>): string => {
   if (isMessageKey(result.key)) return result.key;
   const root = (item.args?.[0] ?? '').split('.')[0]?.toLowerCase() ?? '';
   return messageKeys[root] ?? (root ? root.toUpperCase() : '');
@@ -161,10 +135,10 @@ const commandKey = (item: DashboardItem, result: Record<string, unknown>): strin
  * dashboard item may return either a plain payload or a `{ key, object }`
  * pair; when the key is absent it is derived from the item `args` path.
  */
-export const buildTileCommands = (item: DashboardItem, value: unknown, main: unknown): DashboardCommand[] => {
+export const buildTileCommands = (item: IDashboardItem, value: unknown, main: unknown): IDashboardCommand[] => {
   const result = buildDashboardCommands(item, value, main, evaluate);
   const results = Array.isArray(result) ? result : [result];
-  const commands: DashboardCommand[] = [];
+  const commands: IDashboardCommand[] = [];
 
   for (const entry of results) {
     if (!isRecordValue(entry)) continue;

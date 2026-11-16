@@ -1,9 +1,9 @@
 import { Router } from 'express';
 
-import type { AuthService } from '@server/modules/auth/application/authService.ts';
-import { requireAuth, type AuthenticatedRequest } from './middleware.ts';
+import type { IAuthService } from '@server/modules/auth/application/authService.ts';
+import { requireAuth, type IAuthenticatedRequest } from './middleware.ts';
 
-export const createAuthRouter = (auth: AuthService) => {
+export const createAuthRouter = (auth: IAuthService) => {
   const router = Router();
 
   router.get('/status', (_request, response) => {
@@ -25,11 +25,11 @@ export const createAuthRouter = (auth: AuthService) => {
     response.json(session);
   });
 
-  router.get('/me', requireAuth(auth), (request: AuthenticatedRequest, response) => {
+  router.get('/me', requireAuth(auth), (request: IAuthenticatedRequest, response) => {
     response.json({ user: request.auth });
   });
 
-  router.post('/change-password', requireAuth(auth), (request: AuthenticatedRequest, response) => {
+  router.post('/change-password', requireAuth(auth), (request: IAuthenticatedRequest, response) => {
     const { currentPassword, newPassword } = (request.body ?? {}) as Record<string, unknown>;
     if (typeof currentPassword !== 'string' || typeof newPassword !== 'string' || newPassword.length < 6) {
       response.status(400).json({ error: 'Current password and a new password of at least 6 characters are required' });

@@ -17,7 +17,7 @@
         :title="compact ? item.name : undefined"
         @click="emit('select')"
       >
-        <component :is="iconComponent" class="size-5 shrink-0 opacity-70" />
+        <VIcon :name="iconName" class="size-5 shrink-0 opacity-70" />
         <span v-if="!compact" class="min-w-0 flex-1 truncate text-sm">{{ item.name }}</span>
       </router-link>
 
@@ -29,7 +29,7 @@
         :title="compact ? item.name : undefined"
         @click="toggle"
       >
-        <component :is="iconComponent" class="size-5 shrink-0 opacity-70" />
+        <VIcon :name="iconName" class="size-5 shrink-0 opacity-70" />
         <span v-if="!compact" class="min-w-0 flex-1 truncate text-sm">{{ item.name }}</span>
       </button>
 
@@ -41,7 +41,7 @@
         :aria-label="item.name"
         @click.prevent.stop="toggle"
       >
-        <IconChevron class="size-4 transition-transform" :class="open ? 'rotate-90' : ''" />
+        <VIcon name="chevron-down" class="size-4 transition-transform" :class="open ? '' : '-rotate-90'" />
       </button>
     </div>
 
@@ -64,18 +64,16 @@
 </template>
 
 <script setup lang="ts">
+import { VIcon } from 'vuesp-components/components';
 import { computed, ref, watch } from 'vue';
-import type { Component } from 'vue';
 
-import type { MenuChildType, MenuItemType } from '@/types';
-import legacyIcons from '@/components/app/legacyIcons.ts';
+import type { IMenuChildType, IMenuItemType } from '@/types';
 
 defineOptions({ name: 'HubNavItem' });
 
-const IconChevron = legacyIcons.IconChevron;
 
 const props = defineProps<{
-  item: MenuItemType | MenuChildType;
+  item: IMenuItemType | IMenuChildType;
   level: number;
   activePath: string;
   compact: boolean;
@@ -83,15 +81,12 @@ const props = defineProps<{
 
 const emit = defineEmits<{ select: [] }>();
 
-const iconComponent = computed<Component>(() => {
-  const icons = legacyIcons as Record<string, Component>;
-  return icons[props.item.icon ?? 'IconDevice'] ?? icons.IconDevice;
-});
+const iconName = computed(() => props.item.icon ?? 'cpu');
 
 const hasChildren = computed(() => Boolean(props.item.children?.length));
 const open = ref(false);
 
-const itemContainsPath = (item: MenuItemType | MenuChildType, path: string): boolean => {
+const itemContainsPath = (item: IMenuItemType | IMenuChildType, path: string): boolean => {
   if (!item.path) return false;
   if (item.path === '/') return path === '/';
   if (path === item.path || path.startsWith(item.path)) return true;

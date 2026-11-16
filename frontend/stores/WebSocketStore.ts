@@ -1,36 +1,33 @@
 import { defineStore } from 'pinia';
 import { markRaw } from 'vue';
 import { io } from 'socket.io-client';
-import type { IMessageDevice, IMessageInfo } from 'vuesp-components/types';
 import type {
-  DeviceCommand,
-  DeviceEventPayload,
-  DeviceListItem,
-  DeviceMenu,
-  TargetedDeviceCommand,
+  IDeviceCommand,
+  IDeviceEventPayload,
+  IDeviceListItem,
+  IDeviceMenu,
+  TTargetedDeviceCommand,
 } from '@/types';
 import { isDeviceEventPayload, isRecordValue } from '../../shared/device.ts';
 import { isServiceStatusPayload } from '../../shared/socket.ts';
-import type { DeviceSocketAcknowledgement } from '../../shared/socket.ts';
+import type { TDeviceSocketAcknowledgement } from '../../shared/socket.ts';
 import { clearToken, getToken } from '@/utils/auth.ts';
 import { translate } from '@/i18n/index.ts';
 
 type DeviceTelemetry = {
-  INFO?: IMessageInfo;
-  DEVICE?: IMessageDevice;
   [key: string]: unknown;
 };
 type DeviceState = Record<string, DeviceTelemetry>;
-type RawDeviceEvent = DeviceEventPayload & { at: number };
+type RawDeviceEvent = IDeviceEventPayload & { at: number };
 
-export type DeviceMain = {
+export type TDeviceMain = {
   ports: Record<string, Record<string, unknown>>;
   dallas: Record<string, Record<string, unknown>>;
   slots: Record<string, Record<string, unknown>>;
   [key: string]: unknown;
 };
 
-const emptyMain = (): DeviceMain => ({ ports: {}, dallas: {}, slots: {} });
+const emptyMain = (): TDeviceMain => ({ ports: {}, dallas: {}, slots: {} });
 
 const dallasAddress = (data: Record<string, unknown>): string => {
   const { address } = data;
@@ -44,11 +41,11 @@ interface StatusAck {
 }
 
 interface MenusAck extends StatusAck {
-  menus?: DeviceMenu[];
+  menus?: IDeviceMenu[];
 }
 
 interface ListAck extends StatusAck {
-  list?: DeviceListItem[];
+  list?: IDeviceListItem[];
 }
 
 interface RunningAck {
@@ -63,10 +60,10 @@ export const useWebSocketStore = defineStore('websocketstore', {
     serviceRunning: false,
     info: {} as Record<string, unknown>,
     devices: {} as DeviceState,
-    mains: {} as Record<string, DeviceMain>,
+    mains: {} as Record<string, TDeviceMain>,
     events: [] as RawDeviceEvent[],
-    menus: [] as DeviceMenu[],
-    list: [] as DeviceListItem[],
+    menus: [] as IDeviceMenu[],
+    list: [] as IDeviceListItem[],
   }),
   actions: {
     connect() {
@@ -148,27 +145,27 @@ export const useWebSocketStore = defineStore('websocketstore', {
       this.events = [];
     },
 
-    sendDevice({ ip, name, comm, data }: TargetedDeviceCommand, done?: (ack: DeviceSocketAcknowledgement) => void): void {
+    sendDevice({ ip, name, comm, data }: TTargetedDeviceCommand, done?: (ack: TDeviceSocketAcknowledgement) => void): void {
       const socket = this.socket;
       if (!socket?.connected) {
         done?.({ status: 'error', message: 'Device service is not connected' });
         return;
       }
 
-      socket.emit('device:send', { ip, name, comm, data }, (ack: DeviceSocketAcknowledgement) => done?.(ack));
+      socket.emit('device:send', { ip, name, comm, data }, (ack: TDeviceSocketAcknowledgement) => done?.(ack));
     },
 
-    sendDeviceAll({ comm, data }: DeviceCommand): void {
+    sendDeviceAll({ comm, data }: IDeviceCommand): void {
       const socket = this.socket;
       if (!socket?.connected) return;
 
       socket.emit('device:sendAll', { comm, data });
     },
-    onSend(comm: string, data?: DeviceCommand['data']): void {
+    onSend(comm: string, data?: IDeviceCommand['data']): void {
       this.sendDeviceAll({ comm, data });
     },
-    async loadMenusWithRetry(attempts = 10, delay = 500): Promise<DeviceMenu[]> {
-      let result: DeviceMenu[] = [];
+    async loadMenusWithRetry(attempts = 10, delay = 500): Promise<IDeviceMenu[]> {
+      let result: IDeviceMenu[] = [];
 
       for (let attempt = 0; attempt < attempts; attempt += 1) {
         try {
@@ -186,7 +183,7 @@ export const useWebSocketStore = defineStore('websocketstore', {
       return result;
     },
     getMenus() {
-      return new Promise<DeviceMenu[]>((resolve, reject) => {
+      return new Promise<IDeviceMenu[]>((resolve, reject) => {
         if (!this.socket?.connected) return reject(new Error(translate('errors.deviceServiceNotConnected')));
         this.socket.timeout(5000).emit('device:menus', {}, (error: Error | null, response?: MenusAck) => {
           if (error) return reject(error);
@@ -201,7 +198,7 @@ export const useWebSocketStore = defineStore('websocketstore', {
       });
     },
     getList() {
-      return new Promise<DeviceListItem[]>((resolve, reject) => {
+      return new Promise<IDeviceListItem[]>((resolve, reject) => {
         if (!this.socket?.connected) return reject(new Error(translate('errors.deviceServiceNotConnected')));
         this.socket.timeout(5000).emit('device:list', {}, (error: Error | null, response?: ListAck) => {
           if (error) return reject(error);

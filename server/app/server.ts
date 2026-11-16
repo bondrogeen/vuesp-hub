@@ -6,27 +6,27 @@ import { createServer } from 'http';
 import { Server } from 'socket.io';
 
 import type { DeviceRuntime } from '@core/application/deviceRuntime.ts';
-import type { AuthService } from '@server/modules/auth/application/authService.ts';
+import type { IAuthService } from '@server/modules/auth/application/authService.ts';
 import { requireAuth, requirePasswordChanged, socketAuth } from '@server/modules/auth/api/middleware.ts';
 import { createAuthRouter } from '@server/modules/auth/api/authRoutes.ts';
 import { createRouter } from './router.ts';
-import type { CloudService } from '@server/modules/cloud/application/cloudService.ts';
+import type { ICloudService } from '@server/modules/cloud/application/cloudService.ts';
 import proxy from '@server/modules/proxy/proxy.ts';
-import type { DeviceRepository } from '@server/modules/devices/infrastructure/deviceRepository.ts';
-import type { StoreModelFactory } from '@shared/stores/types.ts';
-import type { AccessRepository } from '@server/modules/access/infrastructure/jsonAccessRepository.ts';
+import type { IDeviceRepository } from '@server/modules/devices/infrastructure/deviceRepository.ts';
+import type { TStoreModelFactory } from '@shared/stores/types.ts';
+import type { IAccessRepository } from '@server/modules/access/infrastructure/jsonAccessRepository.ts';
 import { createAccessRouter } from '@server/modules/access/api/accessRoutes.ts';
 import { socketDevice } from '@server/modules/devices/sockets/device.ts';
 import { socketSerial } from '@server/modules/serial/sockets/serial.ts';
 import { createMobileRouter } from '@server/modules/mobile/api/mobileRoutes.ts';
-import type { ModuleHost } from '@server/module-host/moduleHost.ts';
-import type { ModuleCatalog } from '@server/modules/modules/application/moduleCatalog.ts';
+import type { TModuleHost } from '@server/module-host/moduleHost.ts';
+import type { TModuleCatalog } from '@server/modules/modules/application/moduleCatalog.ts';
 import { createModuleRouter } from '@server/modules/modules/api/moduleRoutes.ts';
 
 const defaultPort = 3005;
 const defaultHost = '127.0.0.1';
 
-interface SettingsStore {
+interface ISettingsStore {
   get<T>(key: string, defaultValue?: T): T | undefined;
   set(key: string, value: unknown): void;
 }
@@ -34,14 +34,14 @@ interface SettingsStore {
 interface ServerOptions {
   staticDirectory?: string;
   deviceRuntime: DeviceRuntime<unknown>;
-  getDeviceModel: () => Promise<DeviceRepository>;
-  storeModel: StoreModelFactory;
-  serialSettingsStore: SettingsStore;
-  auth?: AuthService;
-  access?: AccessRepository;
-  cloud?: CloudService;
-  moduleHost?: ModuleHost;
-  moduleCatalog?: ModuleCatalog;
+  getDeviceModel: () => Promise<IDeviceRepository>;
+  storeModel: TStoreModelFactory;
+  serialSettingsStore: ISettingsStore;
+  auth?: IAuthService;
+  access?: IAccessRepository;
+  cloud?: ICloudService;
+  moduleHost?: TModuleHost;
+  moduleCatalog?: TModuleCatalog;
   host?: string;
   port?: number;
 }
@@ -223,7 +223,7 @@ export const server = ({
       const socket = dgram.createSocket('udp4');
       beaconSocket = socket;
       socket.on('error', error => {
-        console.warn(`Hub beacon stopped: ${error.message}`);
+        console.warn(`IHub beacon stopped: ${error.message}`);
       });
       socket.bind(() => {
         try {

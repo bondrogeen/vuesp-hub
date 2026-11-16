@@ -3,7 +3,7 @@ import { chmodSync, existsSync, mkdirSync, readFileSync, renameSync, writeFileSy
 import path from 'node:path';
 
 import { createAesSecretProvider } from '@server/shared/secrets/aesSecretProvider.ts';
-import type { SecretProvider } from '@server/shared/secrets/secretProvider.ts';
+import type { ISecretProvider } from '@server/shared/secrets/secretProvider.ts';
 
 const CAMERA_MODULE_ID = 'vuesp-hub.video.cameras';
 const LEGACY_MODULE_IDS = ['vuesp.cameras'];
@@ -67,7 +67,7 @@ const moduleSecret = (dataDirectory: string): string => {
 };
 
 /** Move the old core Alisa token store into the Yandex module, re-encrypting tokens. */
-export const migrateLegacyAlisaData = (dataDirectory: string, source?: SecretProvider): void => {
+export const migrateLegacyAlisaData = (dataDirectory: string, source?: ISecretProvider): void => {
   const legacy = path.join(dataDirectory, 'alisa.json');
   const destination = path.join(dataDirectory, 'module-data', YANDEX_MODULE_ID, 'alisa.json');
   if (!source || !existsSync(legacy) || existsSync(destination)) return;

@@ -8,9 +8,9 @@
     </div>
 
     <div class="grid grid-cols-1 gap-6 xl:grid-cols-3">
-      <CardMain :title="t('profile.account')" :loading="false" class="xl:col-span-1">
+      <VCard :title="t('profile.account')" class="xl:col-span-1" hover>
         <div class="flex items-center gap-4">
-          <div class="flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-cyan-main to-[var(--color-blue-main)] text-lg font-semibold uppercase text-white shadow-sm">
+          <div class="flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-cyan-main to-blue-main text-lg font-semibold uppercase text-white shadow-sm">
             {{ initials }}
           </div>
 
@@ -34,9 +34,9 @@
             <dd class="font-medium text-gray-dark-40 dark:text-white">JWT</dd>
           </div>
         </dl>
-      </CardMain>
+      </VCard>
 
-      <CardMain :title="t('profile.changePassword')" :loading="false" class="xl:col-span-2">
+      <VCard :title="t('profile.changePassword')" class="xl:col-span-2" hover>
         <div class="mb-5 rounded-md border border-blue-400/40 bg-blue-50/80 px-4 py-3 text-sm text-blue-800 dark:border-blue-500/30 dark:bg-blue-950/30 dark:text-blue-200">
           {{ t('profile.passwordNotConnected') }}
         </div>
@@ -52,7 +52,7 @@
         <div class="mt-2 flex justify-end">
           <VButton color="blue" disabled>{{ t('profile.saveChanges') }}</VButton>
         </div>
-      </CardMain>
+      </VCard>
     </div>
   </main>
 </template>
@@ -60,7 +60,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { BlockBreadcrumb as VBreadcrumb, CardMain, VButton, VTextField } from 'vuesp-components/components';
+import { BlockBreadcrumb as VBreadcrumb, VButton, VTextField, VCard } from 'vuesp-components/components';
 
 import { getRole, getUsername } from '@/utils/auth.ts';
 

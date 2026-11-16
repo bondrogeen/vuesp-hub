@@ -4,14 +4,14 @@ import en from './locales/en.ts';
 import ru from './locales/ru.ts';
 
 export const SUPPORTED_LOCALES = ['en', 'ru'] as const;
-export type SupportedLocale = (typeof SUPPORTED_LOCALES)[number];
+export type TSupportedLocale = (typeof SUPPORTED_LOCALES)[number];
 
 const LOCALE_KEY = 'vuesp-locale';
 
-const isSupportedLocale = (value: string): value is SupportedLocale =>
+const isSupportedLocale = (value: string): value is TSupportedLocale =>
   (SUPPORTED_LOCALES as readonly string[]).includes(value);
 
-const detectLocale = (): SupportedLocale => {
+const detectLocale = (): TSupportedLocale => {
   try {
     const saved = typeof localStorage === 'undefined' ? null : localStorage.getItem(LOCALE_KEY);
     if (saved && isSupportedLocale(saved)) return saved;
@@ -33,9 +33,9 @@ export const i18n = createI18n({
   messages: { en, ru },
 });
 
-export const getLocale = (): SupportedLocale => i18n.global.locale.value as SupportedLocale;
+export const getLocale = (): TSupportedLocale => i18n.global.locale.value as TSupportedLocale;
 
-export const setLocale = (locale: SupportedLocale): void => {
+export const setLocale = (locale: TSupportedLocale): void => {
   i18n.global.locale.value = locale;
 
   try {

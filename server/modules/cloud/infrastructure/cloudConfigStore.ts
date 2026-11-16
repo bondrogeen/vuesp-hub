@@ -1,9 +1,9 @@
 import { chmodSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 
-import type { SecretProvider } from '@shared/secrets/secretProvider.ts';
+import type { ISecretProvider } from '@shared/secrets/secretProvider.ts';
 
-export interface CloudConfig {
+export interface ICloudConfig {
   url: string;
   hubId: string;
   name: string;
@@ -22,9 +22,9 @@ interface StoredCloudConfig {
   publishedTiles?: string[];
 }
 
-export interface CloudConfigStore {
-  read(): CloudConfig | null;
-  write(config: CloudConfig): void;
+export interface ICloudConfigStore {
+  read(): ICloudConfig | null;
+  write(config: ICloudConfig): void;
   clear(): void;
 }
 
@@ -35,8 +35,8 @@ export const createCloudConfigStore = ({
   secretProvider,
 }: {
   dataDirectory: string;
-  secretProvider: SecretProvider;
-}): CloudConfigStore => {
+  secretProvider: ISecretProvider;
+}): ICloudConfigStore => {
   const file = path.join(dataDirectory, FILE_NAME);
   mkdirSync(dataDirectory, { recursive: true, mode: 0o700 });
 
@@ -49,7 +49,7 @@ export const createCloudConfigStore = ({
         return {
           url: stored.url,
           hubId: stored.hubId,
-          name: stored.name || 'Vuesp Hub',
+          name: stored.name || 'Vuesp IHub',
           token: secretProvider.decrypt(stored.token),
           pairedAt: stored.pairedAt || new Date().toISOString(),
           ...(Array.isArray(stored.publishedTiles)

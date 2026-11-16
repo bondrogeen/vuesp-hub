@@ -7,9 +7,9 @@
       <p class="mt-2 text-sm text-gray-dark-25 dark:text-gray-main">{{ t('dashboard.subtitle') }}</p>
     </div>
 
-    <CardMain v-if="!sections.length" :title="t('dashboard.devices')" :loading="isLoading">
+    <VCard v-if="!sections.length" :title="t('dashboard.devices')" hover>
       <p class="text-gray-dark-25 dark:text-gray-main">{{ t('dashboard.empty') }}</p>
-    </CardMain>
+    </VCard>
 
     <template v-else>
       <section v-for="device in sections" :key="device.ip" class="mb-8 last:mb-0">
@@ -52,22 +52,13 @@ import type { Component } from 'vue';
 import { computed, onMounted, watch } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useI18n } from 'vue-i18n';
-import {
-  BlockBreadcrumb as VBreadcrumb,
-  CardButton,
-  CardDate,
-  CardDimmer,
-  CardInfo,
-  CardInput,
-  CardList,
-  CardMain,
-} from 'vuesp-components/components';
-import type { DashboardItem, ResolvedDashboardItem } from 'vuesp-dashboard-core';
+import { BlockBreadcrumb as VBreadcrumb, CardButton, CardDate, CardDimmer, CardInfo, CardInput, CardList, VCard } from 'vuesp-components/components';
+import type { IDashboardItem, IResolvedDashboardItem } from 'vuesp-dashboard-core';
 
 import DeviceTileIcon from '@/components/dashboard/DeviceTileIcon.vue';
 import { useWebSocketStore } from '@/stores/WebSocketStore';
-import type { DeviceMain } from '@/stores/WebSocketStore';
-import type { DeviceListItem } from '@/types';
+import type { TDeviceMain } from '@/stores/WebSocketStore';
+import type { IDeviceListItem } from '@/types';
 import { buildTileCommands, resolveTiles } from '../../shared/dashboardTiles.ts';
 import { isRecordValue } from '../../shared/device.ts';
 
@@ -87,7 +78,7 @@ const cards: Record<string, Component> = {
 const getComponent = (type?: string): Component => cards[type ?? 'info'] ?? CardInfo;
 
 // The tile id is only a key; passing it through would duplicate DOM ids across devices.
-const tileProps = (tile: ResolvedDashboardItem): Omit<ResolvedDashboardItem, 'id'> => {
+const tileProps = (tile: IResolvedDashboardItem): Omit<IResolvedDashboardItem, 'id'> => {
   const { id: _id, ...rest } = tile;
   return rest;
 };
@@ -102,9 +93,9 @@ const statusLabel = (online: boolean | null): string => {
   return online ? t('common.online') : t('common.offline');
 };
 
-const mainFor = (device: DeviceListItem): DeviceMain => mains.value[device.ip] ?? { ports: {}, dallas: {}, slots: {} };
+const mainFor = (device: IDeviceListItem): TDeviceMain => mains.value[device.ip] ?? { ports: {}, dallas: {}, slots: {} };
 
-const isOnline = (main: DeviceMain): boolean | null => {
+const isOnline = (main: TDeviceMain): boolean | null => {
   const ping = isRecordValue(main.ping) ? main.ping : undefined;
   const delta = typeof ping?.delta === 'number' ? ping.delta : null;
   return delta === null ? null : delta <= 5000;
@@ -124,7 +115,7 @@ const sections = computed(() =>
 
 const isLoading = computed(() => serviceRunning.value && !list.value.length);
 
-const onSetState = (device: DeviceListItem, item: DashboardItem, value: unknown): void => {
+const onSetState = (device: IDeviceListItem, item: IDashboardItem, value: unknown): void => {
   for (const command of buildTileCommands(item, value, mainFor(device))) {
     webSocketStore.sendDevice({ ip: device.ip, comm: command.comm, data: command.data }, ack => {
       if (ack.status !== 'success') console.warn(`Device command ${command.comm} failed for ${device.ip}: ${ack.message ?? ack.status}`);

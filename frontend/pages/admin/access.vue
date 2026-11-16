@@ -14,7 +14,7 @@
       {{ t('access.saved') }}
     </p>
 
-    <CardMain :title="t('access.title')" :loading="isLoading">
+    <VCard :title="t('access.title')" hover>
       <div class="overflow-x-auto">
         <table class="w-full min-w-[560px] text-left text-sm">
           <thead>
@@ -49,7 +49,7 @@
       <div class="mt-5 flex justify-end">
         <VButton color="blue" :loading="isSaving" :disabled="isSaving" @click="save">{{ t('access.save') }}</VButton>
       </div>
-    </CardMain>
+    </VCard>
   </main>
 </template>
 
@@ -57,9 +57,9 @@
 import { onMounted, reactive, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 
-import { BlockBreadcrumb as VBreadcrumb, CardMain, VButton, VCheckbox } from 'vuesp-components/components';
+import { BlockBreadcrumb as VBreadcrumb, VButton, VCheckbox, VCard } from 'vuesp-components/components';
 
-import { ACCESS_PAGES, type AccessPage } from '@/utils/access.ts';
+import { ACCESS_PAGES, type TAccessPage } from '@/utils/access.ts';
 import { useAccessStore } from '@/stores/AccessStore.ts';
 
 const { t } = useI18n();
@@ -70,9 +70,9 @@ const isLoading = ref(false);
 const isSaving = ref(false);
 const saved = ref(false);
 const error = ref('');
-const selected = reactive<{ user: AccessPage[]; viewer: AccessPage[] }>({ user: [], viewer: [] });
+const selected = reactive<{ user: TAccessPage[]; viewer: TAccessPage[] }>({ user: [], viewer: [] });
 
-const toggle = (role: 'user' | 'viewer', page: AccessPage) => {
+const toggle = (role: 'user' | 'viewer', page: TAccessPage) => {
   const current = selected[role];
   selected[role] = current.includes(page) ? current.filter(item => item !== page) : [...current, page];
   saved.value = false;

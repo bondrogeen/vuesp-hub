@@ -158,7 +158,7 @@ const start = (): void => {
       if (startupPromise) await startupPromise.catch(() => undefined);
       await Promise.race([
         hub.stop(),
-        new Promise<never>((_, reject) => setTimeout(() => reject(new Error('Hub shutdown timed out')), 5000)),
+        new Promise<never>((_, reject) => setTimeout(() => reject(new Error('IHub shutdown timed out')), 5000)),
       ]);
     })();
 

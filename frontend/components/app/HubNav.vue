@@ -4,12 +4,12 @@
       <button
         v-if="!compact"
         type="button"
-        class="mb-1 flex w-full items-center justify-between rounded-md px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-gray-main transition hover:text-gray-dark-25 dark:hover:text-gray-light-10"
+        class="mb-1 flex w-full items-center justify-between rounded-md px-3 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-gray-main transition hover:text-gray-dark-25 dark:hover:text-gray-light-10"
         :aria-expanded="!isCollapsed(group)"
         @click="toggleGroup(group)"
       >
         <span>{{ group.title }}</span>
-        <IconChevron class="size-3.5 transition-transform" :class="isCollapsed(group) ? '' : 'rotate-90'" />
+        <VIcon name="chevron-down" class="size-3.5 transition-transform" :class="isCollapsed(group) ? '-rotate-90' : ''" />
       </button>
 
       <div
@@ -36,33 +36,32 @@
 </template>
 
 <script setup lang="ts">
+import { VIcon } from 'vuesp-components/components';
 import { computed, onMounted, onUnmounted, reactive, ref, watch } from 'vue';
 
-import type { MenuChildType, MenuItemType, MenuType } from '@/types';
-import legacyIcons from '@/components/app/legacyIcons.ts';
+import type { IMenuChildType, IMenuItemType, IMenuType } from '@/types';
 import HubNavItem from './HubNavItem.vue';
 
 const props = defineProps<{
-  groups: MenuType[];
+  groups: IMenuType[];
   isSidebar: boolean;
   fullPath: string;
 }>();
 
 const emit = defineEmits<{ sidebar: [value: boolean] }>();
 
-const IconChevron = legacyIcons.IconChevron;
 const STORAGE_KEY = 'vuesp.hub.nav.groups';
 
 const isDesktop = ref(false);
 const collapsed = reactive<Record<string, boolean>>({});
 
-const groupKey = (group: MenuType): string => group.key ?? group.title;
+const groupKey = (group: IMenuType): string => group.key ?? group.title;
 
 const compact = computed(() => props.isSidebar && isDesktop.value);
 
-const isCollapsed = (group: MenuType): boolean => Boolean(collapsed[groupKey(group)]);
+const isCollapsed = (group: IMenuType): boolean => Boolean(collapsed[groupKey(group)]);
 
-const itemContainsPath = (item: MenuItemType | MenuChildType, path: string): boolean => {
+const itemContainsPath = (item: IMenuItemType | IMenuChildType, path: string): boolean => {
   if (!item.path) return false;
   if (item.path === '/') return path === '/';
   if (path === item.path || path.startsWith(item.path)) return true;
@@ -85,7 +84,7 @@ const persist = (): void => {
   }
 };
 
-const toggleGroup = (group: MenuType): void => {
+const toggleGroup = (group: IMenuType): void => {
   const key = groupKey(group);
   collapsed[key] = !collapsed[key];
   persist();

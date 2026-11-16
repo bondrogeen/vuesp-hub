@@ -1,4 +1,4 @@
-import type { DeviceMenu, DeviceMenuItem, DeviceRecord, IconName, MenuChildType, MenuType } from '@/types';
+import type { IDeviceMenu, IDeviceMenuItem, IDeviceRecord, TIconName, IMenuChildType, IMenuType } from '@/types';
 
 type Translate = (key: string) => string;
 
@@ -11,13 +11,13 @@ const labelKeys: Record<string, string> = {
   'menu.gpio': 'deviceMenu.gpio',
 };
 
-const iconNames: Record<string, IconName> = {
-  home: 'IconHome',
-  dashboard: 'IconDashboard',
-  script: 'IconScript',
-  settings: 'IconSettings',
-  storage: 'IconStorage',
-  gpio: 'IconGpio',
+const iconNames: Record<string, TIconName> = {
+  home: 'home',
+  dashboard: 'dashboard',
+  script: 'script',
+  settings: 'settings',
+  storage: 'storage',
+  gpio: 'gpio',
 };
 
 const humanizeMenuName = (name: string): string => {
@@ -43,27 +43,27 @@ export const getDeviceMenuLabel = (name: string, t: Translate): string => {
   return key ? t(key) : humanizeMenuName(name);
 };
 
-export const getDeviceMenuIcon = (icon?: string): IconName => iconNames[icon ?? ''] ?? 'IconDevice';
+export const getDeviceMenuIcon = (icon?: string): TIconName => iconNames[icon ?? ''] ?? 'cpu';
 
 export const normalizeDeviceMenuPath = (path?: string): string => normalizePath(path);
 
-const toDeviceMenuItem = (item: DeviceMenuItem, ip: string, t: Translate): MenuChildType => ({
+const toDeviceMenuItem = (item: IDeviceMenuItem, ip: string, t: Translate): IMenuChildType => ({
   name: getDeviceMenuLabel(item.name, t),
   icon: getDeviceMenuIcon(item.icon),
   path: `/device/${encodeURIComponent(ip)}${normalizePath(item.path)}`,
   children: item.children?.map(child => toDeviceMenuItem(child, ip, t)),
 });
 
-export const createDeviceMenu = (menus: DeviceMenu[], t: Translate, devices: Array<Pick<DeviceRecord, 'ip' | 'name'>> = []): MenuType[] => {
+export const createDeviceMenu = (menus: IDeviceMenu[], t: Translate, devices: Array<Pick<IDeviceRecord, 'ip' | 'name'>> = []): IMenuType[] => {
   // Registry devices stay in the menu even when they are offline; the runtime
   // adds names and the device's own submenu for connected ones.
-  const known = new Map<string, { ip: string; name: string; menu?: DeviceMenuItem[] }>();
+  const known = new Map<string, { ip: string; name: string; menu?: IDeviceMenuItem[] }>();
   for (const device of devices) known.set(device.ip, { ip: device.ip, name: device.name || device.ip });
   for (const menu of menus) known.set(menu.ip, { ip: menu.ip, name: menu.name || menu.ip, menu: menu.menu });
 
-  const deviceItems: MenuChildType[] = [...known.values()].map(device => ({
+  const deviceItems: IMenuChildType[] = [...known.values()].map(device => ({
     name: device.name,
-    icon: 'IconDevice',
+    icon: 'cpu',
     path: `/device/${encodeURIComponent(device.ip)}/`,
     ...(device.menu?.length ? { children: device.menu.map(item => toDeviceMenuItem(item, device.ip, t)) } : {}),
   }));
@@ -73,9 +73,9 @@ export const createDeviceMenu = (menus: DeviceMenu[], t: Translate, devices: Arr
       key: 'overview',
       title: t('common.menuGroups.overview'),
       items: [
-        { name: t('common.home'), icon: 'IconHome', path: '/' },
-        { name: t('common.dashboard'), icon: 'IconDashboard', path: '/dashboard/' },
-        { name: t('common.dashboardPreview'), icon: 'IconDashboard', path: '/dashboard-preview/' },
+        { name: t('common.home'), icon: 'home', path: '/' },
+        { name: t('common.dashboard'), icon: 'dashboard', path: '/dashboard/' },
+        { name: t('common.dashboardPreview'), icon: 'dashboard', path: '/dashboard-preview/' },
       ],
     },
     {
@@ -84,13 +84,13 @@ export const createDeviceMenu = (menus: DeviceMenu[], t: Translate, devices: Arr
       items: [
         {
           name: t('common.devices'),
-          icon: 'IconDevice',
+          icon: 'cpu',
           path: '/device/list/',
           ...(deviceItems.length ? { children: deviceItems } : {}),
         },
         {
           name: t('common.rawData'),
-          icon: 'IconList',
+          icon: 'list-check',
           path: '/device/raw/',
         },
       ],
@@ -101,12 +101,12 @@ export const createDeviceMenu = (menus: DeviceMenu[], t: Translate, devices: Arr
       items: [
         {
           name: t('common.modbus'),
-          icon: 'IconScript',
+          icon: 'script',
           path: '/modbus/',
         },
         {
           name: t('common.cloud'),
-          icon: 'IconSettings',
+          icon: 'settings',
           path: '/cloud/',
         },
       ],

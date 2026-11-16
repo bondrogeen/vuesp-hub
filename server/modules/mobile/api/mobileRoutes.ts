@@ -1,10 +1,10 @@
 import { Router } from 'express';
 import type { Request, Response } from 'express';
 
-import type { CloudService, MobileTokenRecord } from '@server/modules/cloud/application/cloudService.ts';
+import type { ICloudService, IMobileTokenRecord } from '@server/modules/cloud/application/cloudService.ts';
 
 interface MobileRequest extends Request {
-  mobileUser?: MobileTokenRecord;
+  mobileUser?: IMobileTokenRecord;
 }
 
 const readBearer = (request: Request): string => {
@@ -15,7 +15,7 @@ const readBearer = (request: Request): string => {
 };
 
 /** LAN API for the mobile app. Pairing uses the Vuesp cloud session. */
-export const createMobileRouter = (cloud: CloudService) => {
+export const createMobileRouter = (cloud: ICloudService) => {
   const router = Router();
 
   router.post('/session', async (request: Request, response: Response) => {
