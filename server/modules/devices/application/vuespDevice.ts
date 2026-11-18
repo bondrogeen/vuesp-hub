@@ -2,7 +2,7 @@ import { EventEmitter } from 'node:events';
 import WebSocket from 'ws';
 import AxiosDigestAuth from '@mhoc/axios-digest-auth';
 import { parseLegacyDashboard } from '@server/modules/devices/domain/legacyDashboard.ts';
-import { LegacyDeviceProtocol } from '@server/modules/devices/domain/protocols/legacyDeviceProtocol.ts';
+import { DeviceProtocol, type TProtocolEnums } from '@server/modules/devices/domain/protocols/deviceProtocol.ts';
 import type { TDeviceCommandPayload } from '@root/shared/device.ts';
 
 interface WebSocketClient {
@@ -91,7 +91,7 @@ class VuespDevice extends EventEmitter {
   #reconnectAttempt: number;
   #reconnectTimer: ReturnType<typeof setTimeout> | null;
   #manualDisconnect: boolean;
-  #protocol: LegacyDeviceProtocol;
+  #protocol: DeviceProtocol;
   #menu: unknown[] = [];
   #defaultConfig: Record<string, unknown> | null = null;
   #defaultConfigLoaded = false;
@@ -121,7 +121,7 @@ class VuespDevice extends EventEmitter {
     this.#list = [];
     this.#state = {};
     this.#fetch = fetchClient ?? createHttpClient(username, password);
-    this.#protocol = new LegacyDeviceProtocol();
+    this.#protocol = new DeviceProtocol();
     this.#address = `ws://${ip}/esp`;
     this.#options = { ...options };
     if ((username || password) && !this.#options.headers) {
@@ -153,6 +153,10 @@ class VuespDevice extends EventEmitter {
     return this.#list;
   }
 
+  get enums(): TProtocolEnums {
+    return this.#protocol.enums;
+  }
+
   get id(): number {
     const id = this.getInfo().id;
     return typeof id === 'number' ? id : -1;
@@ -171,46 +175,37 @@ class VuespDevice extends EventEmitter {
   }
 
   async onInit() {
+    let definition: unknown;
+
     try {
-      const { data } = await this.#fetch.get({ url: `http://${this.#ip}/struct.json` });
-      let definition = data;
-
-      // New Vuesp firmware no longer serves struct.json; the definition lives
-      // in default.json. Legacy devices still return a protocol object here.
-      if (!isRecord(definition) || (!definition.keys && !definition.structs)) {
-        const config = await this.#loadDefaultConfig();
-        definition = isRecord(config?.struct) ? config.struct : definition;
-      }
-
-      if (!isRecord(definition)) {
-        this.#protocolReady = false;
-        this.#onEvent('compatibility-warning', {
-          reason: 'protocol-unavailable',
-          message: 'No valid protocol definition was found; device data decoding is unavailable.',
-        });
-        return;
-      }
-
-      try {
-        this.#protocol.initialize(definition);
-      } catch (error) {
-        this.#protocolReady = false;
-        this.#onEvent('error', error);
-        return;
-      }
-
-      this.#protocolReady = true;
-      this.#onEvent('init', true);
-
-      const pendingFrames = this.#pendingFrames;
-      this.#pendingFrames = [];
-      for (const frame of pendingFrames) this.#decodeFrame(frame);
-
-      this.send('INFO');
+      const { data } = await this.#fetch.get({ url: `http://${this.#ip}/protocol.json` });
+      definition = data;
     } catch (error) {
-      this.#onEvent('error', error);
+      this.#protocolReady = false;
+      this.#onEvent('compatibility-warning', {
+        reason: 'protocol-unavailable',
+        message: 'No protocol.json was found; device data decoding is unavailable.',
+      });
       console.warn(errorMessage(error));
+      return;
     }
+
+    try {
+      this.#protocol.initialize(definition);
+    } catch (error) {
+      this.#protocolReady = false;
+      this.#onEvent('error', error);
+      return;
+    }
+
+    this.#protocolReady = true;
+    this.#onEvent('init', true);
+
+    const pendingFrames = this.#pendingFrames;
+    this.#pendingFrames = [];
+    for (const frame of pendingFrames) this.#decodeFrame(frame);
+
+    this.send('INFO');
   }
 
   async loadFile(url: string) {

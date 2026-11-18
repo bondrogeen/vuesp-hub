@@ -136,20 +136,6 @@ declare module 'vue-router/auto-routes' {
       Record<never, never>,
       | never
     >,
-    '/device/main': RouteRecordInfo<
-      '/device/main',
-      '/device/main',
-      Record<never, never>,
-      Record<never, never>,
-      | never
-    >,
-    '/device/profile': RouteRecordInfo<
-      '/device/profile',
-      '/device/profile',
-      Record<never, never>,
-      Record<never, never>,
-      | never
-    >,
     '/device/raw': RouteRecordInfo<
       '/device/raw',
       '/device/raw',
@@ -313,22 +299,6 @@ declare module 'vue-router/auto-routes' {
     'frontend/pages/device/list/index.vue': {
       routes:
         | '/device/list/'
-      views:
-        | never
-      pathParamNames:
-        | never
-    }
-    'frontend/pages/device/main.vue': {
-      routes:
-        | '/device/main'
-      views:
-        | never
-      pathParamNames:
-        | never
-    }
-    'frontend/pages/device/profile.vue': {
-      routes:
-        | '/device/profile'
       views:
         | never
       pathParamNames:

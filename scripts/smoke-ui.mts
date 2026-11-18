@@ -31,9 +31,9 @@ const tiles = [
     type: 'button',
     icon: 'bulb',
     args: ['device.output', 'device'],
-    get: '(v & 1 ? 0 : 1)',
+    get: '(a & 1 ? 0 : 1)',
     getTo: "v ? 'ON' : 'OFF'",
-    set: '({...a, output: v ? (a.output &= ~1) : (a.output |= 1), command: 2 })',
+    set: '({...a, output: v ? (a.output &= ~1) : (a.output |= 1), command: CMD.SET })',
   },
 ];
 
@@ -52,7 +52,7 @@ class FakeManager extends EventEmitter {
       ],
     }];
   }
-  getList() { return [{ id: 1, ip: '192.0.2.5', name: 'Lamp', list: tiles }]; }
+  getList() { return [{ id: 1, ip: '192.0.2.5', name: 'Lamp', list: tiles, enums: { KEY: { DEVICE: 13, PORT: 9 }, CMD: { SET: 2 }, PORT: { INPUT: 1, OUTPUT: 4 } } }]; }
   onSend(target: string, comm: string, data?: unknown) { sends.push({ target, comm, data }); return true; }
   onSendAll() { return true; }
 }

@@ -1,18 +1,7 @@
-export type TIconName =
-  | 'more'
-  | 'search'
-  | 'refresh'
-  | 'dashboard'
-  | 'cpu'
-  | 'video'
-  | 'list-check'
-  | 'home'
-  | 'script'
-  | 'storage'
-  | 'gpio'
-  | 'user'
-  | 'settings'
-  | 'box';
+import { ICON_NAMES } from 'vuesp-components/components';
+
+export type TIconName = (typeof ICON_NAMES)[number];
+
 
 export interface IMenuChildType {
   name: string;

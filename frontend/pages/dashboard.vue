@@ -35,7 +35,7 @@
             @setState="onSetState(device, tile, $event)"
           >
             <template #icon="{ icon }">
-              <DeviceTileIcon :name="icon" />
+              <VIcon :name="tileViewIcon(icon)" class="size-full" />
             </template>
           </component>
         </div>
@@ -52,14 +52,13 @@ import type { Component } from 'vue';
 import { computed, onMounted, watch } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useI18n } from 'vue-i18n';
-import { BlockBreadcrumb as VBreadcrumb, CardButton, CardDate, CardDimmer, CardInfo, CardInput, CardList, VCard } from 'vuesp-components/components';
+import { BlockBreadcrumb as VBreadcrumb, CardButton, CardDate, CardDimmer, CardInfo, CardInput, CardList, VCard, VIcon } from 'vuesp-components/components';
 import type { IDashboardItem, IResolvedDashboardItem } from 'vuesp-dashboard-core';
 
-import DeviceTileIcon from '@/components/dashboard/DeviceTileIcon.vue';
 import { useWebSocketStore } from '@/stores/WebSocketStore';
 import type { TDeviceMain } from '@/stores/WebSocketStore';
 import type { IDeviceListItem } from '@/types';
-import { buildTileCommands, resolveTiles } from '../../shared/dashboardTiles.ts';
+import { buildTileCommands, resolveTiles, tileViewIcon } from '../../shared/dashboardTiles.ts';
 import { isRecordValue } from '../../shared/device.ts';
 
 const { t } = useI18n();
@@ -108,7 +107,8 @@ const sections = computed(() =>
       ip: device.ip,
       name: device.name,
       online: isOnline(main),
-      items: resolveTiles(device.list ?? [], main),
+      enums: device.enums,
+      items: resolveTiles(device.list ?? [], main, device.enums),
     };
   }),
 );
@@ -116,7 +116,7 @@ const sections = computed(() =>
 const isLoading = computed(() => serviceRunning.value && !list.value.length);
 
 const onSetState = (device: IDeviceListItem, item: IDashboardItem, value: unknown): void => {
-  for (const command of buildTileCommands(item, value, mainFor(device))) {
+  for (const command of buildTileCommands(item, value, mainFor(device), device.enums)) {
     webSocketStore.sendDevice({ ip: device.ip, comm: command.comm, data: command.data }, ack => {
       if (ack.status !== 'success') console.warn(`Device command ${command.comm} failed for ${device.ip}: ${ack.message ?? ack.status}`);
     });

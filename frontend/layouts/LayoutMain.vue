@@ -4,7 +4,7 @@
 
     <div class="hub-shell flex h-screen overflow-hidden">
       <AppAside :isSidebar="sidebarToggle" @sidebar="sidebarToggle = $event">
-        <HubNav :groups="getMenu" :is-sidebar="sidebarToggle" :full-path="route.path" @sidebar="sidebarToggle = $event" />
+        <AppNav :groups="getMenu" :is-sidebar="sidebarToggle" :full-path="route.path" @sidebar="sidebarToggle = $event" />
         <div class="mt-auto pt-4 text-xs text-gray-main dark:text-gray-dark-25" :class="sidebarToggle ? 'lg:hidden' : ''">
           {{ t('common.appName') }}
         </div>
@@ -20,11 +20,65 @@
           <span class="hub-scan" />
         </div>
 
-        <HubHeader
+        <AppHeader
           :notifications="headerNotifications"
+          :change-theme="appStore.changeTheme"
+          :show-logout="false"
           @sidebar="sidebarToggle = !sidebarToggle"
           @notif="isNotificationsOpen = !isNotificationsOpen"
-        />
+        >
+          <template #status>
+            <div class="hidden items-center gap-2 text-xs text-gray-dark-25 dark:text-gray-main lg:flex">
+              <span class="h-2 w-2 rounded-full bg-emerald-500 shadow-green-ring"></span>
+              <span>{{ t('header.localHub') }}</span>
+            </div>
+          </template>
+
+          <template #actions>
+            <button
+              type="button"
+              class="flex h-10 min-w-10 items-center justify-center rounded-md px-2 text-xs font-semibold uppercase text-gray-dark-25 transition hover:bg-gray-light-30 hover:text-gray-dark-40 dark:text-gray-main dark:hover:bg-white/5 dark:hover:text-white"
+              :aria-label="t('common.language')"
+              @click="toggleLocale"
+            >
+              {{ locale }}
+            </button>
+          </template>
+
+          <template #account>
+            <VDropdown left="unset" right="0" top="calc(100% + 10px)" :title="t('common.account')">
+              <template #activator="{ on }">
+                <button type="button" class="flex items-center gap-2 rounded-md p-1.5 pr-2 text-left transition hover:bg-gray-light-30 dark:hover:bg-white/5" @click="on.click($event)">
+                  <span class="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-cyan-main to-blue-main text-xs font-semibold uppercase text-white shadow-sm">{{ initials }}</span>
+                  <span class="hidden min-w-0 sm:block">
+                    <span class="block truncate text-sm font-medium text-gray-dark-40 dark:text-white">{{ username }}</span>
+                    <span class="block text-xs text-gray-dark-25 dark:text-gray-main">{{ roleLabel }}</span>
+                  </span>
+                  <VIcon name="chevron-down" class="hidden size-4 text-gray-main sm:block" />
+                </button>
+              </template>
+
+              <template #default="{ hide }">
+                <div class="glass-popover w-[min(28rem,calc(100vw-2rem))] overflow-hidden rounded-[10px] lg:w-64">
+                  <div class="border-b border-gray-light-10/70 px-4 py-3 dark:border-white/10">
+                    <p class="truncate text-sm font-semibold text-gray-dark-40 dark:text-white">{{ username }}</p>
+                    <p class="mt-0.5 text-xs text-gray-dark-25 dark:text-gray-main">{{ roleLabel }}</p>
+                  </div>
+                  <div class="p-1.5">
+                    <button type="button" class="flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-left text-sm text-gray-dark-30 transition hover:bg-gray-light-30 dark:text-gray-light-10 dark:hover:bg-white/5" @click="goProfile(hide)">
+                      <VIcon name="user" class="size-4 text-gray-main" />
+                      {{ t('header.profile') }}
+                    </button>
+                    <button type="button" class="flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-left text-sm text-red-600 transition hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950/40" @click="onLogout(hide)">
+                      <VIcon name="logout" class="size-4" />
+                      {{ t('header.signOut') }}
+                    </button>
+                  </div>
+                </div>
+              </template>
+            </VDropdown>
+          </template>
+        </AppHeader>
 
         <AppNotification
           :value="isNotificationsOpen"
@@ -55,26 +109,39 @@
 <script setup lang="ts">
 import { ref, provide, computed, onMounted, onUnmounted, watch } from 'vue';
 import { storeToRefs } from 'pinia';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { useAppStore } from '@/stores/AppStore';
 import { useWebSocketStore } from '@/stores/WebSocketStore';
 
 import { api } from '@/utils/helpers.ts';
-import { isAdmin } from '@/utils/auth.ts';
+import { getRole, getUsername, isAdmin, logout } from '@/utils/auth.ts';
+import { setLocale } from '@/i18n/index.ts';
 import { useAccessStore } from '@/stores/AccessStore.ts';
 import { createDeviceMenu } from '@/utils/deviceMenu.ts';
 import { withTrailingSlash } from '@/utils/path.ts';
 
 import AppDialog from '@/components/app/AppDialog.vue';
-import HubHeader from '@/components/app/HubHeader.vue';
-import HubNav from '@/components/app/HubNav.vue';
-import { AppAside, AppNotification, VButton } from 'vuesp-components/components';
+import { AppAside, AppHeader, AppNav, AppNotification, VButton, VDropdown, VIcon } from 'vuesp-components/components';
 import type { IDeviceRecord, IMenuChildType, IMenuItemType, IModuleSummary } from '@/types';
 import type { INotification } from 'vuesp-components/types';
 
 const route = useRoute();
-const { t } = useI18n();
+const router = useRouter();
+const { t, locale } = useI18n();
+
+const username = computed(() => getUsername() || 'admin');
+const roleLabel = computed(() => t(`admin.roles.${getRole()}`));
+const initials = computed(() => username.value.slice(0, 2).toUpperCase());
+const toggleLocale = (): void => setLocale(locale.value === 'ru' ? 'en' : 'ru');
+const goProfile = (hide: (event: Event) => void) => {
+  hide(new Event('click'));
+  void router.push('/profile');
+};
+const onLogout = (hide: (event: Event) => void) => {
+  hide(new Event('click'));
+  logout();
+};
 
 const webSocketStore = useWebSocketStore();
 const appStore = useAppStore();

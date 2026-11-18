@@ -79,7 +79,7 @@ const { t } = useI18n();
 const currentRole = getRole();
 
 const features = [
-  { icon: 'cpu', title: 'landing.features.devices.title', text: 'landing.features.devices.text' },
+  { icon: 'layout-grid', title: 'landing.features.devices.title', text: 'landing.features.devices.text' },
   { icon: 'video', title: 'landing.features.cameras.title', text: 'landing.features.cameras.text' },
   { icon: 'storage', title: 'landing.features.local.title', text: 'landing.features.local.text' },
   { icon: 'settings', title: 'landing.features.roles.title', text: 'landing.features.roles.text' },

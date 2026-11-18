@@ -104,3 +104,17 @@ test('ignores tiles without a command payload', () => {
   const primitive: IDashboardItem = { id: 'value', name: 'value', type: 'input', args: ['settings.foo'], set: 'v' };
   assert.deepEqual(buildTileCommands(primitive, 1, state), []);
 });
+
+test('evaluates CMD, KEY and PORT constants from the device protocol', () => {
+  const enums = { KEY: { PORT: 9 }, CMD: { SET: 2 }, PORT: { INPUT: 1, OUTPUT: 4 } };
+  const item: IDashboardItem = {
+    ...button,
+    set: '({ ...b, output: v, command: CMD.SET })',
+    getTo: 'PORT.OUTPUT === 4 ? "ON" : "OFF"',
+  };
+
+  assert.deepEqual(buildTileCommands(item, 1, state, enums), [
+    { comm: 'DEVICE', data: { output: 1, command: 2 } },
+  ]);
+  assert.equal(resolveTiles([item], state, enums)[0].valueTo, 'ON');
+});

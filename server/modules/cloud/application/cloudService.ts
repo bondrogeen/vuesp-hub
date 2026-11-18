@@ -106,6 +106,7 @@ export interface ICloudServiceOptions {
 /** The cloud channel needs the runtime's event stream plus device list/commands. */
 export interface ICloudRuntime extends ITelemetryEventSource {
   getList(): unknown[];
+  getEnums?(target: string): Record<string, Record<string, number>> | null;
   send(target: string, command: string, data?: Record<string, unknown>): boolean;
   sendAll(command: string, data?: Record<string, unknown>): boolean;
 }
@@ -256,7 +257,7 @@ export const createCloudService = ({
     for (const record of records) {
       if (remaining <= 0) break;
       const entry = list.get(record.ip);
-      const resolved = resolvePublicTiles(entry?.list, sender?.getState(record.ip) ?? {}, record.uuid);
+      const resolved = resolvePublicTiles(entry?.list, sender?.getState(record.ip) ?? {}, record.uuid, runtime.getEnums?.(record.ip));
       const tiles = (allowed ? resolved.filter(tile => allowed.has(tile.key)) : resolved).slice(0, remaining);
       if (!tiles.length) continue;
       selected.set(record.ip, tiles);
@@ -274,7 +275,7 @@ export const createCloudService = ({
       name: record.name || record.ip,
       ip: record.ip,
       online: list.has(record.ip),
-      tiles: resolvePublicTiles(list.get(record.ip)?.list, sender?.getState(record.ip) ?? {}, record.uuid),
+      tiles: resolvePublicTiles(list.get(record.ip)?.list, sender?.getState(record.ip) ?? {}, record.uuid, runtime.getEnums?.(record.ip)),
     }));
 
     const defaults = devices
@@ -362,7 +363,7 @@ export const createCloudService = ({
       }
       if (!isRecordValue(item)) return { ok: false, error: 'Unknown tile' };
 
-      const commands = buildTileCommands(item as unknown as IDashboardItem, value, sender?.getState(record.ip) ?? {});
+      const commands = buildTileCommands(item as unknown as IDashboardItem, value, sender?.getState(record.ip) ?? {}, runtime.getEnums?.(record.ip));
       if (!commands.length) return { ok: false, error: 'This tile cannot be changed' };
 
       let ok = true;

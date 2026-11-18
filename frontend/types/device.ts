@@ -34,6 +34,7 @@ export interface IDeviceListItem {
   ip: string;
   name: string;
   list?: IDeviceListEntry[];
+  enums?: Record<string, Record<string, number>>;
 }
 
 export interface IDeviceListEntry extends IDashboardItem {

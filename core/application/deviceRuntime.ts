@@ -8,6 +8,7 @@ export interface IDeviceConnectionManager {
   disconnection(): void;
   getMenu(): unknown[];
   getList(): unknown[];
+  getEnums(target: string): Record<string, Record<string, number>> | null;
   onSend(target: string, command: string, data?: TDeviceCommandPayload): boolean;
   onSendAll(command: string, data?: TDeviceCommandPayload): boolean;
 }
@@ -99,5 +100,9 @@ export class DeviceRuntime<TDevice> extends EventEmitter {
   getList(): unknown[] {
     if (!this.manager) throw new Error('Device service is not running');
     return this.manager.getList();
+  }
+
+  getEnums(target: string): Record<string, Record<string, number>> | null {
+    return this.manager?.getEnums(target) ?? null;
   }
 }

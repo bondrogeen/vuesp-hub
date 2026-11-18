@@ -8,6 +8,8 @@ import type {
 
 import { isRecordValue } from './device.ts';
 
+export type TProtocolEnums = Record<string, Record<string, number>>;
+
 export interface IDashboardCommand {
   comm: string;
   data: Record<string, unknown>;
@@ -63,6 +65,13 @@ const evaluate: TDashboardEvaluator = (body, scope) => {
   return fn(...Object.values(scope));
 };
 
+const withEnums = (enums?: TProtocolEnums | null): TDashboardEvaluator => {
+  if (!enums) return evaluate;
+
+  const extra = { CMD: enums.CMD, KEY: enums.KEY, PORT: enums.PORT };
+  return (body, scope) => evaluate(body, { ...extra, ...scope });
+};
+
 /** Maps the first path segment of dashboard `args` to the device message key. */
 const messageKeys: Record<string, string> = {
   device: 'DEVICE',
@@ -77,14 +86,14 @@ const messageKeys: Record<string, string> = {
   slots: 'MESSAGE',
 };
 
-export const resolveTiles = (items: IDashboardItem[], main: unknown): IResolvedDashboardItem[] =>
-  items.map(item => resolveDashboardItem(item, main, evaluate));
+export const resolveTiles = (items: IDashboardItem[], main: unknown, enums?: TProtocolEnums | null): IResolvedDashboardItem[] =>
+  items.map(item => resolveDashboardItem(item, main, withEnums(enums)));
 
 /**
  * Resolves dashboard items for publication. A single broken expression must
  * not hide the whole device dashboard, so bad tiles are skipped individually.
  */
-export const resolvePublicTiles = (items: unknown, main: unknown, deviceId = ''): IPublicDashboardTile[] => {
+export const resolvePublicTiles = (items: unknown, main: unknown, deviceId = '', enums?: TProtocolEnums | null): IPublicDashboardTile[] => {
   if (!Array.isArray(items)) return [];
 
   const tiles: IPublicDashboardTile[] = [];
@@ -92,7 +101,7 @@ export const resolvePublicTiles = (items: unknown, main: unknown, deviceId = '')
     if (!isRecordValue(item)) return;
     try {
       const key = `${deviceId}:${index}`;
-      tiles.push(toPublicTile(resolveDashboardItem(item as unknown as IDashboardItem, main, evaluate), key));
+      tiles.push(toPublicTile(resolveDashboardItem(item as unknown as IDashboardItem, main, withEnums(enums)), key));
     } catch {
       // Skip a tile that cannot be resolved against the current state.
     }
@@ -135,8 +144,8 @@ const commandKey = (item: IDashboardItem, result: Record<string, unknown>): stri
  * dashboard item may return either a plain payload or a `{ key, object }`
  * pair; when the key is absent it is derived from the item `args` path.
  */
-export const buildTileCommands = (item: IDashboardItem, value: unknown, main: unknown): IDashboardCommand[] => {
-  const result = buildDashboardCommands(item, value, main, evaluate);
+export const buildTileCommands = (item: IDashboardItem, value: unknown, main: unknown, enums?: TProtocolEnums | null): IDashboardCommand[] => {
+  const result = buildDashboardCommands(item, value, main, withEnums(enums));
   const results = Array.isArray(result) ? result : [result];
   const commands: IDashboardCommand[] = [];
 

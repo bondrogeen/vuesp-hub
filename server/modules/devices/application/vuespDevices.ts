@@ -1,5 +1,6 @@
 import { EventEmitter } from 'node:events';
 import Device from './vuespDevice.ts';
+import type { TProtocolEnums } from '@server/modules/devices/domain/protocols/deviceProtocol.ts';
 import type { TDeviceCommandPayload, IDeviceConnectionRecord } from '@root/shared/device.ts';
 
 interface DeviceEvent {
@@ -82,11 +83,16 @@ class VuespDevices extends EventEmitter {
   }
 
   getList() {
-    const list: Array<{ id: number; ip: string; name: string; list: unknown[] }> = [];
+    const list: Array<{ id: number; ip: string; name: string; list: unknown[]; enums: TProtocolEnums }> = [];
     this.#devices.forEach(device => {
-      list.push({ id: device.id, ip: device.ip, name: device.name, list: device.list })
+      list.push({ id: device.id, ip: device.ip, name: device.name, list: device.list, enums: device.enums })
     });
     return list
+  }
+
+  getEnums(find: string): TProtocolEnums | null {
+    const device = this.#devices.find(device => device.name === find || device.ip === find);
+    return device ? device.enums : null;
   }
 
   onSend(find: string, comm: string, data?: TDeviceCommandPayload) {

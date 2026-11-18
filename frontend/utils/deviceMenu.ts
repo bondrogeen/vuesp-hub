@@ -43,7 +43,7 @@ export const getDeviceMenuLabel = (name: string, t: Translate): string => {
   return key ? t(key) : humanizeMenuName(name);
 };
 
-export const getDeviceMenuIcon = (icon?: string): TIconName => iconNames[icon ?? ''] ?? 'cpu';
+export const getDeviceMenuIcon = (icon?: string): TIconName => iconNames[icon ?? ''] ?? 'layout-grid';
 
 export const normalizeDeviceMenuPath = (path?: string): string => normalizePath(path);
 
@@ -63,7 +63,7 @@ export const createDeviceMenu = (menus: IDeviceMenu[], t: Translate, devices: Ar
 
   const deviceItems: IMenuChildType[] = [...known.values()].map(device => ({
     name: device.name,
-    icon: 'cpu',
+    icon: 'layout-grid',
     path: `/device/${encodeURIComponent(device.ip)}/`,
     ...(device.menu?.length ? { children: device.menu.map(item => toDeviceMenuItem(item, device.ip, t)) } : {}),
   }));
@@ -84,7 +84,7 @@ export const createDeviceMenu = (menus: IDeviceMenu[], t: Translate, devices: Ar
       items: [
         {
           name: t('common.devices'),
-          icon: 'cpu',
+          icon: 'layout-grid',
           path: '/device/list/',
           ...(deviceItems.length ? { children: deviceItems } : {}),
         },

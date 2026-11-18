@@ -94,19 +94,18 @@ test('disconnect cancels pending retries and is safe before a connection exists'
   assert.equal(FakeWebSocket.instances.length, 1);
 });
 
-test('device transport encodes INFO and forwards declared legacy state without interpreting it', async () => {
+test('device transport encodes INFO and forwards declared device state without interpreting it', async () => {
   const definition = {
-    keys: ['INFO', 'CUSTOM'],
+    enums: { KEY: { INFO: 0, CUSTOM: 1 } },
     structs: {
-      Init: [{ type: 'uint8_t', name: 'key' }],
       Info: [
-        { type: 'uint8_t', name: 'key' },
-        { type: 'uint32_t', name: 'id' },
-        { type: 'uint8_t', name: 'firmware', length: 3 },
+        { name: 'key', type: 'uint8_t' },
+        { name: 'id', type: 'uint32_t' },
+        { name: 'firmware', type: 'uint8_t', dimensions: [3] },
       ],
       Custom: [
-        { type: 'uint8_t', name: 'key' },
-        { type: 'uint16_t', name: 'value' },
+        { name: 'key', type: 'uint8_t' },
+        { name: 'value', type: 'uint16_t' },
       ],
     },
   };
@@ -116,7 +115,7 @@ test('device transport encodes INFO and forwards declared legacy state without i
       WebSocketClass: FakeWebSocket,
       fetchClient: {
         get: async ({ url }) => {
-          if (url.endsWith('/struct.json')) return { data: definition };
+          if (url.endsWith('/protocol.json')) return { data: definition };
           if (url.endsWith('/menu.json')) return { data: [] };
           return { data: [] };
         },
@@ -151,15 +150,15 @@ test('device transport encodes INFO and forwards declared legacy state without i
 
 test('device transport retries after a socket error and ignores later events from the stale socket', async () => {
   const definition = {
-    keys: ['INFO', 'CUSTOM'],
+    enums: { KEY: { INFO: 0, CUSTOM: 1 } },
     structs: {
       Info: [
-        { type: 'uint8_t', name: 'key' },
-        { type: 'uint32_t', name: 'id' },
+        { name: 'key', type: 'uint8_t' },
+        { name: 'id', type: 'uint32_t' },
       ],
       Custom: [
-        { type: 'uint8_t', name: 'key' },
-        { type: 'uint16_t', name: 'value' },
+        { name: 'key', type: 'uint8_t' },
+        { name: 'value', type: 'uint16_t' },
       ],
     },
   };
@@ -171,7 +170,7 @@ test('device transport retries after a socket error and ignores later events fro
       fetchClient: {
         get: async ({ url }) => {
           fetchCalls += 1;
-          if (url.endsWith('/struct.json')) return { data: definition };
+          if (url.endsWith('/protocol.json')) return { data: definition };
           if (url.endsWith('/menu.json')) return { data: [] };
           return { data: [] };
         },
@@ -225,8 +224,8 @@ test('device transport does not send INFO when the device protocol definition is
       WebSocketClass: FakeWebSocket,
       fetchClient: {
         get: async ({ url }) => {
-          if (url.endsWith('/struct.json')) {
-            return { data: { keys: ['INFO'], structs: { Info: [{ name: 'key' }] } } };
+          if (url.endsWith('/protocol.json')) {
+            return { data: { enums: { KEY: { INFO: 0 } }, structs: { Info: [{ name: 'key' }] } } };
           }
           if (url.endsWith('/menu.json')) return { data: [] };
           return { data: [] };
@@ -252,17 +251,17 @@ test('device transport does not send INFO when the device protocol definition is
 
   assert.equal(FakeWebSocket.instances[0].sent.length, 0);
   assert.equal(errors.length, 1);
-  assert.match(String(errors[0]), /Legacy protocol struct fields are invalid/);
+  assert.match(String(errors[0]), /Device protocol struct Info is invalid/);
 });
 
 test('loads the device dashboard into tile list and tags events with ip and name', async () => {
   const definition = {
-    keys: ['INFO'],
+    enums: { KEY: { INFO: 0 } },
     structs: {
       Info: [
-        { type: 'uint8_t', name: 'key' },
-        { type: 'uint32_t', name: 'id' },
-        { type: 'uint8_t', name: 'firmware', length: 3 },
+        { name: 'key', type: 'uint8_t' },
+        { name: 'id', type: 'uint32_t' },
+        { name: 'firmware', type: 'uint8_t', dimensions: [3] },
       ],
     },
   };
@@ -283,9 +282,9 @@ test('loads the device dashboard into tile list and tags events with ip and name
       WebSocketClass: FakeWebSocket,
       fetchClient: {
         get: async ({ url }) => {
-          if (url.endsWith('/struct.json')) return { data: definition };
+          if (url.endsWith('/protocol.json')) return { data: definition };
           if (url.includes('/fs?file=/tmp/dashboard.json')) throw new Error('not found');
-          if (url.endsWith('/default.json')) return { data: { struct: definition, dashboard, menu: [] } };
+          if (url.endsWith('/default.json')) return { data: { dashboard, menu: [] } };
           if (url.endsWith('/menu.json')) return { data: [] };
           return { data: [] };
         },

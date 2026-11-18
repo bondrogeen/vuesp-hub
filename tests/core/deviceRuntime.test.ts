@@ -24,6 +24,10 @@ class FakeDeviceManager extends EventEmitter implements IDeviceConnectionManager
     return [];
   }
 
+  getEnums(_target: string): Record<string, Record<string, number>> | null {
+    return null;
+  }
+
   onSend(): boolean {
     return true;
   }
