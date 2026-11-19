@@ -1,5 +1,5 @@
 import { changeTheme as applyTheme, jsonParse, jsonString } from 'vuesp-components/helpers';
-import { clearToken, getToken } from './auth.ts';
+import { clearSession } from './auth.ts';
 import { translate } from '@/i18n/index.ts';
 
 export const localGet = (name: string, isJSON = false) => {
@@ -34,12 +34,14 @@ const headers = { 'Content-Type': 'application/json;charset=utf-8' };
 export const apiFetch = async <T>(path: string, init?: RequestInit): Promise<T> => {
   const requestHeaders = new Headers(headers);
   new Headers(init?.headers).forEach((value, key) => requestHeaders.set(key, value));
-  const token = getToken();
-  if (token) requestHeaders.set('Authorization', `Bearer ${token}`);
 
-  const response = await fetch(`${basePath}${path}`, { ...init, headers: requestHeaders });
+  const response = await fetch(`${basePath}${path}`, {
+    ...init,
+    headers: requestHeaders,
+    credentials: 'same-origin',
+  });
   if (response.status === 401 && path !== '/auth/login') {
-    clearToken();
+    clearSession();
     if (typeof window !== 'undefined' && window.location.pathname !== '/auth/login/') {
       window.location.assign('/auth/login/');
     }

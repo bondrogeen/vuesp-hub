@@ -1,7 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import { routes, handleHotUpdate } from 'vue-router/auto-routes';
 
-import { getMustChangePassword, getToken } from '@/utils/auth.ts';
+import { getMustChangePassword, isAuthenticated } from '@/utils/auth.ts';
 import { useAccessStore } from '@/stores/AccessStore.ts';
 import { withTrailingSlash, withoutTrailingSlash } from '@/utils/path.ts';
 
@@ -48,7 +48,7 @@ router.beforeEach(async to => {
   }
 
   const path = withoutTrailingSlash(to.path);
-  const token = getToken();
+  const token = isAuthenticated();
   const mustChangePassword = getMustChangePassword();
   const isAuthRoute = path.startsWith('/auth');
 

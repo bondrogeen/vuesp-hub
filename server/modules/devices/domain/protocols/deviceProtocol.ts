@@ -7,9 +7,12 @@ export interface IProtocolField {
 }
 
 export interface IProtocolDefinition {
+  protocolVersion?: number;
   enums: TProtocolEnums;
   structs: Record<string, IProtocolField[]>;
 }
+
+export const SUPPORTED_PROTOCOL_VERSION = 2;
 
 export type TProtocolEnums = Record<string, Record<string, number>>;
 
@@ -37,6 +40,9 @@ const isProtocolField = (value: unknown): value is IProtocolField =>
 
 export const parseProtocolDefinition = (value: unknown): IProtocolDefinition => {
   if (!isRecord(value)) throw new TypeError('Device protocol definition must be an object');
+  if (value.protocolVersion !== undefined && value.protocolVersion !== SUPPORTED_PROTOCOL_VERSION) {
+    throw new TypeError(`Unsupported device protocol version: ${String(value.protocolVersion)}`);
+  }
   if (!isRecord(value.enums)) throw new TypeError('Device protocol enums must be an object');
   if (!isRecord(value.structs)) throw new TypeError('Device protocol structs must be an object');
 
@@ -55,7 +61,7 @@ export const parseProtocolDefinition = (value: unknown): IProtocolDefinition => 
     structs[name] = fields;
   }
 
-  return { enums, structs };
+  return { ...(value.protocolVersion === undefined ? {} : { protocolVersion: SUPPORTED_PROTOCOL_VERSION }), enums, structs };
 };
 
 export class DeviceProtocol {

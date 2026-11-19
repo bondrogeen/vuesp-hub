@@ -33,7 +33,7 @@ import { useI18n } from 'vue-i18n';
 import { VButton, VTextField, VCard } from 'vuesp-components/components';
 
 import { api } from '@/utils/helpers.ts';
-import { logout, setToken, type IAuthSession } from '@/utils/auth.ts';
+import { logout, setSession, type IAuthSession } from '@/utils/auth.ts';
 
 const { t } = useI18n();
 
@@ -43,7 +43,7 @@ const confirmPassword = ref('');
 const isLoading = ref(false);
 const errorMessage = ref('');
 
-const onLogout = () => logout();
+const onLogout = () => void logout();
 
 const onSubmit = async (): Promise<void> => {
   if (isLoading.value) return;
@@ -63,7 +63,7 @@ const onSubmit = async (): Promise<void> => {
     const session = await api.post<IAuthSession>('/auth/change-password', {
       body: JSON.stringify({ currentPassword: currentPassword.value, newPassword: newPassword.value }),
     });
-    setToken(session.token);
+    setSession(session);
     window.location.assign('/');
   } catch (cause) {
     errorMessage.value = cause instanceof Error ? cause.message : t('auth.changePasswordFailed');

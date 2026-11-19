@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
-import { buildTileCommands, resolvePublicTiles, resolveTiles } from '../../shared/dashboardTiles.ts';
+import { buildTileCommands, resolvePublicTiles, resolveTiles, resolveTilesSafe } from '../../shared/dashboardTiles.ts';
 import type { IDashboardItem } from 'vuesp-dashboard-core';
 
 const state = {
@@ -117,4 +117,26 @@ test('evaluates CMD, KEY and PORT constants from the device protocol', () => {
     { comm: 'DEVICE', data: { output: 1, command: 2 } },
   ]);
   assert.equal(resolveTiles([item], state, enums)[0].valueTo, 'ON');
+});
+
+test('skips a dangerous tile without hiding the rest of the dashboard', () => {
+  const items: IDashboardItem[] = [
+    { id: 'safe', name: 'safe', type: 'info', args: ['device.output'], get: 'a & 1' },
+    { id: 'danger', name: 'danger', type: 'info', args: ['device.output'], get: 'process.exit(1)' },
+  ];
+  const tiles = resolvePublicTiles(items, state, 'uuid-1');
+  assert.equal(tiles.length, 1);
+  assert.equal(tiles[0]?.key, 'uuid-1:0');
+  assert.equal(tiles[0]?.value, 1);
+});
+
+
+test('resolveTilesSafe skips a broken expression and keeps valid tiles', () => {
+  const items: IDashboardItem[] = [
+    { id: 'safe', name: 'safe', type: 'info', args: ['device.output'], get: 'a & 1' },
+    { id: 'broken', name: 'broken', type: 'info', args: ['device.output'], get: 'process.exit(1)' },
+  ];
+  const tiles = resolveTilesSafe(items, state);
+  assert.equal(tiles.length, 1);
+  assert.equal(tiles[0]?.id, 'safe');
 });

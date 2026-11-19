@@ -221,3 +221,64 @@ test('downloads and verifies module assets', async () => {
     await rm(root, { recursive: true, force: true });
   }
 });
+
+test('module manifest v2 supports kind, requires and scoped permissions', async () => {
+  const root = await mkdtemp(path.join(tmpdir(), 'vuesp-module-v2-'));
+  const modulesDirectory = path.join(root, 'modules');
+  const dataDirectory = path.join(root, 'data');
+  const source = path.join(root, 'hello');
+  await cp(path.resolve('modules-dev/hello'), source, { recursive: true });
+  const manifestPath = path.join(source, 'manifest.json');
+  const manifest = JSON.parse(await readFile(manifestPath, 'utf8')) as Record<string, unknown>;
+  await writeFile(manifestPath, JSON.stringify({
+    ...manifest,
+    apiVersion: 2,
+    kind: 'integration',
+    provides: ['demo:hello'],
+    requires: ['core:>=1.0 <2'],
+    permissions: ['storage:scoped'],
+  }, null, 2));
+
+  const host = createModuleHost({
+    modulesDirectory,
+    dataDirectory,
+    runnerPath: path.resolve('server/module-host/module-runner.cjs'),
+  });
+
+  try {
+    const installed = await host.install(source);
+    assert.equal(installed.apiVersion, 2);
+    assert.deepEqual(installed.provides, ['demo:hello']);
+    await host.start('vuesp-hub.hello');
+    assert.equal((await host.list())[0]?.running, true);
+  } finally {
+    await host.stopAll();
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+test('module host rejects unsupported versions and permissions', async () => {
+  const root = await mkdtemp(path.join(tmpdir(), 'vuesp-module-invalid-'));
+  const modulesDirectory = path.join(root, 'modules');
+  const dataDirectory = path.join(root, 'data');
+  const source = path.join(root, 'hello');
+  await cp(path.resolve('modules-dev/hello'), source, { recursive: true });
+  const manifestPath = path.join(source, 'manifest.json');
+  const manifest = JSON.parse(await readFile(manifestPath, 'utf8')) as Record<string, unknown>;
+
+  const host = createModuleHost({
+    modulesDirectory,
+    dataDirectory,
+    runnerPath: path.resolve('server/module-host/module-runner.cjs'),
+  });
+
+  try {
+    await writeFile(manifestPath, JSON.stringify({ ...manifest, apiVersion: 3 }));
+    await assert.rejects(() => host.install(source), /Unsupported module apiVersion/);
+    await writeFile(manifestPath, JSON.stringify({ ...manifest, apiVersion: 2, permissions: ['root'] }));
+    await assert.rejects(() => host.install(source), /permissions/);
+  } finally {
+    await host.stopAll();
+    await rm(root, { recursive: true, force: true });
+  }
+});

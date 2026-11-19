@@ -11,6 +11,10 @@ test('role page access uses one defaults table', () => {
   assert.equal(canAccess('viewer', '/admin/users/', DEFAULT_ROLE_PAGES.viewer), false);
   assert.equal(canAccess('user', '/admin/users/', DEFAULT_ROLE_PAGES.user), false);
   assert.equal(canAccess('viewer', '/device/raw/', DEFAULT_ROLE_PAGES.viewer), false);
+  assert.equal(canAccess('viewer', '/panels/', DEFAULT_ROLE_PAGES.viewer), false);
+  assert.equal(canAccess('viewer', '/areas/', DEFAULT_ROLE_PAGES.viewer), false);
+  assert.ok(canAccess('user', '/panels/', DEFAULT_ROLE_PAGES.user));
+  assert.ok(canAccess('user', '/areas/', DEFAULT_ROLE_PAGES.user));
   assert.ok(DEFAULT_ROLE_PAGES.viewer.includes('devices'));
 });
 

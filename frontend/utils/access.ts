@@ -3,6 +3,11 @@ import type { TUserRole } from './auth.ts';
 export const ACCESS_PAGES = [
   { key: 'dashboard', path: '/dashboard', label: 'access.pages.dashboard' },
   { key: 'devices', path: '/device', label: 'access.pages.devices' },
+  { key: 'areas', path: '/areas', label: 'access.pages.areas' },
+  { key: 'panels', path: '/panels', label: 'access.pages.panels' },
+  { key: 'automations', path: '/automations', label: 'access.pages.automations' },
+  { key: 'scripts', path: '/scripts', label: 'access.pages.scripts' },
+  { key: 'system', path: '/system', label: 'access.pages.system' },
   { key: 'raw', path: '/device/raw', label: 'access.pages.raw' },
   { key: 'modbus', path: '/modbus', label: 'access.pages.modbus' },
   { key: 'cloud', path: '/cloud', label: 'access.pages.cloud' },
@@ -16,7 +21,7 @@ export type TRolePages = Record<TUserRole, TAccessPage[]>;
 
 export const DEFAULT_ROLE_PAGES: TRolePages = {
   admin: ACCESS_PAGES.map(page => page.key),
-  user: ACCESS_PAGES.filter(page => page.key !== 'cloud').map(page => page.key),
+  user: ACCESS_PAGES.filter(page => page.key !== 'cloud' && page.key !== 'system').map(page => page.key),
   viewer: ['dashboard', 'devices', 'profile'],
 };
 

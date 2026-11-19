@@ -14,7 +14,7 @@
  */
 import { spawn } from 'node:child_process';
 import { randomBytes } from 'node:crypto';
-import { existsSync, mkdtempSync, readdirSync, rmSync, statSync } from 'node:fs';
+import { existsSync, mkdtempSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { createServer } from 'node:net';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
@@ -165,7 +165,9 @@ try {
   const secretKey = randomBytes(24).toString('hex');
 
   console.log('\nInstalling into a throw-away prefix...');
-  await run('npm', ['install', '--global', '--prefix', prefix, tarball, '--no-audit', '--no-fund', '--loglevel=error']);
+  // The smoke test verifies the package layout/API, not native postinstall
+  // downloads (ffmpeg/serialport); skipping scripts keeps it deterministic.
+  await run('npm', ['install', '--global', '--prefix', prefix, tarball, '--no-audit', '--no-fund', '--loglevel=error', '--ignore-scripts']);
 
   const bin = path.join(prefix, 'bin/vuesp-hub');
   assert(existsSync(bin), `bin shim missing: ${bin}`);
@@ -189,6 +191,12 @@ try {
     assert(response.text.includes('id="app"'), 'no SPA fallback');
   });
 
+  await check('GET /healthz reports a running core', async () => {
+    const response = await request(`${base}/healthz`);
+    assert(response.status === 200, `status ${response.status}: ${response.text}`);
+    assert(['starting', 'ready', 'degraded'].includes(response.json().status), 'unexpected health status');
+  });
+
   await check('GET /api/v1/auth/me rejects anonymous access', async () => {
     const response = await request(`${base}/api/v1/auth/me`);
     assert([401, 403].includes(response.status), `status ${response.status}`);
@@ -205,14 +213,26 @@ try {
     assert(typeof session.token === 'string' && session.token.length > 10, 'no token in response');
   });
 
+  let adminPassword = 'admin';
   const login = async () => {
     const response = await request(`${base}/api/v1/auth/login`, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ username: 'admin', password: 'admin' }),
+      body: JSON.stringify({ username: 'admin', password: adminPassword }),
     });
-    assert(response.status === 200, `login status ${response.status}`);
-    return response.json().token;
+    assert(response.status === 200, `login status ${response.status}: ${response.text}`);
+    const session = response.json();
+    if (!session.user?.mustChangePassword) return session.token;
+
+    const nextPassword = 'smoke-admin-123';
+    const changed = await request(`${base}/api/v1/auth/change-password`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', authorization: `Bearer ${session.token}` },
+      body: JSON.stringify({ currentPassword: adminPassword, newPassword: nextPassword }),
+    });
+    assert(changed.status === 200, `change password status ${changed.status}: ${changed.text}`);
+    adminPassword = nextPassword;
+    return changed.json().token;
   };
 
   await check('authenticated GET /api/v1/device returns an empty device list', async () => {
@@ -239,7 +259,7 @@ try {
     assert(modeOf(dataDir) === '700', `mode ${modeOf(dataDir)}`);
   });
 
-  for (const file of ['auth.json', 'jwt.secret', 'secret.salt']) {
+  for (const file of ['users.json', 'jwt.secret', 'secret.salt', 'state.sqlite', 'config.sqlite', 'history.sqlite']) {
     await check(`${file} is 0600`, async () => {
       const filePath = path.join(dataDir, file);
       assert(existsSync(filePath), 'file missing');
@@ -263,6 +283,31 @@ try {
     activeHub = await startHub({ bin, dataDir, port, secretKey });
     const token = await login();
     assert(token.length > 10, 'no token after restart');
+    const response = await request(`${base}/api/v1/device`, {
+      headers: { authorization: `Bearer ${token}` },
+    });
+    assert(response.status === 200, `status ${response.status}`);
+  });
+
+  console.log('\nPower-loss recovery');
+  await check('hub stops before the corruption scenario', async () => {
+    const result = await stopHub(activeHub);
+    activeHub = undefined;
+    assert(result.code === 0, `exit code ${result.code}`);
+  });
+
+  await check('truncated state.sqlite is quarantined and the hub starts', async () => {
+    writeFileSync(path.join(dataDir, 'state.sqlite'), 'not a sqlite database');
+    activeHub = await startHub({ bin, dataDir, port, secretKey });
+    const health = await request(`${base}/healthz`);
+    assert(health.status === 200, `healthz status ${health.status}: ${health.text}`);
+    assert(health.json().status === 'degraded' || health.json().status === 'ready', `unexpected status ${health.text}`);
+    const names = readdirSync(dataDir);
+    assert(names.some(name => name.includes('state.sqlite.corrupt-')), 'corrupted database was not quarantined');
+  });
+
+  await check('admin login works after storage recovery', async () => {
+    const token = await login();
     const response = await request(`${base}/api/v1/device`, {
       headers: { authorization: `Bearer ${token}` },
     });

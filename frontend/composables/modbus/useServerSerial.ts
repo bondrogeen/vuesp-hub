@@ -1,7 +1,6 @@
 import { ref } from 'vue';
 import { io, type Socket } from 'socket.io-client';
 
-import { getToken } from '@/utils/auth.ts';
 import { detectBrowser } from '@/utils/helpers.ts';
 import { translate } from '@/i18n/index.ts';
 import type { ISerialConfig, TSerialSelectOption, ISerialStatusPayload } from '@/types';
@@ -14,7 +13,7 @@ export const useServerSerial = (
   let serial: Socket | null = null;
 
   const init = (): void => {
-    const socket = io({ transports: ['websocket'], path: '/ws/serial', auth: { token: getToken() } });
+    const socket = io({ transports: ['websocket'], path: '/ws/serial' });
     serial = socket;
 
     socket.on('connect', () => {

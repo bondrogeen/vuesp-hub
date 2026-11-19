@@ -28,6 +28,10 @@ class FakeDeviceManager extends EventEmitter implements IDeviceConnectionManager
     return null;
   }
 
+  getState(_target: string): Record<string, unknown> | null {
+    return null;
+  }
+
   onSend(): boolean {
     return true;
   }

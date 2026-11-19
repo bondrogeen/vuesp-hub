@@ -306,3 +306,16 @@ test('loads the device dashboard into tile list and tags events with ip and name
   assert.equal(init?.ip, '192.0.2.30');
   assert.equal(init?.name, 'lamp');
 });
+
+test('device identity keeps the registry uuid separate from the numeric device id', () => {
+  const device = new Device(
+    { ip: '192.0.2.13', uuid: 'uuid-13', reconnectDelay: 10, maxReconnectDelay: 20 },
+    { WebSocketClass: FakeWebSocket },
+  );
+  devices.push(device);
+
+  assert.equal(device.uuid, 'uuid-13');
+  assert.equal(device.getInfo().uuid, 'uuid-13');
+  assert.equal(device.id, -1);
+  assert.equal(device.getStatus().uuid, 'uuid-13');
+});

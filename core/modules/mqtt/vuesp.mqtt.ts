@@ -63,7 +63,7 @@ export default class MqttModule {
       const [, , deviceId] = topic.split('/');
       const state: unknown = JSON.parse(message);
       this.core.log(`Received MQTT state for ${deviceId}`);
-      this.core.emit('mqtt:state', { deviceId, state });
+      this.core.emitEvent('mqtt:state', { deviceId, state, at: Date.now() });
     } catch (error) {
       this.core.log(`Error processing MQTT message: ${error instanceof Error ? error.message : String(error)}`, 'error');
     }

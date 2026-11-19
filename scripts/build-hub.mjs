@@ -24,15 +24,10 @@ await build({
   outfile: 'dist/index.cjs',
 });
 
-await build({
-  ...common,
-  entryPoints: ['core/modules/script/worker-script.ts'],
-  outfile: 'dist/worker-script.cjs',
-});
-
 await viteBuild({ configFile: 'vite.web.config.mjs', logLevel: 'info' });
 
 await copyFile('server/module-host/module-runner.cjs', 'dist/module-runner.cjs');
+await copyFile('server/modules/scripts/script-runner.cjs', 'dist/script-runner.cjs');
 
 await mkdir('dist/bin', { recursive: true });
 await writeFile(
@@ -65,14 +60,16 @@ const hubPackage = {
   engines: {
     node: '>=22.13.0',
   },
-  files: ['index.cjs', 'index.cjs.map', 'worker-script.cjs', 'worker-script.cjs.map', 'module-runner.cjs', 'web', 'bin'],
+  files: ['index.cjs', 'index.cjs.map', 'script-runner.cjs', 'module-runner.cjs', 'web', 'bin'],
   dependencies: {
     '@mhoc/axios-digest-auth': rootPackage.dependencies['@mhoc/axios-digest-auth'],
+    acorn: rootPackage.dependencies.acorn,
     'c-struct-to-json': rootPackage.dependencies['c-struct-to-json'],
     express: rootPackage.dependencies.express,
     'ffmpeg-static': rootPackage.dependencies['ffmpeg-static'],
     serialport: rootPackage.dependencies.serialport,
     'socket.io': rootPackage.dependencies['socket.io'],
+    'vuesp-dashboard-core': rootPackage.dependencies['vuesp-dashboard-core'],
     'vuesp-struct': rootPackage.dependencies['vuesp-struct'],
     tar: rootPackage.dependencies.tar,
     ws: rootPackage.dependencies.ws,
@@ -110,7 +107,7 @@ device credentials is refused with an explicit error.
 - \`--port <port>\` — HTTP/Socket.IO port, default \`3005\`
 - \`--data-dir <path>\` — database and settings directory
 - \`--static-dir <path>\` — override the bundled web UI directory
-- \`--worker-script <path>\` — override the script runner worker
+- \`--script-runner <path>\` — override the script runner process
 - \`--secret-key <key>\` — master key (alternative to \`VUESP_SECRET_KEY\`)
 
 Data defaults to \`$XDG_DATA_HOME/vuesp-hub\` (\`~/.local/share/vuesp-hub\` on Linux).

@@ -66,6 +66,13 @@ declare module 'vue-router/auto-routes' {
       Record<never, never>,
       | never
     >,
+    '/areas/': RouteRecordInfo<
+      '/areas/',
+      '/areas',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
     '/auth/change-password': RouteRecordInfo<
       '/auth/change-password',
       '/auth/change-password',
@@ -97,6 +104,13 @@ declare module 'vue-router/auto-routes' {
     '/auth/two-step-verification': RouteRecordInfo<
       '/auth/two-step-verification',
       '/auth/two-step-verification',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
+    '/automations/': RouteRecordInfo<
+      '/automations/',
+      '/automations',
       Record<never, never>,
       Record<never, never>,
       | never
@@ -136,6 +150,13 @@ declare module 'vue-router/auto-routes' {
       Record<never, never>,
       | never
     >,
+    '/device/objects': RouteRecordInfo<
+      '/device/objects',
+      '/device/objects',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
     '/device/raw': RouteRecordInfo<
       '/device/raw',
       '/device/raw',
@@ -164,9 +185,37 @@ declare module 'vue-router/auto-routes' {
       { slug: ParamValue<false> },
       | never
     >,
+    '/panels/': RouteRecordInfo<
+      '/panels/',
+      '/panels',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
+    '/panels/[id]': RouteRecordInfo<
+      '/panels/[id]',
+      '/panels/:id',
+      { id: ParamValue<true> },
+      { id: ParamValue<false> },
+      | never
+    >,
     '/profile': RouteRecordInfo<
       '/profile',
       '/profile',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
+    '/scripts/': RouteRecordInfo<
+      '/scripts/',
+      '/scripts',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
+    '/system/': RouteRecordInfo<
+      '/system/',
+      '/system',
       Record<never, never>,
       Record<never, never>,
       | never
@@ -224,6 +273,14 @@ declare module 'vue-router/auto-routes' {
       pathParamNames:
         | never
     }
+    'frontend/pages/areas/index.vue': {
+      routes:
+        | '/areas/'
+      views:
+        | never
+      pathParamNames:
+        | never
+    }
     'frontend/pages/auth/change-password.vue': {
       routes:
         | '/auth/change-password'
@@ -259,6 +316,14 @@ declare module 'vue-router/auto-routes' {
     'frontend/pages/auth/two-step-verification.vue': {
       routes:
         | '/auth/two-step-verification'
+      views:
+        | never
+      pathParamNames:
+        | never
+    }
+    'frontend/pages/automations/index.vue': {
+      routes:
+        | '/automations/'
       views:
         | never
       pathParamNames:
@@ -304,6 +369,14 @@ declare module 'vue-router/auto-routes' {
       pathParamNames:
         | never
     }
+    'frontend/pages/device/objects.vue': {
+      routes:
+        | '/device/objects'
+      views:
+        | never
+      pathParamNames:
+        | never
+    }
     'frontend/pages/device/raw.vue': {
       routes:
         | '/device/raw'
@@ -336,9 +409,41 @@ declare module 'vue-router/auto-routes' {
       pathParamNames:
         | 'slug'
     }
+    'frontend/pages/panels/index.vue': {
+      routes:
+        | '/panels/'
+      views:
+        | never
+      pathParamNames:
+        | never
+    }
+    'frontend/pages/panels/[id].vue': {
+      routes:
+        | '/panels/[id]'
+      views:
+        | never
+      pathParamNames:
+        | 'id'
+    }
     'frontend/pages/profile.vue': {
       routes:
         | '/profile'
+      views:
+        | never
+      pathParamNames:
+        | never
+    }
+    'frontend/pages/scripts/index.vue': {
+      routes:
+        | '/scripts/'
+      views:
+        | never
+      pathParamNames:
+        | never
+    }
+    'frontend/pages/system/index.vue': {
+      routes:
+        | '/system/'
       views:
         | never
       pathParamNames:

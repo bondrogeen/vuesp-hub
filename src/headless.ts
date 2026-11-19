@@ -1,5 +1,4 @@
 import { existsSync, mkdirSync } from 'node:fs';
-import { homedir } from 'node:os';
 import path from 'node:path';
 import { parseArgs } from 'node:util';
 
@@ -11,35 +10,35 @@ import { createDeviceRepository } from '@server/modules/devices/infrastructure/d
 import { createJsonSettingsStore, createJsonStoreModel } from '@server/shared/stores/jsonStore.ts';
 import type { IDeviceRepository } from '@server/modules/devices/infrastructure/deviceRepository.ts';
 import { createAesSecretProvider } from '@server/shared/secrets/aesSecretProvider.ts';
-
-const defaultDataDirectory = () => {
-  if (process.env.VUESP_DATA_DIR) return process.env.VUESP_DATA_DIR;
-  const home = homedir();
-  if (process.platform === 'win32') return path.join(process.env.APPDATA || path.join(home, 'AppData', 'Roaming'), 'vuesp-hub');
-  if (process.platform === 'darwin') return path.join(home, 'Library', 'Application Support', 'vuesp-hub');
-  return path.join(process.env.XDG_DATA_HOME || path.join(home, '.local', 'share'), 'vuesp-hub');
-};
+import { defaultDataDirectory } from './paths.ts';
+import { runUpdateCommand } from './updateCli.ts';
 
 const usage = `Usage: vuesp-hub [options]
+       vuesp-hub update <status|check|apply|rollback> [options]
 
 Options:
   --host <address>       HTTP/Socket.IO bind address (default: 127.0.0.1, env: VUESP_HOST)
   --port <port>          HTTP/Socket.IO port (default: 3005, env: VUESP_PORT)
   --data-dir <path>      Database and settings directory (default: XDG data dir, env: VUESP_DATA_DIR)
   --static-dir <path>    Built web UI directory (default: bundled web/)
-  --worker-script <path> Script runner worker bundle (env: VUESP_WORKER_SCRIPT)
+  --script-runner <path> Script runner process bundle (env: VUESP_SCRIPT_RUNNER)
   --secret-key <key>     Master key for device credentials (or VUESP_SECRET_KEY)
   -h, --help             Show this help
 `;
 
 export const main = async () => {
+  if (process.argv[2] === 'update') {
+    await runUpdateCommand(process.argv.slice(3));
+    return;
+  }
+
   const { values } = parseArgs({
     options: {
       host: { type: 'string' },
       port: { type: 'string' },
       'data-dir': { type: 'string' },
       'static-dir': { type: 'string' },
-      'worker-script': { type: 'string' },
+      'script-runner': { type: 'string' },
       'secret-key': { type: 'string' },
       help: { type: 'boolean', short: 'h' },
     },
@@ -90,7 +89,7 @@ export const main = async () => {
   const explicitWeb = values['static-dir'];
   const webDirectory = explicitWeb ? path.resolve(explicitWeb) : existsSync(bundledWeb) ? bundledWeb : undefined;
 
-  const workerScriptPath = path.resolve(values['worker-script'] ?? process.env.VUESP_WORKER_SCRIPT ?? path.join(__dirname, 'worker-script.cjs'));
+  const scriptRunnerPath = path.resolve(values['script-runner'] ?? process.env.VUESP_SCRIPT_RUNNER ?? path.join(__dirname, 'script-runner.cjs'));
 
   const cloudUrl = process.env.VUESP_CLOUD_URL?.trim();
   const cloudToken = process.env.VUESP_CLOUD_TOKEN?.trim();
@@ -101,7 +100,7 @@ export const main = async () => {
     closeDeviceModel,
     storeModel: createJsonStoreModel(path.join(dataDirectory, 'store.json')),
     serialSettingsStore: createJsonSettingsStore(path.join(dataDirectory, 'settings.json')),
-    workerScriptPath,
+    scriptRunnerPath,
     auth: createAuthService({ dataDirectory }),
     access: createJsonAccessRepository({ dataDirectory }),
     dataDirectory,

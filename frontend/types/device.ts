@@ -31,8 +31,11 @@ export interface IDeviceMenu {
 
 export interface IDeviceListItem {
   id?: number;
+  uuid?: string;
+  legacyId?: number;
   ip: string;
   name: string;
+  online?: boolean | null;
   list?: IDeviceListEntry[];
   enums?: Record<string, Record<string, number>>;
 }

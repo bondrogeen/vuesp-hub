@@ -55,6 +55,8 @@ export type TTargetedDeviceCommand = IDeviceCommand & ({ ip: string; name?: stri
 export interface IDeviceEventPayload {
   event: string;
   id: string | number;
+  uuid?: string;
+  legacyId?: number;
   key?: string;
   data?: unknown;
   ip?: string;

@@ -30,7 +30,7 @@ test('nests all known devices under the devices item', () => {
   assert.equal(devices.children?.[1].children, undefined);
 
   // Devices are no longer separate top-level entries.
-  assert.deepEqual(devicesGroup.items.map(item => item.path), ['/device/list/', '/device/raw/']);
+  assert.deepEqual(devicesGroup.items.map(item => item.path), ['/device/list/', '/device/objects/', '/device/raw/']);
   assert.ok(menu.some(group => group.items.some(item => item.path === '/')));
 });
 

@@ -63,7 +63,7 @@
       <div
         v-if="module.web"
         ref="container"
-        class="module-host"
+        class="module-host min-h-50"
       />
       <p
         v-else
@@ -90,7 +90,7 @@ import { useI18n } from 'vue-i18n';
 import { BlockBreadcrumb as VBreadcrumb, VButton } from 'vuesp-components/components';
 
 import { api } from '@/utils/helpers.ts';
-import { getToken, isAdmin } from '@/utils/auth.ts';
+import { isAdmin } from '@/utils/auth.ts';
 import type { IModuleSummary } from '@/types';
 
 const { t } = useI18n();
@@ -107,41 +107,75 @@ const loading = ref(true);
 const starting = ref(false);
 const error = ref('');
 
-let mountedElement: HTMLElement | undefined;
+let frame: HTMLIFrameElement | undefined;
+let messageHandler: ((event: MessageEvent) => void) | undefined;
+let mountMessage: Record<string, unknown> | undefined;
 let themeObserver: MutationObserver | undefined;
 
+const isDark = (): boolean => document.documentElement.classList.contains('dark');
+
 const syncTheme = (): void => {
-  mountedElement?.classList.toggle('dark', document.documentElement.classList.contains('dark'));
+  frame?.contentWindow?.postMessage({ type: 'theme', value: isDark() ? 'dark' : 'light' }, '*');
 };
 
 const clear = (): void => {
-  mountedElement?.remove();
-  mountedElement = undefined;
+  if (messageHandler) window.removeEventListener('message', messageHandler);
+  messageHandler = undefined;
+  frame?.remove();
+  frame = undefined;
   container.value?.replaceChildren();
 };
 
+/**
+ * Module UI runs inside a sandboxed iframe without `allow-same-origin`: the
+ * module gets an opaque origin, so it cannot reach the hub DOM, cookies or
+ * localStorage. Only a short-lived module token crosses the boundary.
+ */
 const mountUi = async (): Promise<void> => {
   const info = module.value;
   if (!info?.web || !container.value) return;
 
   try {
-    await import(/* @vite-ignore */ info.web.url);
-    if (!customElements.get(info.web.element)) {
-      throw new Error(`Custom element ${info.web.element} is not registered`);
-    }
-
-    const element = document.createElement(info.web.element);
-    element.style.display = 'block';
-    Object.assign(element, {
-      token: getToken(),
+    const { token } = await api.get<{ token: string }>(`/modules/${encodeURIComponent(info.id)}/token`);
+    mountMessage = {
+      type: 'mount',
+      url: info.web.url,
+      element: info.web.element,
+      token,
       moduleId: info.id,
       apiBase: `/api/v1/modules/${info.id}/proxy`,
       wsBase: info.web?.ws ?? '',
-    });
+      theme: isDark() ? 'dark' : 'light',
+    };
+
+    const element = document.createElement('iframe');
+    element.title = info.name;
+    element.className = 'block w-full min-h-50 border-0 bg-transparent';
+    element.setAttribute('sandbox', 'allow-scripts');
+    const handler = (event: MessageEvent) => {
+      if (event.source !== element.contentWindow) return;
+      const data = (event.data ?? {}) as Record<string, unknown>;
+      if (data.type === 'ready') {
+        element.contentWindow?.postMessage(mountMessage, '*');
+        return;
+      }
+      if (data.type === 'mounted') {
+        element.dataset.status = 'mounted';
+        element.dataset.text = String(data.text ?? '');
+        return;
+      }
+      if (data.type === 'module-error') {
+        element.dataset.status = 'error';
+        error.value = String(data.message ?? t('modules.loadError'));
+      }
+    };
+
     clear();
+    messageHandler = handler;
+    window.addEventListener('message', handler);
     container.value.replaceChildren(element);
-    mountedElement = element;
-    syncTheme();
+    frame = element;
+    element.src = '/module-frame.html';
   } catch (cause) {
     error.value = cause instanceof Error ? cause.message : t('modules.loadError');
   }
@@ -195,8 +229,3 @@ onBeforeUnmount(() => {
 });
 </script>
 
-<style scoped>
-.module-host {
-  min-height: 200px;
-}
-</style>

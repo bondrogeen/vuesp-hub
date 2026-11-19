@@ -1,5 +1,6 @@
 import type { Server as SocketIOServer } from 'socket.io';
 import type { DeviceRuntime } from '@core/application/deviceRuntime.ts';
+import type { ObjectRegistry } from '@core/application/objectRegistry.ts';
 import { parseBroadcastDeviceCommand, parseTargetedDeviceCommand } from '@root/shared/device.ts';
 import type { TServiceSocketAcknowledgement } from '@root/shared/socket.ts';
 
@@ -9,7 +10,7 @@ const respond = (callback: unknown, payload: TServiceSocketAcknowledgement) => {
 
 const errorMessage = (error: unknown, fallback: string) => error instanceof Error ? error.message : fallback;
 
-export const socketDevice = (io: SocketIOServer, runtime: DeviceRuntime<unknown>): (() => void) => {
+export const socketDevice = (io: SocketIOServer, runtime: DeviceRuntime<unknown>, registry?: ObjectRegistry): (() => void) => {
   const forwardData = (payload: unknown) => io.emit('device:data', payload);
   const forwardStatus = (running: boolean) => io.emit('service:status', { running });
   runtime.on('data', forwardData);
@@ -19,6 +20,20 @@ export const socketDevice = (io: SocketIOServer, runtime: DeviceRuntime<unknown>
     socket.emit('service:status', { running: runtime.isRunning });
     for (const payload of runtime.getSnapshot()) {
       socket.emit('device:data', payload);
+    }
+
+    if (registry) {
+      socket.emit('objects:snapshot', registry.snapshotView());
+      const unsubscribe = registry.subscribe(change => {
+        if (change.type === 'entity') {
+          const entity = registry.getEntity(change.deviceId, change.entityKey);
+          if (entity) socket.emit('objects:entity', { deviceId: change.deviceId, entity });
+          return;
+        }
+        const device = registry.snapshotView(change.deviceId).devices[0];
+        if (device) socket.emit('objects:device', { device });
+      });
+      socket.on('disconnect', unsubscribe);
     }
 
     socket.on('service:start', async (_data, callback) => {

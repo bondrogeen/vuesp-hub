@@ -56,7 +56,12 @@ export interface IDeviceRepository {
   getById(id: number | string, options: { includeCredentials: true }): IDeviceConnectionRecord | null;
   create(input: unknown): IDeviceRecord;
   update(id: number | string, input: unknown): IDeviceRecord | null;
+  /** Soft delete: the record stays in the database and can be restored. */
   delete(id: number | string): IDeviceRecord | null;
+  restore(id: number | string): IDeviceRecord | null;
+  /** Hard delete: removes the record and its credentials permanently. */
+  purge(id: number | string): IDeviceRecord | null;
+  getAllDeleted(): IDeviceRecord[];
   close(): void;
 }
 
@@ -89,7 +94,7 @@ export const createDeviceRepository = async ({
   const run = (sql: string, params: SqliteInputValue[] = []) => database.prepare(sql).run(...params).lastInsertRowid;
 
   const currentVersion = Number(database.prepare('PRAGMA user_version').get()?.user_version ?? 0);
-  const latestVersion = 2;
+  const latestVersion = 3;
   if (!Number.isInteger(currentVersion) || currentVersion < 0 || currentVersion > latestVersion) {
     database.close();
     throw new Error(`Unsupported device database schema version: ${currentVersion}`);
@@ -143,6 +148,31 @@ export const createDeviceRepository = async ({
       }
       database.exec('PRAGMA user_version = 2');
     }
+    if (currentVersion < 3) {
+      // Rebuild the table so `ip` is unique only among active devices: a
+      // soft-deleted device keeps its address in the trash while the address
+      // can be registered again.
+      database.exec(`
+        ALTER TABLE devices RENAME TO devices_v2;
+        CREATE TABLE devices (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          uuid TEXT NOT NULL UNIQUE,
+          device_id INTEGER NOT NULL,
+          name TEXT NOT NULL,
+          ip TEXT NOT NULL,
+          firmware TEXT NOT NULL DEFAULT '[]',
+          username TEXT NOT NULL DEFAULT '',
+          password TEXT,
+          added_at TEXT NOT NULL,
+          deleted_at TEXT
+        );
+        INSERT INTO devices (id, uuid, device_id, name, ip, firmware, username, password, added_at)
+          SELECT id, uuid, device_id, name, ip, firmware, username, password, added_at FROM devices_v2;
+        DROP TABLE devices_v2;
+        CREATE UNIQUE INDEX devices_ip_active ON devices(ip) WHERE deleted_at IS NULL;
+        PRAGMA user_version = 3;
+      `);
+    }
     database.exec('COMMIT');
   } catch (error) {
     database.exec('ROLLBACK');
@@ -175,7 +205,7 @@ export const createDeviceRepository = async ({
   function getAll(): IDeviceRecord[];
   function getAll(options: { includeCredentials: true }): IDeviceConnectionRecord[];
   function getAll(options?: { includeCredentials?: boolean }): IDeviceRecord[] | IDeviceConnectionRecord[] {
-    const records = rows('SELECT * FROM devices ORDER BY added_at, id');
+    const records = rows('SELECT * FROM devices WHERE deleted_at IS NULL ORDER BY added_at, id');
     return options?.includeCredentials
       ? records.map(withCredentials)
       : records.map(toDevice);
@@ -184,7 +214,7 @@ export const createDeviceRepository = async ({
   function getById(id: number | string): IDeviceRecord | null;
   function getById(id: number | string, options: { includeCredentials: true }): IDeviceConnectionRecord | null;
   function getById(id: number | string, options?: { includeCredentials?: boolean }): IDeviceRecord | IDeviceConnectionRecord | null {
-    const row = rows('SELECT * FROM devices WHERE id = ?', [Number(id)])[0];
+    const row = rows('SELECT * FROM devices WHERE id = ? AND deleted_at IS NULL', [Number(id)])[0];
     if (!row) return null;
     return options?.includeCredentials ? withCredentials(row) : toDevice(row);
   }
@@ -195,7 +225,7 @@ export const createDeviceRepository = async ({
     return { name, ip };
   };
   const assertUniqueAddress = (ip: string, id: number | string = 0) => {
-    const duplicate = rows('SELECT id FROM devices WHERE ip = ? AND id != ?', [ip, Number(id) || 0])[0];
+    const duplicate = rows('SELECT id FROM devices WHERE ip = ? AND id != ? AND deleted_at IS NULL', [ip, Number(id) || 0])[0];
     if (!duplicate) return;
     const error = Object.assign(new Error('A device at this IP address is already registered'), {
       code: 'SQLITE_CONSTRAINT_UNIQUE',
@@ -258,8 +288,29 @@ export const createDeviceRepository = async ({
     delete(id) {
       const device = getById(id);
       if (!device) return null;
-      run('DELETE FROM devices WHERE id = ?', [Number(id)]);
+      run('UPDATE devices SET deleted_at = ? WHERE id = ?', [new Date().toISOString(), Number(id)]);
       return device;
+    },
+
+    restore(id) {
+      const row = rows('SELECT * FROM devices WHERE id = ? AND deleted_at IS NOT NULL', [Number(id)])[0];
+      if (!row) return null;
+      const device = toDevice(row);
+      assertUniqueAddress(device.ip, device.id);
+      run('UPDATE devices SET deleted_at = NULL WHERE id = ?', [device.id]);
+      return device;
+    },
+
+    purge(id) {
+      const row = rows('SELECT * FROM devices WHERE id = ? AND deleted_at IS NOT NULL', [Number(id)])[0];
+      if (!row) return null;
+      const device = toDevice(row);
+      run('DELETE FROM devices WHERE id = ?', [device.id]);
+      return device;
+    },
+
+    getAllDeleted() {
+      return rows('SELECT * FROM devices WHERE deleted_at IS NOT NULL ORDER BY added_at, id').map(toDevice);
     },
 
     close() {

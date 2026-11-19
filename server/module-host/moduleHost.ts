@@ -9,10 +9,12 @@ import { Readable } from 'node:stream';
 import { fileURLToPath } from 'node:url';
 import { pipeline } from 'node:stream/promises';
 import path from 'node:path';
-import { x as extractTar } from 'tar';
+import { extractArchive } from '@server/shared/security/archive.ts';
 
 import type { IModuleInfo, IModuleLogEntry, IModuleManifest } from '@root/shared/module.ts';
 import { modulePublicRoute, validateModuleRoute } from './publicRoute.ts';
+import { assertModuleArchiveTrusted, moduleArchiveSha256, type IModuleTrustPolicy } from '@server/modules/modules/application/moduleTrust.ts';
+import { serializeModuleStorage } from './storage.ts';
 
 interface ModuleHostOptions {
   modulesDirectory: string;
@@ -20,6 +22,15 @@ interface ModuleHostOptions {
   runnerPath: string;
   /** Verifies a short-lived token issued for a specific module. */
   verifyModuleToken?: (token: string, moduleId: string) => unknown;
+  /** Narrow gateway to hub objects and actions. */
+  gateway?: IModuleGateway;
+  /** Optional signing/allowlist policy for distributed module archives. */
+  trust?: IModuleTrustPolicy;
+}
+
+export interface IModuleGateway {
+  readObjects(): unknown;
+  executeAction(input: unknown): Promise<unknown>;
 }
 
 interface Runtime {
@@ -29,12 +40,24 @@ interface Runtime {
   dataDirectory: string;
   running: boolean;
   stopping: boolean;
+  desired: boolean;
   httpPort?: number;
   logs: IModuleLogEntry[];
   ready?: { resolve: () => void; reject: (error: Error) => void };
 }
 
 const ID_PATTERN = /^[a-z0-9][a-z0-9._-]{1,63}$/;
+const SUPPORTED_API_VERSIONS = new Set([1, 2]);
+const MODULE_PERMISSIONS = new Set([
+  'objects:read',
+  'actions:execute',
+  'storage:scoped',
+  'auth:verify',
+  'network',
+  'filesystem:scoped',
+  'events:emit',
+]);
+const MODULE_KINDS = new Set(['integration', 'storage', 'ui', 'runtime']);
 const PLATFORM = `${process.platform}-${process.arch}`;
 const READY_TIMEOUT_MS = 8_000;
 const STOP_TIMEOUT_MS = 4_000;
@@ -46,7 +69,22 @@ const readManifest = async (directory: string): Promise<IModuleManifest> => {
   if (typeof manifest.id !== 'string' || !ID_PATTERN.test(manifest.id)) throw new Error('Invalid module id');
   if (typeof manifest.name !== 'string' || !manifest.name.trim()) throw new Error('Module name is required');
   if (typeof manifest.version !== 'string' || !manifest.version.trim()) throw new Error('Module version is required');
-  if (manifest.apiVersion !== 1) throw new Error(`Unsupported module apiVersion: ${String(manifest.apiVersion)}`);
+  if (!SUPPORTED_API_VERSIONS.has(Number(manifest.apiVersion))) {
+    throw new Error(`Unsupported module apiVersion: ${String(manifest.apiVersion)}`);
+  }
+  if (manifest.kind !== undefined && !MODULE_KINDS.has(String(manifest.kind))) {
+    throw new Error(`Unsupported module kind: ${String(manifest.kind)}`);
+  }
+  for (const field of ['provides', 'requires'] as const) {
+    if (manifest[field] !== undefined && (!Array.isArray(manifest[field]) || !manifest[field]!.every(value => typeof value === 'string'))) {
+      throw new Error(`Module ${field} must be an array of strings`);
+    }
+  }
+  if (manifest.permissions !== undefined) {
+    if (!Array.isArray(manifest.permissions) || !manifest.permissions.every(permission => typeof permission === 'string' && MODULE_PERMISSIONS.has(permission))) {
+      throw new Error('Module permissions contain an unsupported value');
+    }
+  }
   if (typeof manifest.entry !== 'string' || !manifest.entry.trim()) throw new Error('Module entry is required');
   if (manifest.entry.startsWith('/') || manifest.entry.includes('..')) throw new Error('Module entry must stay inside the package');
   if (manifest.web && manifest.uiApiVersion !== 1) {
@@ -62,7 +100,7 @@ const readManifest = async (directory: string): Promise<IModuleManifest> => {
   return manifest as IModuleManifest;
 };
 
-export const createModuleHost = ({ modulesDirectory, dataDirectory, runnerPath, verifyModuleToken }: ModuleHostOptions) => {
+export const createModuleHost = ({ modulesDirectory, dataDirectory, runnerPath, verifyModuleToken, gateway, trust }: ModuleHostOptions) => {
   const runtimes = new Map<string, Runtime>();
   const assetCacheDirectory = path.join(dataDirectory, 'module-cache');
 
@@ -181,7 +219,15 @@ export const createModuleHost = ({ modulesDirectory, dataDirectory, runnerPath, 
 
   const writeStorage = async (id: string, value: Record<string, unknown>): Promise<void> => {
     await mkdir(moduleDataDirectory(id), { recursive: true, mode: 0o700 });
-    await writeFile(storageFile(id), JSON.stringify(value, null, 2), { mode: 0o600 });
+    const target = storageFile(id);
+    const temporary = `${target}.${process.pid}.${Date.now()}.tmp`;
+    await writeFile(temporary, serializeModuleStorage(value), { mode: 0o600 });
+    await rename(temporary, target);
+  };
+
+  const permission = (runtime: Runtime, name: string, legacy = false): boolean => {
+    if (legacy && runtime.manifest.apiVersion < 2) return true;
+    return Array.isArray(runtime.manifest.permissions) && runtime.manifest.permissions.includes(name);
   };
 
   const handleRpc = async (runtime: Runtime, id: number, method: string, params: unknown): Promise<void> => {
@@ -189,10 +235,12 @@ export const createModuleHost = ({ modulesDirectory, dataDirectory, runnerPath, 
     try {
       let result: unknown;
       if (method === 'storage.get') {
+        if (!permission(runtime, 'storage:scoped', true)) throw new Error('Module has no storage:scoped permission');
         const key = (params as { key?: unknown } | undefined)?.key;
         if (typeof key !== 'string') throw new Error('storage.get key is required');
         result = (await readStorage(runtimeId))[key] ?? null;
       } else if (method === 'storage.set') {
+        if (!permission(runtime, 'storage:scoped', true)) throw new Error('Module has no storage:scoped permission');
         const { key, value } = (params ?? {}) as { key?: unknown; value?: unknown };
         if (typeof key !== 'string') throw new Error('storage.set key is required');
         const storage = await readStorage(runtimeId);
@@ -200,10 +248,19 @@ export const createModuleHost = ({ modulesDirectory, dataDirectory, runnerPath, 
         await writeStorage(runtimeId, storage);
         result = true;
       } else if (method === 'auth.verify') {
+        if (!permission(runtime, 'auth:verify', true)) throw new Error('Module has no auth:verify permission');
         if (!verifyModuleToken) throw new Error('Module auth is not configured');
         const token = (params as { token?: unknown } | undefined)?.token;
         if (typeof token !== 'string') throw new Error('auth.verify token is required');
         result = verifyModuleToken(token, runtimeId) ?? null;
+      } else if (method === 'objects.list') {
+        if (!permission(runtime, 'objects:read')) throw new Error('Module has no objects:read permission');
+        if (!gateway) throw new Error('Module gateway is not configured');
+        result = gateway.readObjects();
+      } else if (method === 'actions.execute') {
+        if (!permission(runtime, 'actions:execute')) throw new Error('Module has no actions:execute permission');
+        if (!gateway) throw new Error('Module gateway is not configured');
+        result = await gateway.executeAction(params);
       } else {
         throw new Error(`Unsupported module RPC: ${method}`);
       }
@@ -256,8 +313,12 @@ export const createModuleHost = ({ modulesDirectory, dataDirectory, runnerPath, 
     }
   };
 
-  const install = async (source: string): Promise<IModuleManifest> => {
+  const install = async (source: string, options: { signature?: string } = {}): Promise<IModuleManifest> => {
     const sourceStat = await stat(source);
+    if (!sourceStat.isDirectory() && trust) {
+      const sha256 = await moduleArchiveSha256(source);
+      await assertModuleArchiveTrusted({ file: source, sha256, signature: options.signature, policy: trust });
+    }
     const staging = path.join(modulesDirectory, `.staging-${Date.now()}-${Math.random().toString(36).slice(2)}`);
     await mkdir(staging, { recursive: true, mode: 0o700 });
 
@@ -269,7 +330,7 @@ export const createModuleHost = ({ modulesDirectory, dataDirectory, runnerPath, 
         const magic = Buffer.alloc(2);
         await handle.read(magic, 0, 2, 0);
         await handle.close();
-        await extractTar({
+        await extractArchive({
           file: source,
           cwd: staging,
           gzip: magic[0] === 0x1f && magic[1] === 0x8b,
@@ -301,6 +362,14 @@ export const createModuleHost = ({ modulesDirectory, dataDirectory, runnerPath, 
       throw error;
     }
   };
+
+  /** Runtime supervision state used by the watchdog. */
+  const states = (): Array<{ id: string; running: boolean; desired: boolean }> =>
+    [...runtimes.values()].map(runtime => ({
+      id: runtime.manifest.id,
+      running: runtime.running,
+      desired: runtime.desired,
+    }));
 
   const list = async (): Promise<IModuleInfo[]> => {
     await mkdir(modulesDirectory, { recursive: true, mode: 0o700 });
@@ -372,6 +441,7 @@ export const createModuleHost = ({ modulesDirectory, dataDirectory, runnerPath, 
       dataDirectory: dataDir,
       running: true,
       stopping: false,
+      desired: true,
       logs: [],
     };
     runtimes.set(id, runtime);
@@ -409,6 +479,7 @@ export const createModuleHost = ({ modulesDirectory, dataDirectory, runnerPath, 
     const runtime = runtimes.get(id);
     if (!runtime) return;
     runtime.stopping = true;
+    runtime.desired = false;
 
     if (!runtime.running) {
       runtimes.delete(id);
@@ -586,9 +657,9 @@ export const createModuleHost = ({ modulesDirectory, dataDirectory, runnerPath, 
     return match;
   };
 
-  const installFromUrl = async (url: string, sha256: string): Promise<IModuleManifest> => {
+  const installFromUrl = async (url: string, sha256: string, signature?: string): Promise<IModuleManifest> => {
     const cached = await downloadToCache(url, sha256);
-    return install(cached);
+    return install(cached, signature ? { signature } : {});
   };
 
   const uninstall = async (id: string): Promise<void> => {
@@ -600,7 +671,7 @@ export const createModuleHost = ({ modulesDirectory, dataDirectory, runnerPath, 
     await rm(moduleDataDirectory(id), { recursive: true, force: true });
   };
 
-  return { install, installFromUrl, list, start, stop, startAll, stopAll, logs, proxy, upgrade, resolve, uninstall };
+  return { install, installFromUrl, list, states, start, stop, startAll, stopAll, logs, proxy, upgrade, resolve, uninstall };
 };
 
 export type TModuleHost = ReturnType<typeof createModuleHost>;

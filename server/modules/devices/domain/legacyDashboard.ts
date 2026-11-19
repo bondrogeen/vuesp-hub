@@ -92,13 +92,19 @@ export const parseLegacyDashboard = (value: unknown): ILegacyDashboardItem[] | n
     }
   }
 
+  if (isRecord(value) && value.schemaVersion !== undefined && value.schemaVersion !== 1) return null;
   const entries = Array.isArray(value) ? value : isRecord(value) ? value.dashboard : null;
   if (!Array.isArray(entries) || entries.length > 100) return null;
 
   const items: ILegacyDashboardItem[] = [];
+  const ids = new Set<string>();
   for (const entry of entries) {
     const item = sanitizeItem(entry);
     if (!item) return null;
+    // Dashboard ids are entity keys. Keep the first tile and skip a duplicate
+    // instead of silently overwriting another entity/history stream.
+    if (ids.has(item.id)) continue;
+    ids.add(item.id);
     items.push(item);
   }
   return items;

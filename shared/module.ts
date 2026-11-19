@@ -42,6 +42,9 @@ export interface IModuleManifest {
   name: string;
   version: string;
   apiVersion: number;
+  kind?: 'integration' | 'storage' | 'ui' | 'runtime';
+  provides?: string[];
+  requires?: string[];
   entry: string;
   platforms?: string[];
   permissions?: string[];

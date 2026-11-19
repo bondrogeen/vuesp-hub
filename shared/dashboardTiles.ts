@@ -7,6 +7,7 @@ import type {
 } from 'vuesp-dashboard-core';
 
 import { isRecordValue } from './device.ts';
+import { evaluateSafe } from './safeExpression.ts';
 
 export type TProtocolEnums = Record<string, Record<string, number>>;
 
@@ -59,17 +60,11 @@ export interface ICloudTilesResult {
  */
 export const tileViewIcon = (icon?: string): string => icon || 'box';
 
-const evaluate: TDashboardEvaluator = (body, scope) => {
-  const fn = new Function(...Object.keys(scope), body);
-
-  return fn(...Object.values(scope));
-};
-
 const withEnums = (enums?: TProtocolEnums | null): TDashboardEvaluator => {
-  if (!enums) return evaluate;
+  if (!enums) return evaluateSafe;
 
   const extra = { CMD: enums.CMD, KEY: enums.KEY, PORT: enums.PORT };
-  return (body, scope) => evaluate(body, { ...extra, ...scope });
+  return (body, scope) => evaluateSafe(body, { ...extra, ...scope });
 };
 
 /** Maps the first path segment of dashboard `args` to the device message key. */
@@ -88,6 +83,19 @@ const messageKeys: Record<string, string> = {
 
 export const resolveTiles = (items: IDashboardItem[], main: unknown, enums?: TProtocolEnums | null): IResolvedDashboardItem[] =>
   items.map(item => resolveDashboardItem(item, main, withEnums(enums)));
+
+/** Resolves tiles one by one; a broken expression is skipped, not fatal. */
+export const resolveTilesSafe = (items: IDashboardItem[], main: unknown, enums?: TProtocolEnums | null): IResolvedDashboardItem[] => {
+  const tiles: IResolvedDashboardItem[] = [];
+  for (const item of items) {
+    try {
+      tiles.push(resolveDashboardItem(item, main, withEnums(enums)));
+    } catch {
+      // Skip only the broken tile.
+    }
+  }
+  return tiles;
+};
 
 /**
  * Resolves dashboard items for publication. A single broken expression must

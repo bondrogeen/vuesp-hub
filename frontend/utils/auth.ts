@@ -1,7 +1,12 @@
 import { translate } from '@/i18n/index.ts';
 import type { TAccessPage } from './access.ts';
 
-export const AUTH_TOKEN_KEY = 'vuesp-auth-token';
+/**
+ * The session JWT lives in an HttpOnly cookie and is never readable from the
+ * page. Only the non-secret profile is persisted so role checks and first
+ * paint work synchronously; the server remains the source of truth.
+ */
+export const AUTH_PROFILE_KEY = 'vuesp-auth-profile';
 
 export type TUserRole = 'admin' | 'user' | 'viewer';
 
@@ -14,76 +19,71 @@ export interface IAuthUser {
 }
 
 export interface IAuthSession {
-  token: string;
+  token?: string;
   user: IAuthUser;
 }
 
-export const getToken = (): string => {
-  if (typeof localStorage === 'undefined') return '';
-  return localStorage.getItem(AUTH_TOKEN_KEY) ?? '';
-};
+const isRole = (value: unknown): value is TUserRole => value === 'admin' || value === 'user' || value === 'viewer';
 
-export const setToken = (token: string): void => {
-  if (typeof localStorage === 'undefined') return;
-  localStorage.setItem(AUTH_TOKEN_KEY, token);
-};
-
-export const clearToken = (): void => {
-  if (typeof localStorage === 'undefined') return;
-  localStorage.removeItem(AUTH_TOKEN_KEY);
-};
-
-export const isAuthenticated = (): boolean => Boolean(getToken());
-
-interface AuthTokenPayload {
-  sub?: unknown;
-  role?: unknown;
-  uid?: unknown;
-  mustChange?: unknown;
-}
-
-const decodeToken = (): AuthTokenPayload | null => {
-  const token = getToken();
-  if (!token) return null;
+const readProfile = (): IAuthUser | null => {
+  if (typeof localStorage === 'undefined') return null;
   try {
-    const payload = token.split('.')[1];
-    if (!payload || typeof atob === 'undefined') return null;
-    const normalized = payload.replace(/-/g, '+').replace(/_/g, '/');
-    return JSON.parse(atob(normalized)) as AuthTokenPayload;
+    const raw = localStorage.getItem(AUTH_PROFILE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as Partial<IAuthUser>;
+    if (typeof parsed.id !== 'number' || typeof parsed.username !== 'string' || !isRole(parsed.role)) return null;
+    return {
+      id: parsed.id,
+      username: parsed.username,
+      role: parsed.role,
+      mustChangePassword: parsed.mustChangePassword === true,
+      pages: Array.isArray(parsed.pages) ? parsed.pages : null,
+    };
   } catch {
     return null;
   }
 };
 
-const isRole = (value: unknown): value is TUserRole => value === 'admin' || value === 'user' || value === 'viewer';
-
-export const getUsername = (): string => {
-  const parsed = decodeToken();
-  return parsed && typeof parsed.sub === 'string' ? parsed.sub : '';
+const writeProfile = (user: IAuthUser): void => {
+  if (typeof localStorage === 'undefined') return;
+  localStorage.setItem(AUTH_PROFILE_KEY, JSON.stringify({
+    id: user.id,
+    username: user.username,
+    role: user.role,
+    mustChangePassword: user.mustChangePassword,
+    pages: user.pages ?? null,
+  }));
 };
 
-export const getRole = (): TUserRole => {
-  const parsed = decodeToken();
-  // Legacy tokens issued before roles existed belong to the local administrator.
-  if (!parsed) return 'viewer';
-  return isRole(parsed.role) ? parsed.role : 'admin';
+export const getUser = (): IAuthUser | null => readProfile();
+
+export const setSession = (session: IAuthSession): void => {
+  writeProfile(session.user);
 };
 
-export const getUserId = (): number | null => {
-  const parsed = decodeToken();
-  return parsed && typeof parsed.uid === 'number' ? parsed.uid : null;
+export const clearSession = (): void => {
+  if (typeof localStorage === 'undefined') return;
+  localStorage.removeItem(AUTH_PROFILE_KEY);
 };
 
-export const getMustChangePassword = (): boolean => {
-  const parsed = decodeToken();
-  return parsed?.mustChange === true;
-};
+/** Backwards-compatible aliases for the previous token-based helpers. */
+export const clearToken = clearSession;
+export const isAuthenticated = (): boolean => Boolean(readProfile());
+
+export const getUsername = (): string => readProfile()?.username ?? '';
+
+export const getRole = (): TUserRole => readProfile()?.role ?? 'viewer';
+
+export const getUserId = (): number | null => readProfile()?.id ?? null;
+
+export const getMustChangePassword = (): boolean => readProfile()?.mustChangePassword === true;
 
 export const isAdmin = (): boolean => getRole() === 'admin';
 
 export const login = async (username: string, password: string): Promise<IAuthSession> => {
   const response = await fetch('/api/v1/auth/login', {
     method: 'POST',
+    credentials: 'same-origin',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ username, password }),
   });
@@ -103,16 +103,19 @@ export const login = async (username: string, password: string): Promise<IAuthSe
 
     if (response.status === 400) throw new Error(translate('auth.credentialsRequired'));
     if (response.status === 401) throw new Error(translate('auth.invalidCredentials'));
+    if (response.status === 429) throw new Error(translate('auth.tooManyAttempts'));
     throw new Error(serverMessage);
   }
 
   const session = body as IAuthSession;
-  if (!session?.token) throw new Error(translate('auth.noToken'));
-  setToken(session.token);
+  if (!session?.user) throw new Error(translate('auth.noToken'));
+  setSession(session);
   return session;
 };
 
-export const logout = (): void => {
-  clearToken();
+export const logout = async (): Promise<void> => {
+  clearSession();
+  // Best effort: the cookie is HttpOnly, so only the server can clear it.
+  await fetch('/api/v1/auth/logout', { method: 'POST', credentials: 'same-origin' }).catch(() => undefined);
   if (typeof window !== 'undefined') window.location.assign('/auth/login/');
 };

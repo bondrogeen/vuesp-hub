@@ -53,6 +53,14 @@ test('imports existing registry entries once and supports deletion', async () =>
   assert.equal(repository.getById(device.id, { includeCredentials: true })!.password, 'legacy-secret');
   assert.equal(repository.delete(device.id)!.uuid, device.uuid);
   assert.deepEqual(repository.getAll(), []);
+  assert.equal(repository.getAllDeleted().length, 1);
+  assert.equal(repository.delete(device.id), null);
+  assert.equal(repository.restore(device.id)!.uuid, device.uuid);
+  assert.equal(repository.getAll().length, 1);
+  assert.equal(repository.delete(device.id)!.uuid, device.uuid);
+  assert.equal(repository.purge(device.id)!.uuid, device.uuid);
+  assert.deepEqual(repository.getAllDeleted(), []);
+  assert.equal(repository.purge(device.id), null);
   repository.close();
 });
 
@@ -191,13 +199,13 @@ test('rejects database schema versions newer than the application supports', asy
   const directory = mkdtempSync(join(tmpdir(), 'vuesp-newer-schema-'));
   const databasePath = join(directory, 'devices.sqlite');
   const database = new DatabaseSync(databasePath);
-  database.exec('PRAGMA user_version = 3');
+  database.exec('PRAGMA user_version = 4');
   database.close();
 
   try {
     await assert.rejects(
       createDeviceRepository({ databasePath, secretProvider }),
-      /Unsupported device database schema version: 3/,
+      /Unsupported device database schema version: 4/,
     );
   } finally {
     rmSync(databasePath, { force: true });
@@ -227,5 +235,25 @@ test('updates device details without decrypting an unchanged password', async ()
   assert.equal(decryptCalls, 0);
   assert.equal(repository.getById(device.id, { includeCredentials: true })!.password, 'secret');
   assert.equal(decryptCalls, 1);
+  repository.close();
+});
+
+test('soft delete hides a device, frees its address and can be restored', async () => {
+  const repository = await createRepository({});
+  const device = repository.create({ deviceId: 1, ip: '192.0.2.30', name: 'Trash me' });
+
+  repository.delete(device.id);
+  assert.deepEqual(repository.getAll(), []);
+  assert.equal(repository.getById(device.id), null);
+  assert.equal(repository.getAllDeleted()[0]?.name, 'Trash me');
+
+  // A deleted address is reusable while the old record stays in the trash.
+  const replacement = repository.create({ deviceId: 1, ip: '192.0.2.30', name: 'Replacement' });
+  assert.throws(() => repository.restore(device.id), /already registered/);
+
+  repository.delete(replacement.id);
+  assert.equal(repository.restore(device.id)!.name, 'Trash me');
+  assert.deepEqual(repository.getAll().map(item => item.name), ['Trash me']);
+  assert.equal(repository.getAllDeleted()[0]?.name, 'Replacement');
   repository.close();
 });

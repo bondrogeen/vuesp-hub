@@ -41,6 +41,15 @@ export const createVuespRouter = (getDeviceModel: () => Promise<IDeviceRepositor
     }
   });
 
+  router.get('/deleted/', async (_req, res) => {
+    try {
+      const model = await getDeviceModel();
+      res.json(model.getAllDeleted());
+    } catch (error) {
+      return sendDeviceFailure(res, error);
+    }
+  });
+
   router.get('/:id/ui/', async (req, res) => {
     try {
       const id = parseDeviceRecordId(req.params.id);
@@ -98,9 +107,26 @@ export const createVuespRouter = (getDeviceModel: () => Promise<IDeviceRepositor
     try {
       const id = parseDeviceRecordId(req.params.id);
       const model = await getDeviceModel();
+      if (req.query.purge === 'true') {
+        const purged = model.purge(id);
+        if (purged) return res.json(purged);
+        return res.status(404).json({ error: 'Device is not in the trash' });
+      }
       const device = model.delete(id);
       if (device) return res.json(device);
       return res.status(404).json({ error: 'Device not found' });
+    } catch (error) {
+      return sendDeviceFailure(res, error);
+    }
+  });
+
+  router.post('/:id/restore/', async (req, res) => {
+    try {
+      const id = parseDeviceRecordId(req.params.id);
+      const model = await getDeviceModel();
+      const device = model.restore(id);
+      if (device) return res.json(device);
+      return res.status(404).json({ error: 'Device is not in the trash' });
     } catch (error) {
       return sendDeviceFailure(res, error);
     }

@@ -24,6 +24,8 @@ export interface IAuthSession {
 }
 
 export interface IAuthService {
+  /** Session lifetime used for both the JWT and the cookie. */
+  readonly ttlSeconds: number;
   login(username: string, password: string): IAuthSession | null;
   verify(token: string | undefined): IAuthUser | null;
   changePassword(id: number, currentPassword: string, newPassword: string): IAuthSession | null;
@@ -100,6 +102,7 @@ export const createAuthService = ({
 
   return {
     users,
+    ttlSeconds,
 
     login(username, password) {
       const user = users.findWithPassword(username);

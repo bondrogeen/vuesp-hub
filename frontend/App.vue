@@ -9,7 +9,7 @@ import { useRoute } from 'vue-router';
 import { computed, onBeforeUnmount, onMounted, watch, type Component } from 'vue';
 import { useAppStore } from '@/stores/AppStore';
 import { useWebSocketStore } from '@/stores/WebSocketStore';
-import { getToken } from '@/utils/auth.ts';
+import { isAuthenticated } from '@/utils/auth.ts';
 
 import LayoutEmpty from '@/layouts/LayoutEmpty.vue';
 import LayoutMain from '@/layouts/LayoutMain.vue';
@@ -29,7 +29,7 @@ watch(() => webSocketStore.connectionError, message => {
 
 onMounted(() => {
   appStore.init();
-  if (getToken()) webSocketStore.connect();
+  if (isAuthenticated()) webSocketStore.connect();
 });
 
 onBeforeUnmount(() => webSocketStore.disconnect());

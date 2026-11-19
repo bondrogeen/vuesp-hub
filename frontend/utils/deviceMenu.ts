@@ -76,6 +76,8 @@ export const createDeviceMenu = (menus: IDeviceMenu[], t: Translate, devices: Ar
         { name: t('common.home'), icon: 'home', path: '/' },
         { name: t('common.dashboard'), icon: 'dashboard', path: '/dashboard/' },
         { name: t('common.dashboardPreview'), icon: 'dashboard', path: '/dashboard-preview/' },
+        { name: t('areas.title'), icon: 'home', path: '/areas/' },
+        { name: t('panels.title'), icon: 'dashboard', path: '/panels/' },
       ],
     },
     {
@@ -87,6 +89,11 @@ export const createDeviceMenu = (menus: IDeviceMenu[], t: Translate, devices: Ar
           icon: 'layout-grid',
           path: '/device/list/',
           ...(deviceItems.length ? { children: deviceItems } : {}),
+        },
+        {
+          name: t('objects.title'),
+          icon: 'list-check',
+          path: '/device/objects/',
         },
         {
           name: t('common.rawData'),
@@ -103,6 +110,21 @@ export const createDeviceMenu = (menus: IDeviceMenu[], t: Translate, devices: Ar
           name: t('common.modbus'),
           icon: 'script',
           path: '/modbus/',
+        },
+        {
+          name: t('scripts.title'),
+          icon: 'code',
+          path: '/scripts/',
+        },
+        {
+          name: t('automations.title'),
+          icon: 'clock',
+          path: '/automations/',
+        },
+        {
+          name: t('system.title'),
+          icon: 'gauge',
+          path: '/system/',
         },
         {
           name: t('common.cloud'),

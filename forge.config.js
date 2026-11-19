@@ -9,7 +9,7 @@ const packagerIgnore = file => {
 
 module.exports = {
   packagerConfig: {
-    asar: { unpack: '**/{.vite/build/worker-script.cjs,.vite/build/module-runner.cjs,node_modules/ffmpeg-static/**}' },
+    asar: { unpack: '**/{.vite/build/script-runner.cjs,.vite/build/module-runner.cjs,node_modules/ffmpeg-static/**}' },
     ignore: packagerIgnore,
   },
   rebuildConfig: {},
@@ -52,11 +52,6 @@ module.exports = {
             entry: 'src/preload.ts',
             config: 'vite.preload.config.mjs',
             target: 'preload',
-          },
-          {
-            entry: 'core/modules/script/worker-script.ts',
-            config: 'vite.main.config.mjs',
-            target: 'main',
           },
         ],
         renderer: [

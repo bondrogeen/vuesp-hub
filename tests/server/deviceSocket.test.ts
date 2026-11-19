@@ -22,6 +22,10 @@ class FakeDeviceManager extends EventEmitter implements IDeviceConnectionManager
     return null;
   }
 
+  getState(_target: string): Record<string, unknown> | null {
+    return null;
+  }
+
   onSend(target: string, command: string, data?: Record<string, unknown>): boolean {
     this.sent.push({ target, command, data });
     return true;
@@ -113,4 +117,45 @@ test('reports the current stopped service status to a new socket', () => {
 
   assert.deepEqual(statusEvents, [{ running: false }]);
   detach();
+});
+
+test('pushes object snapshots and entity deltas to a new socket', async () => {
+  const manager = new FakeDeviceManager();
+  const runtime = new DeviceRuntime({
+    loadDevices: async () => [],
+    createConnections: () => manager,
+  });
+  await runtime.start();
+
+  const { ObjectRegistry } = await import('@core/application/objectRegistry.ts');
+  const registry = new ObjectRegistry();
+  registry.upsertDevice({ deviceId: 'uuid-1', name: 'BMS', ip: '192.0.2.7', online: true });
+  registry.syncEntities('uuid-1', [{
+    id: 'uuid-1/device.temp',
+    deviceId: 'uuid-1',
+    key: 'device.temp',
+    name: 'Temperature',
+    type: 'info',
+    entityType: 'sensor',
+    available: false,
+    get: { value: 21, display: '21 °C', status: 'live', updatedAt: 1, lastChanged: 1 },
+  }]);
+
+  const io = new FakeSocketIO();
+  const detach = socketDevice(io as unknown as SocketIOServer, runtime, registry);
+  const socket = new EventEmitter();
+  const snapshots: unknown[] = [];
+  const deltas: unknown[] = [];
+  socket.on('objects:snapshot', payload => snapshots.push(payload));
+  socket.on('objects:entity', payload => deltas.push(payload));
+
+  io.emit('connection', socket);
+  assert.equal((snapshots[0] as { devices: unknown[] }).devices.length, 1);
+
+  registry.updateEntity('uuid-1', 'device.temp', { name: 'Temp' });
+  assert.equal(deltas.length, 1);
+  assert.equal((deltas[0] as { entity: { name: string } }).entity.name, 'Temp');
+
+  detach();
+  await runtime.stop();
 });

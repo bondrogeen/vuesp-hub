@@ -140,7 +140,7 @@ const goProfile = (hide: (event: Event) => void) => {
 };
 const onLogout = (hide: (event: Event) => void) => {
   hide(new Event('click'));
-  logout();
+  void logout();
 };
 
 const webSocketStore = useWebSocketStore();

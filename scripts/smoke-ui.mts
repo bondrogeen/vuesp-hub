@@ -33,7 +33,7 @@ const tiles = [
     args: ['device.output', 'device'],
     get: '(a & 1 ? 0 : 1)',
     getTo: "v ? 'ON' : 'OFF'",
-    set: '({...a, output: v ? (a.output &= ~1) : (a.output |= 1), command: CMD.SET })',
+    set: '({...a, output: v ? (a.output & ~1) : (a.output | 1), command: CMD.SET })',
   },
 ];
 
@@ -112,7 +112,7 @@ const login = await fetch(`${base}/api/v1/auth/login`, {
   headers: { 'content-type': 'application/json' },
   body: JSON.stringify({ username: 'admin', password: 'admin' }),
 });
-let { token } = (await login.json()) as { token: string };
+let { token, user } = (await login.json()) as { token: string; user: Record<string, unknown> };
 
 // The bootstrap admin starts with a password-change flag. Clear it before the
 // UI smoke test so the router does not redirect to /auth/change-password.
@@ -122,7 +122,9 @@ const changed = await fetch(`${base}/api/v1/auth/change-password`, {
   body: JSON.stringify({ currentPassword: 'admin', newPassword: 'admin123' }),
 });
 if (changed.ok) {
-  token = ((await changed.json()) as { token: string }).token;
+  const body = (await changed.json()) as { token: string; user: Record<string, unknown> };
+  token = body.token;
+  user = body.user;
 }
 
 // --- headless Chrome via CDP -------------------------------------------------
@@ -218,7 +220,18 @@ const viewportWidth = Number(process.env.UI_WIDTH ?? 1440);
 const viewportHeight = Number(process.env.UI_HEIGHT ?? 900);
 await send('Emulation.setDeviceMetricsOverride', { width: viewportWidth, height: viewportHeight, deviceScaleFactor: 1, mobile: viewportWidth < 768 });
 await waitFor(async () => (await evaluate('document.readyState')) === 'complete', 'login page');
-await evaluate(`localStorage.setItem('vuesp-auth-token', ${JSON.stringify(token)})`);
+// The session lives in an HttpOnly cookie now; seed both the cookie and the
+// non-secret profile that the SPA uses for synchronous role checks.
+await send('Network.enable');
+await send('Network.setCookie', {
+  name: 'vuesp_session',
+  value: token,
+  domain: '127.0.0.1',
+  path: '/',
+  httpOnly: true,
+  sameSite: 'Strict',
+});
+await evaluate(`localStorage.setItem('vuesp-auth-profile', ${JSON.stringify(JSON.stringify(user))})`);
 await send('Page.navigate', { url: `${base}/dashboard` });
 
 await waitFor(async () => await evaluate('Boolean(document.querySelector("section .grid button"))'), 'dashboard tiles');
@@ -260,10 +273,14 @@ console.log('nested links:', JSON.stringify(nestedLinks));
 // --- module web component ---------------------------------------------------
 await send('Page.navigate', { url: `${base}/modules/vuesp-hub.hello` });
 await waitFor(
-  async () => await evaluate('Boolean(document.querySelector("vuesp-module-hello")?.shadowRoot?.textContent?.includes("vuesp-hub.hello"))'),
+  async () => await evaluate('document.querySelector(".module-host iframe")?.dataset.status === "mounted"'),
   'module web component',
 );
-const moduleUi = await evaluate('document.querySelector("vuesp-module-hello")?.shadowRoot?.querySelector(".panel")?.innerText?.replace(/\\s+/g, " ").trim().slice(0, 200)');
+await waitFor(
+  async () => String(await evaluate("document.querySelector('.module-host iframe')?.dataset.text || ''")).includes('vuesp-hub.hello'),
+  'module ui content',
+);
+const moduleUi = await evaluate("document.querySelector('.module-host iframe')?.dataset.text?.slice(0, 200)");
 console.log('module ui:', moduleUi);
 
 socket.close();

@@ -13,7 +13,7 @@ import storeModel from './adapters/storeModel.ts';
 
 const appPath = app.getAppPath();
 const buildDirectory = path.join(app.isPackaged ? `${appPath}.unpacked` : appPath, '.vite', 'build');
-const workerScriptPath = path.join(buildDirectory, 'worker-script.cjs');
+const scriptRunnerPath = path.join(buildDirectory, 'script-runner.cjs');
 
 const dataDirectory = app.getPath('userData');
 migrateLegacyCameraData(dataDirectory);
@@ -106,7 +106,7 @@ const start = (): void => {
     closeDeviceModel,
     storeModel,
     serialSettingsStore: new Store<Record<string, unknown>>(),
-    workerScriptPath,
+    scriptRunnerPath,
     auth: createAuthService({ dataDirectory }),
     access: createJsonAccessRepository({ dataDirectory }),
     dataDirectory,

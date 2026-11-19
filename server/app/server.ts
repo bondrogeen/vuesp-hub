@@ -6,9 +6,21 @@ import { createServer } from 'http';
 import { Server } from 'socket.io';
 
 import type { DeviceRuntime } from '@core/application/deviceRuntime.ts';
+import type Core from '@core/core.ts';
+import type { ObjectRegistry } from '@core/application/objectRegistry.ts';
+import type { ActionService } from '@core/application/actionService.ts';
+import type { IHistoryStore } from '@core/application/historyStore.ts';
+import type { AutomationEngine } from '@server/modules/automations/application/automationEngine.ts';
+import type { ScriptRuntime } from '@core/application/scriptRuntime.ts';
+import type { BackupService } from '@server/modules/backup/application/backupService.ts';
+import { applySecurityHeaders } from '@server/shared/security/securityHeaders.ts';
+import type { AuditLog } from '@server/modules/audit/application/auditLog.ts';
+import type { UpdateManager } from '@server/modules/update/application/updateManager.ts';
 import type { IAuthService } from '@server/modules/auth/application/authService.ts';
-import { requireAuth, requirePasswordChanged, socketAuth } from '@server/modules/auth/api/middleware.ts';
+import { requireAuth, requirePasswordChanged, requireSameOrigin, socketAuth } from '@server/modules/auth/api/middleware.ts';
 import { createAuthRouter } from '@server/modules/auth/api/authRoutes.ts';
+import { createModuleProxyRouter } from '@server/modules/modules/api/moduleProxyRoutes.ts';
+import { MODULE_FRAME_CSP, MODULE_FRAME_HTML, MODULE_FRAME_PATH } from '@server/module-host/frame.ts';
 import { createRouter } from './router.ts';
 import type { ICloudService } from '@server/modules/cloud/application/cloudService.ts';
 import proxy from '@server/modules/proxy/proxy.ts';
@@ -42,6 +54,15 @@ interface ServerOptions {
   cloud?: ICloudService;
   moduleHost?: TModuleHost;
   moduleCatalog?: TModuleCatalog;
+  core?: Core;
+  objects?: ObjectRegistry;
+  actions?: ActionService;
+  history?: IHistoryStore;
+  automation?: AutomationEngine;
+  scripts?: ScriptRuntime;
+  backup?: BackupService;
+  audit?: AuditLog;
+  update?: UpdateManager;
   host?: string;
   port?: number;
 }
@@ -57,6 +78,15 @@ export const server = ({
   cloud,
   moduleHost,
   moduleCatalog,
+  core,
+  objects,
+  actions,
+  history,
+  automation,
+  scripts,
+  backup,
+  audit,
+  update,
   host = defaultHost,
   port = defaultPort,
 }: ServerOptions) => {
@@ -71,7 +101,23 @@ export const server = ({
     await getDeviceModel();
     const app = express();
 
+    app.use((_request, response, next) => {
+      applySecurityHeaders((name, value) => response.setHeader(name, value));
+      next();
+    });
     app.use(express.json());
+    if (moduleHost) {
+      app.get(MODULE_FRAME_PATH, (_request: Request, response: Response) => {
+        response.setHeader('Content-Security-Policy', MODULE_FRAME_CSP);
+        response.setHeader('Content-Type', 'text/html; charset=utf-8');
+        response.setHeader('Cache-Control', 'no-store');
+        response.send(MODULE_FRAME_HTML);
+      });
+    }
+
+    app.get('/healthz', (_request: Request, response: Response) => {
+      response.json({ status: core?.getHealth().status ?? 'unknown' });
+    });
     if (staticDirectory) app.use(express.static(staticDirectory));
 
     if (moduleHost) {
@@ -81,6 +127,9 @@ export const server = ({
       app.use('/modules', async (request: Request, response: Response, next: NextFunction) => {
         const resolved = await moduleHost.resolve(`/modules${request.path}`);
         if (!resolved) return next();
+        // Module UI runs in an opaque-origin iframe; its ES modules and assets
+        // are public code, so cross-origin loading is allowed.
+        response.setHeader('Access-Control-Allow-Origin', '*');
 
         const { info, relative } = resolved;
         const web = info.manifest.web;
@@ -158,15 +207,18 @@ export const server = ({
       );
     }
 
-    const apiRouter = createRouter({ getDeviceModel, storeModel, auth, cloud, moduleHost, moduleCatalog });
+    const apiRouter = createRouter({ getDeviceModel, storeModel, auth, cloud, moduleHost, moduleCatalog, core, objects, actions, history, automation, scripts, backup, audit, update });
     // Mobile LAN access has its own long-lived token and must be mounted
     // before the admin-session middleware for /api/v1.
     if (cloud) app.use('/api/v1/mobile', createMobileRouter(cloud));
+    // Module UI proxy runs before the hub session check: module pages use a
+    // short-lived token scoped to their own module id.
+    if (moduleHost) app.use('/api/v1/modules', createModuleProxyRouter({ moduleHost, auth }));
     if (auth) {
       app.use('/api/v1/auth', createAuthRouter(auth));
       if (access) app.use('/api/v1/access', requireAuth(auth), requirePasswordChanged, createAccessRouter(access, auth));
-      app.use('/api/v1', requireAuth(auth), requirePasswordChanged, apiRouter);
-      app.use('/proxy', requireAuth(auth), requirePasswordChanged, proxy);
+      app.use('/api/v1', requireSameOrigin, requireAuth(auth), requirePasswordChanged, apiRouter);
+      app.use('/proxy', requireSameOrigin, requireAuth(auth), requirePasswordChanged, proxy);
     } else {
       app.use('/api/v1', apiRouter);
       app.use('/proxy', proxy);
@@ -201,7 +253,7 @@ export const server = ({
       response.status(500).json({ error: 'Internal server error' });
     });
 
-    detachDeviceSocket = socketDevice(ioDevice, deviceRuntime);
+    detachDeviceSocket = socketDevice(ioDevice, deviceRuntime, objects);
     socketSerial(ioSerial, serialSettingsStore);
 
     await new Promise<void>((resolve, reject) => {

@@ -73,7 +73,9 @@ const toMessage = args =>
 const createContext = async () => {
   const manifest = JSON.parse(await readFile(path.join(moduleDir, 'manifest.json'), 'utf8'));
   const permissions = new Set(Array.isArray(manifest.permissions) ? manifest.permissions : []);
-  const allowNetwork = permissions.size === 0 || permissions.has('network');
+  const allowNetwork = Number(manifest.apiVersion) < 2
+    ? permissions.size === 0 || permissions.has('network')
+    : permissions.has('network');
 
   return {
     manifest,
@@ -88,6 +90,12 @@ const createContext = async () => {
     auth: {
       /** Verifies a module-scoped token through the hub auth service. */
       verify: token => rpc('auth.verify', { token }),
+    },
+    objects: {
+      list: () => rpc('objects.list', {}),
+    },
+    actions: {
+      execute: input => rpc('actions.execute', input),
     },
     http: {
       fetch: (input, init) => {

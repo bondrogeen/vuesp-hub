@@ -177,7 +177,7 @@ export const createModuleRouter = ({
         return;
       }
 
-      const manifest = await moduleHost.installFromUrl(entry.artifact, entry.sha256);
+      const manifest = await moduleHost.installFromUrl(entry.artifact, entry.sha256, entry.signature);
       await moduleHost.start(manifest.id).catch(error => {
         console.warn(`Module ${manifest.id} installed but failed to start: ${error instanceof Error ? error.message : String(error)}`);
       });
@@ -207,20 +207,6 @@ export const createModuleRouter = ({
     await moduleHost.uninstall(String(request.params.id));
     response.json({ ok: true });
   });
-
-  const proxy = (request: express.Request, response: express.Response): void => {
-    const id = String(request.params.id);
-    const auth = (request as express.Request & { auth?: { id?: number; username?: string; role?: string } }).auth;
-    if (auth?.id !== undefined) request.headers['x-vuesp-user-id'] = String(auth.id);
-    if (auth?.username) request.headers['x-vuesp-username'] = auth.username;
-    if (auth?.role) request.headers['x-vuesp-role'] = auth.role;
-    moduleHost.proxy(id, request, response, `/api/v1/modules/${id}/proxy`);
-  };
-
-  // The dynamic module API lives behind the hub session, so the module itself
-  // never needs to know the admin token format.
-  router.all('/:id/proxy', proxy);
-  router.all('/:id/proxy/*splat', proxy);
 
   return router;
 };

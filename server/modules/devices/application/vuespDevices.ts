@@ -69,11 +69,12 @@ class VuespDevices extends EventEmitter {
   }
 
   getMenu() {
-    const menu: Array<{ id: number; recordId?: number; ip: string; name: string; menu: unknown[] }> = [];
+    const menu: Array<{ id: number; recordId?: number; uuid: string; ip: string; name: string; menu: unknown[] }> = [];
     this.#devices.forEach((device, index) => {
       menu.push({
         id: device.id,
         recordId: this.#list[index]?.id,
+        uuid: device.uuid,
         ip: device.ip,
         name: device.name,
         menu: device.menu,
@@ -83,9 +84,9 @@ class VuespDevices extends EventEmitter {
   }
 
   getList() {
-    const list: Array<{ id: number; ip: string; name: string; list: unknown[]; enums: TProtocolEnums }> = [];
+    const list: Array<{ id: number; uuid: string; legacyId: number; ip: string; name: string; list: unknown[]; enums: TProtocolEnums }> = [];
     this.#devices.forEach(device => {
-      list.push({ id: device.id, ip: device.ip, name: device.name, list: device.list, enums: device.enums })
+      list.push({ id: device.id, uuid: device.uuid, legacyId: device.id, ip: device.ip, name: device.name, list: device.list, enums: device.enums })
     });
     return list
   }
@@ -93,6 +94,11 @@ class VuespDevices extends EventEmitter {
   getEnums(find: string): TProtocolEnums | null {
     const device = this.#devices.find(device => device.name === find || device.ip === find);
     return device ? device.enums : null;
+  }
+
+  getState(find: string): Record<string, unknown> | null {
+    const device = this.#devices.find(device => device.name === find || device.ip === find);
+    return device ? device.getState() : null;
   }
 
   onSend(find: string, comm: string, data?: TDeviceCommandPayload) {

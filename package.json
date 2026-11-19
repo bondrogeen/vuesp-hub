@@ -53,6 +53,7 @@
   "dependencies": {
     "@mhoc/axios-digest-auth": "^0.8.0",
     "@tailwindcss/vite": "^4.3.3",
+    "acorn": "^8.19.0",
     "alisa-npm": "^1.2.0",
     "bufferutil": "^4.1.0",
     "c-struct-to-json": "^1.2.2",

@@ -30,6 +30,7 @@ interface DeviceDependencies {
 
 interface DeviceOptions {
   name?: string;
+  uuid?: string;
   ip: string;
   username?: string;
   password?: string;
@@ -78,6 +79,7 @@ class VuespDevice extends EventEmitter {
   #WebSocket: WebSocketConstructor;
   #time: number;
   #name: string;
+  #uuid: string;
   #list: unknown[];
   #fetch: HttpClient;
   #state: Record<string, unknown>;
@@ -101,6 +103,7 @@ class VuespDevice extends EventEmitter {
   constructor(
     {
       name = '',
+      uuid = '',
       ip,
       username = '',
       password = '',
@@ -117,6 +120,7 @@ class VuespDevice extends EventEmitter {
     this.#WebSocket = WebSocketClass;
     this.#ws = null;
     this.#name = name;
+    this.#uuid = uuid;
     this.#time = Date.now();
     this.#list = [];
     this.#state = {};
@@ -145,6 +149,10 @@ class VuespDevice extends EventEmitter {
     return this.#name;
   }
 
+  get uuid() {
+    return this.#uuid;
+  }
+
   get menu() {
     return this.#menu;
   }
@@ -155,6 +163,10 @@ class VuespDevice extends EventEmitter {
 
   get enums(): TProtocolEnums {
     return this.#protocol.enums;
+  }
+
+  getState(): Record<string, unknown> {
+    return this.#state;
   }
 
   get id(): number {
@@ -255,16 +267,16 @@ class VuespDevice extends EventEmitter {
     return this.#fetch
   }
 
-  getInfo(): Record<string, unknown> & { name: string; ip: string; time: number } {
+  getInfo(): Record<string, unknown> & { name: string; ip: string; uuid: string; time: number } {
     const info = isRecord(this.#state.INFO) ? this.#state.INFO : {};
-    return { ...info, name: this.#name, ip: this.#ip, time: this.#time };
+    return { ...info, name: this.#name, ip: this.#ip, uuid: this.#uuid, time: this.#time };
   }
 
   #onEvent(event: string, data: unknown = {}) {
     const device = this.getInfo();
     const id = device?.id || 0;
     const details = data instanceof Error ? { error: data } : data && typeof data === 'object' ? data : { data };
-    const payload = { event, ...details, id: this.id, ip: this.#ip, name: this.#name };
+    const payload = { event, ...details, id: this.id, uuid: this.#uuid, legacyId: this.id, ip: this.#ip, name: this.#name };
     if (event === 'error' && this.listenerCount('error') === 0) {
       this.emit('*', payload);
       console.error(data instanceof Error ? data.message : data);
@@ -365,6 +377,7 @@ class VuespDevice extends EventEmitter {
     return {
       time: this.#time,
       ip: this.#ip,
+      uuid: this.#uuid,
     };
   }
 

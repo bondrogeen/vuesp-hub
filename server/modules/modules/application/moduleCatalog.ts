@@ -15,6 +15,8 @@ export interface IModuleCatalogEntry {
   platforms?: string[];
   artifact: string;
   sha256: string;
+  /** Detached Ed25519 signature over the lowercase sha256 (base64). */
+  signature?: string;
   size?: number;
   releasedAt?: string;
 }

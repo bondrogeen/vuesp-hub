@@ -65,3 +65,31 @@ test('device protocol decodes a declared state key and exposes protocol enums', 
   assert.equal(protocol.enums.PORT.INPUT, 1);
   assert.equal(protocol.enums.CMD.SET, 2);
 });
+
+test('device protocol rejects an unsupported protocol version', () => {
+  assert.throws(
+    () => parseProtocolDefinition({ protocolVersion: 3, enums: { KEY: { INFO: 0 } }, structs: {} }),
+    /Unsupported device protocol version/,
+  );
+  assert.equal(
+    parseProtocolDefinition({ protocolVersion: 2, enums: { KEY: { INFO: 0 } }, structs: {} }).protocolVersion,
+    2,
+  );
+});
+
+test('dashboard schema version is validated before tiles are used', async () => {
+  const { parseLegacyDashboard } = await import('@server/modules/devices/domain/legacyDashboard.ts');
+  assert.equal(parseLegacyDashboard({ dashboard: [], schemaVersion: 1 })?.length, 0);
+  assert.equal(parseLegacyDashboard({ dashboard: [], schemaVersion: 2 }), null);
+  assert.equal(parseLegacyDashboard({ dashboard: [] })?.length, 0);
+});
+
+test('dashboard keeps the first tile when ids are duplicated', async () => {
+  const { parseLegacyDashboard } = await import('@server/modules/devices/domain/legacyDashboard.ts');
+  const items = parseLegacyDashboard([
+    { id: 'device.status3', name: 'charge', type: 'info', args: ['device.status3'] },
+    { id: 'device.status3', name: 'discharge', type: 'info', args: ['device.status3'] },
+  ]);
+  assert.equal(items?.length, 1);
+  assert.equal(items?.[0]?.name, 'charge');
+});

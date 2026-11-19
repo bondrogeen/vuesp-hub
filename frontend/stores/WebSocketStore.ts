@@ -6,12 +6,15 @@ import type {
   IDeviceEventPayload,
   IDeviceListItem,
   IDeviceMenu,
+  IObjectDevice,
+  IObjectEntity,
+  IObjectsSnapshot,
   TTargetedDeviceCommand,
 } from '@/types';
 import { isDeviceEventPayload, isRecordValue } from '../../shared/device.ts';
 import { isServiceStatusPayload } from '../../shared/socket.ts';
 import type { TDeviceSocketAcknowledgement } from '../../shared/socket.ts';
-import { clearToken, getToken } from '@/utils/auth.ts';
+import { clearSession, isAuthenticated } from '@/utils/auth.ts';
 import { translate } from '@/i18n/index.ts';
 
 type DeviceTelemetry = {
@@ -64,12 +67,13 @@ export const useWebSocketStore = defineStore('websocketstore', {
     events: [] as RawDeviceEvent[],
     menus: [] as IDeviceMenu[],
     list: [] as IDeviceListItem[],
+    objectDevices: {} as Record<string, IObjectDevice>,
   }),
   actions: {
     connect() {
       if (this.socket) return this.socket;
 
-      const socket = markRaw(io({ transports: ['websocket'], path: '/ws/device', auth: { token: getToken() } }));
+      const socket = markRaw(io({ transports: ['websocket'], path: '/ws/device' }));
       this.bindSocket(socket);
       return socket;
     },
@@ -83,10 +87,13 @@ export const useWebSocketStore = defineStore('websocketstore', {
         if (!data.running) this.mains = {};
       });
       socket.on('device:data', (data: unknown) => this.onData(data));
+      socket.on('objects:snapshot', (data: unknown) => this.onObjectsSnapshot(data));
+      socket.on('objects:device', (data: unknown) => this.onObjectDevice(data));
+      socket.on('objects:entity', (data: unknown) => this.onObjectEntity(data));
       socket.on('service:error', (error: unknown) => console.error(error));
       socket.on('connect_error', (error: Error) => {
         if (/unauthorized|jwt|token/i.test(error.message)) {
-          clearToken();
+          clearSession();
           if (typeof window !== 'undefined' && window.location.pathname !== '/auth/login/') {
             window.location.assign('/auth/login/');
           }
@@ -111,6 +118,40 @@ export const useWebSocketStore = defineStore('websocketstore', {
       } finally {
         this.isInitializing = false;
       }
+    },
+
+    onObjectsSnapshot(payload: unknown): void {
+      if (!isRecordValue(payload) || !Array.isArray(payload.devices)) return;
+      const devices: Record<string, IObjectDevice> = {};
+      for (const item of payload.devices) {
+        if (!isRecordValue(item) || typeof item.deviceId !== 'string' || !Array.isArray(item.entities)) continue;
+        devices[item.deviceId] = item as unknown as IObjectDevice;
+      }
+      this.objectDevices = devices;
+    },
+
+    onObjectDevice(payload: unknown): void {
+      if (!isRecordValue(payload) || !isRecordValue(payload.device)) return;
+      const device = payload.device as unknown as IObjectDevice;
+      if (typeof device.deviceId !== 'string') return;
+      this.objectDevices[device.deviceId] = device;
+    },
+
+    onObjectEntity(payload: unknown): void {
+      if (!isRecordValue(payload) || typeof payload.deviceId !== 'string') return;
+      const device = this.objectDevices[payload.deviceId];
+      if (!device || !isRecordValue(payload.entity)) return;
+      const entity = payload.entity as unknown as IObjectEntity;
+      if (typeof entity.key !== 'string') return;
+      const next = device.entities.filter(item => item.key !== entity.key);
+      next.push(entity);
+      this.objectDevices[payload.deviceId] = { ...device, entities: next };
+    },
+
+    setObjectDevices(devices: IObjectDevice[]): void {
+      const map: Record<string, IObjectDevice> = {};
+      for (const device of devices) map[device.deviceId] = device;
+      this.objectDevices = map;
     },
 
     onData(payload: unknown): void {

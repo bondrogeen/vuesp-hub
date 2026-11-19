@@ -9,6 +9,7 @@ export interface IDeviceConnectionManager {
   getMenu(): unknown[];
   getList(): unknown[];
   getEnums(target: string): Record<string, Record<string, number>> | null;
+  getState(target: string): Record<string, unknown> | null;
   onSend(target: string, command: string, data?: TDeviceCommandPayload): boolean;
   onSendAll(command: string, data?: TDeviceCommandPayload): boolean;
 }
@@ -26,7 +27,7 @@ export class DeviceRuntime<TDevice> extends EventEmitter {
   private readonly latestEvents = new Map<string, unknown>();
   private readonly onDeviceData = (payload: unknown) => {
     if (isDeviceEventPayload(payload) && payload.key && payload.event !== 'raw') {
-      this.latestEvents.set(`${payload.id}\0${payload.key}`, payload);
+      this.latestEvents.set(`${payload.uuid ?? payload.id}\0${payload.key}`, payload);
     }
     this.emit('data', payload);
   };
@@ -104,5 +105,9 @@ export class DeviceRuntime<TDevice> extends EventEmitter {
 
   getEnums(target: string): Record<string, Record<string, number>> | null {
     return this.manager?.getEnums(target) ?? null;
+  }
+
+  getState(target: string): Record<string, unknown> | null {
+    return this.manager?.getState(target) ?? null;
   }
 }
