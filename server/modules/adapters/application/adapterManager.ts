@@ -28,7 +28,7 @@ export class AdapterManager {
   async startAll(): Promise<void> {
     for (const [id, adapter] of this.adapters) {
       await adapter.start();
-      this.subscriptions.set(id, adapter.onEvent(event => {
+      this.subscriptions.set(id, adapter.onEvent(() => {
         void this.syncAdapter(adapter).catch(() => undefined);
       }));
       await this.syncAdapter(adapter);

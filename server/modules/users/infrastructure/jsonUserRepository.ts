@@ -1,7 +1,7 @@
 import { chmodSync, existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 
-import { isAccessPage, type TAccessPage } from '@server/modules/access/domain/access.ts';
+import { isAccessPage } from '@server/modules/access/domain/access.ts';
 import { hashPassword } from '@server/modules/users/domain/password.ts';
 import type {
   ICreateUserData,

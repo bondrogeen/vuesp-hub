@@ -1,6 +1,6 @@
 import { createCipheriv, createDecipheriv, randomBytes, scryptSync } from 'node:crypto';
 import { createReadStream, createWriteStream } from 'node:fs';
-import { open, rm, stat, writeFile } from 'node:fs/promises';
+import { open, rm, writeFile } from 'node:fs/promises';
 import { pipeline } from 'node:stream/promises';
 
 /**
@@ -46,6 +46,10 @@ export const encryptBackupFile = async (source: string, target: string, passphra
     const header = Buffer.concat([BACKUP_MAGIC, salt, iv, cipher.getAuthTag()]);
     await writeFile(target, header, { mode: 0o600 });
     await pipeline(createReadStream(cipherPath), createWriteStream(target, { flags: 'a', mode: 0o600 }));
+  } catch (error) {
+    // Never leave a partially written container behind.
+    await rm(target, { force: true });
+    throw error;
   } finally {
     await rm(cipherPath, { force: true });
   }
@@ -79,6 +83,3 @@ export const decryptBackupFile = async (source: string, target: string, passphra
     createWriteStream(target, { mode: 0o600 }),
   );
 };
-
-export const backupEncryptionEnabled = async (file: string): Promise<boolean> =>
-  (await stat(file).catch(() => null)) !== null && isEncryptedBackup(file);

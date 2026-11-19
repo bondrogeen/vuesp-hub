@@ -5,7 +5,7 @@ import path from 'node:path';
 import { test } from 'node:test';
 
 import { STATE_SCHEMA_VERSION } from '@core/application/stateStore.ts';
-import { openWithRecovery, isSqliteCorruption, quarantineSqlite } from '@server/shared/storage/recovery.ts';
+import { openWithRecovery, openWithRecoveryAsync, isSqliteCorruption, quarantineSqlite } from '@server/shared/storage/recovery.ts';
 import { SqliteStateStore } from '@server/shared/storage/sqliteStateStore.ts';
 
 test('detects sqlite corruption messages', () => {
@@ -54,6 +54,26 @@ test('non-corruption errors are not swallowed', () => {
       /permission denied/,
     );
     assert.deepEqual(quarantineSqlite(path.join(directory, 'missing.sqlite')), []);
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
+test('async recovery retries an asynchronous repository open', async () => {
+  const directory = mkdtempSync(path.join(tmpdir(), 'vuesp-recovery-async-'));
+  const file = path.join(directory, 'devices.sqlite');
+  writeFileSync(file, 'broken sqlite payload');
+  const events: string[][] = [];
+  try {
+    const store = await openWithRecoveryAsync(
+      file,
+      async () => new SqliteStateStore(file),
+      moved => events.push(moved),
+    );
+    assert.equal((await store.load())?.schemaVersion, STATE_SCHEMA_VERSION);
+    await store.close();
+    assert.equal(events.length, 1);
+    assert.ok(readdirSync(directory).some(name => name.includes('devices.sqlite.corrupt-')));
   } finally {
     rmSync(directory, { recursive: true, force: true });
   }

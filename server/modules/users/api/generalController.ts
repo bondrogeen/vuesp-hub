@@ -1,5 +1,4 @@
 import type { Request, Response } from 'express';
-import type { IApiErrorResponse } from '@root/shared/api.ts';
 import type { IStoreModel } from '@shared/stores/types.ts';
 import { sendApiError, sendApiFailure } from '@shared/http/apiResponse.ts';
 

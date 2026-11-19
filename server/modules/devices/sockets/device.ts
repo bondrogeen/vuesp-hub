@@ -3,12 +3,12 @@ import type { DeviceRuntime } from '@core/application/deviceRuntime.ts';
 import type { ObjectRegistry } from '@core/application/objectRegistry.ts';
 import { parseBroadcastDeviceCommand, parseTargetedDeviceCommand } from '@root/shared/device.ts';
 import type { TServiceSocketAcknowledgement } from '@root/shared/socket.ts';
+import { errorMessageOr as errorMessage } from '@root/shared/errors.ts';
 
 const respond = (callback: unknown, payload: TServiceSocketAcknowledgement) => {
   if (typeof callback === 'function') callback(payload);
 };
 
-const errorMessage = (error: unknown, fallback: string) => error instanceof Error ? error.message : fallback;
 
 export const socketDevice = (io: SocketIOServer, runtime: DeviceRuntime<unknown>, registry?: ObjectRegistry): (() => void) => {
   const forwardData = (payload: unknown) => io.emit('device:data', payload);

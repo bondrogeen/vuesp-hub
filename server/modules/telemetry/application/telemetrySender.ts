@@ -8,6 +8,7 @@ import { promisify } from 'node:util';
 import type { IDeviceRecord } from '@root/shared/device.ts';
 import { isDeviceEventPayload, isRecordValue } from '@root/shared/device.ts';
 import type { IPublicDashboardTile } from '@root/shared/dashboardTiles.ts';
+import { errorMessage } from '@root/shared/errors.ts';
 
 const execFileAsync = promisify(execFile);
 
@@ -310,7 +311,7 @@ export class TelemetrySender {
       return { sent: devices.length };
     } catch (error) {
       this.#backoff = this.#backoff ? Math.min(this.#backoff * 2, this.#maxBackoffMs) : 2000;
-      console.warn(`Cloud telemetry push failed: ${error instanceof Error ? error.message : String(error)}`);
+      console.warn(`Cloud telemetry push failed: ${errorMessage(error)}`);
       this.#schedule(this.#backoff);
       return { sent: 0 };
     } finally {

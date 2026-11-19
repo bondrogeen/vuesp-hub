@@ -33,7 +33,6 @@ import { socketSerial } from '@server/modules/serial/sockets/serial.ts';
 import { createMobileRouter } from '@server/modules/mobile/api/mobileRoutes.ts';
 import type { TModuleHost } from '@server/module-host/moduleHost.ts';
 import type { TModuleCatalog } from '@server/modules/modules/application/moduleCatalog.ts';
-import { createModuleRouter } from '@server/modules/modules/api/moduleRoutes.ts';
 
 const defaultPort = 3005;
 const defaultHost = '127.0.0.1';
@@ -215,10 +214,13 @@ export const server = ({
     // short-lived token scoped to their own module id.
     if (moduleHost) app.use('/api/v1/modules', createModuleProxyRouter({ moduleHost, auth }));
     if (auth) {
+      // One guard chain for every authenticated surface: Origin check, session
+      // (cookie or Bearer), then the password-change gate.
+      const sessionGuard = [requireSameOrigin, requireAuth(auth), requirePasswordChanged];
       app.use('/api/v1/auth', createAuthRouter(auth));
-      if (access) app.use('/api/v1/access', requireAuth(auth), requirePasswordChanged, createAccessRouter(access, auth));
-      app.use('/api/v1', requireSameOrigin, requireAuth(auth), requirePasswordChanged, apiRouter);
-      app.use('/proxy', requireSameOrigin, requireAuth(auth), requirePasswordChanged, proxy);
+      if (access) app.use('/api/v1/access', sessionGuard, createAccessRouter(access, auth));
+      app.use('/api/v1', sessionGuard, apiRouter);
+      app.use('/proxy', sessionGuard, proxy);
     } else {
       app.use('/api/v1', apiRouter);
       app.use('/proxy', proxy);

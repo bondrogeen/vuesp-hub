@@ -1,9 +1,8 @@
 import { Router } from 'express';
 
 import type { ICloudService } from '../application/cloudService.ts';
+import { errorMessageOr as errorMessage } from '@root/shared/errors.ts';
 
-const errorMessage = (error: unknown, fallback: string): string =>
-  error instanceof Error ? error.message : fallback;
 
 export const createCloudRouter = (cloud: ICloudService) => {
   const router = Router();

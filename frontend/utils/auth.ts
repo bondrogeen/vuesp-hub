@@ -6,7 +6,7 @@ import type { TAccessPage } from './access.ts';
  * page. Only the non-secret profile is persisted so role checks and first
  * paint work synchronously; the server remains the source of truth.
  */
-export const AUTH_PROFILE_KEY = 'vuesp-auth-profile';
+const AUTH_PROFILE_KEY = 'vuesp-auth-profile';
 
 export type TUserRole = 'admin' | 'user' | 'viewer';
 
@@ -55,8 +55,6 @@ const writeProfile = (user: IAuthUser): void => {
   }));
 };
 
-export const getUser = (): IAuthUser | null => readProfile();
-
 export const setSession = (session: IAuthSession): void => {
   writeProfile(session.user);
 };
@@ -67,7 +65,6 @@ export const clearSession = (): void => {
 };
 
 /** Backwards-compatible aliases for the previous token-based helpers. */
-export const clearToken = clearSession;
 export const isAuthenticated = (): boolean => Boolean(readProfile());
 
 export const getUsername = (): string => readProfile()?.username ?? '';

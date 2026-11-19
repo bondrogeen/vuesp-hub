@@ -1,4 +1,5 @@
 import type Core from '@core/core.ts';
+import { errorMessage } from '@root/shared/errors.ts';
 
 interface MqttClient {
   on(event: string, listener: (...args: unknown[]) => void): this;
@@ -51,7 +52,7 @@ export default class MqttModule {
       this.handleMessage(String(topic), String(message));
     });
     this.client.on('error', error => {
-      this.core.log(`MQTT error: ${error instanceof Error ? error.message : String(error)}`, 'error');
+      this.core.log(`MQTT error: ${errorMessage(error)}`, 'error');
     });
 
     this.core.registerService('mqtt', this);
@@ -65,7 +66,7 @@ export default class MqttModule {
       this.core.log(`Received MQTT state for ${deviceId}`);
       this.core.emitEvent('mqtt:state', { deviceId, state, at: Date.now() });
     } catch (error) {
-      this.core.log(`Error processing MQTT message: ${error instanceof Error ? error.message : String(error)}`, 'error');
+      this.core.log(`Error processing MQTT message: ${errorMessage(error)}`, 'error');
     }
   }
 

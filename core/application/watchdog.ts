@@ -1,3 +1,4 @@
+import { errorMessage } from '@root/shared/errors.ts';
 /**
  * Watches long-lived components (modules, adapters, bridges) and restarts
  * them after repeated failures. The watchdog never kills a healthy component:
@@ -99,7 +100,7 @@ export class Watchdog {
     try {
       result = await this.withTimeout(target.check());
     } catch (error) {
-      result = { ok: false, reason: error instanceof Error ? error.message : String(error) };
+      result = { ok: false, reason: errorMessage(error) };
     }
 
     if (result.ok) {
@@ -133,7 +134,7 @@ export class Watchdog {
       await target.restart();
       this.state.set(target.id, { ...next, failures: 0, restarts: previous.restarts + 1, lastRestartAt: at });
     } catch (error) {
-      this.log?.('error', `Failed to restart ${target.id}: ${error instanceof Error ? error.message : String(error)}`, target.id);
+      this.log?.('error', `Failed to restart ${target.id}: ${errorMessage(error)}`, target.id);
     }
   }
 

@@ -1,8 +1,9 @@
-import { fork, type ChildProcess } from 'node:child_process';
+import { fork } from 'node:child_process';
 
 import type { ActionService } from './actionService.ts';
 import type { IHistoryStore } from './historyStore.ts';
 import type { ObjectRegistry } from './objectRegistry.ts';
+import { errorMessage } from '@root/shared/errors.ts';
 
 export interface IScriptRunOptions {
   code: string;
@@ -101,7 +102,7 @@ export class ScriptRuntime {
             const result = await this.handleRpc(String(data.method), Array.isArray(data.args) ? data.args : []);
             child.send?.({ type: 'rpc_result', id: data.id, result });
           } catch (error) {
-            child.send?.({ type: 'rpc_result', id: data.id, error: error instanceof Error ? error.message : String(error) });
+            child.send?.({ type: 'rpc_result', id: data.id, error: errorMessage(error) });
           }
           return;
         }

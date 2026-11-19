@@ -10,6 +10,7 @@ import type { TModuleCatalog } from '@server/modules/modules/application/moduleC
 import type { TModuleHost } from '@server/module-host/moduleHost.ts';
 import type { IModuleInfo, IModuleSummary } from '@root/shared/module.ts';
 import { modulePublicRoute, moduleSlug } from '@server/module-host/publicRoute.ts';
+import { errorMessage, errorMessageOr } from '@root/shared/errors.ts';
 
 const toSummary = (info: IModuleInfo): IModuleSummary => {
   const { manifest } = info;
@@ -76,7 +77,7 @@ export const createModuleRouter = ({
 
     const manifest = await moduleHost.install(source);
     await moduleHost.start(manifest.id).catch(error => {
-      console.warn(`Module ${manifest.id} installed but failed to start: ${error instanceof Error ? error.message : String(error)}`);
+      console.warn(`Module ${manifest.id} installed but failed to start: ${errorMessage(error)}`);
     });
     const modules = await moduleHost.list();
     const info = modules.find(item => item.manifest.id === manifest.id);
@@ -102,7 +103,7 @@ export const createModuleRouter = ({
         await writeFile(temporary, body, { mode: 0o600 });
         const manifest = await moduleHost.install(temporary);
         await moduleHost.start(manifest.id).catch(error => {
-          console.warn(`Module ${manifest.id} installed but failed to start: ${error instanceof Error ? error.message : String(error)}`);
+          console.warn(`Module ${manifest.id} installed but failed to start: ${errorMessage(error)}`);
         });
         const modules = await moduleHost.list();
         const info = modules.find(item => item.manifest.id === manifest.id);
@@ -150,7 +151,7 @@ export const createModuleRouter = ({
         };
       }));
     } catch (error) {
-      response.status(502).json({ error: error instanceof Error ? error.message : 'Module catalog is unavailable' });
+      response.status(502).json({ error: errorMessageOr(error, 'Module catalog is unavailable') });
     }
   });
 
@@ -179,13 +180,13 @@ export const createModuleRouter = ({
 
       const manifest = await moduleHost.installFromUrl(entry.artifact, entry.sha256, entry.signature);
       await moduleHost.start(manifest.id).catch(error => {
-        console.warn(`Module ${manifest.id} installed but failed to start: ${error instanceof Error ? error.message : String(error)}`);
+        console.warn(`Module ${manifest.id} installed but failed to start: ${errorMessage(error)}`);
       });
       const modules = await moduleHost.list();
       const info = modules.find(item => item.manifest.id === manifest.id);
       response.status(201).json(info ? toSummary(info) : { id: manifest.id });
     } catch (error) {
-      response.status(502).json({ error: error instanceof Error ? error.message : 'Module installation failed' });
+      response.status(502).json({ error: errorMessageOr(error, 'Module installation failed') });
     }
   });
 

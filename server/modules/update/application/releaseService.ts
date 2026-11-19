@@ -5,6 +5,7 @@ import path from 'node:path';
 import { extractArchive } from '@server/shared/security/archive.ts';
 
 import type { IReleaseManifest, IReleaseVerification, IUpdateState } from '@core/application/release.ts';
+import { errorMessage } from '@root/shared/errors.ts';
 
 const VERSION_PATTERN = /^[0-9A-Za-z][0-9A-Za-z._-]{0,63}$/;
 
@@ -52,7 +53,7 @@ export const verifyManifest = (
     }
     return { ok: true };
   } catch (error) {
-    return { ok: false, error: error instanceof Error ? error.message : String(error) };
+    return { ok: false, error: errorMessage(error) };
   }
 };
 
@@ -121,6 +122,21 @@ export class ReleaseLayout {
   }
 }
 
+/** Reads `update-state.json`, returning null for a missing or damaged file. */
+export const readUpdateStateFile = async (statePath: string): Promise<IUpdateState | null> => {
+  try {
+    return JSON.parse(await readFile(statePath, 'utf8')) as IUpdateState;
+  } catch {
+    return null;
+  }
+};
+
+/** Writes `update-state.json` atomically enough for a single writer process. */
+export const writeUpdateStateFile = async (statePath: string, state: IUpdateState): Promise<void> => {
+  await mkdir(path.dirname(statePath), { recursive: true, mode: 0o700 });
+  await writeFile(statePath, `${JSON.stringify(state, null, 2)}\n`, { mode: 0o600 });
+};
+
 export interface IUpdateHooks {
   backup?(): Promise<void>;
   stop?(): Promise<void>;
@@ -164,12 +180,8 @@ export class UpdateService {
     this.hooks = hooks;
   }
 
-  async readState(): Promise<IUpdateState | null> {
-    try {
-      return JSON.parse(await readFile(this.statePath, 'utf8')) as IUpdateState;
-    } catch {
-      return null;
-    }
+  readState(): Promise<IUpdateState | null> {
+    return readUpdateStateFile(this.statePath);
   }
 
   async verify(manifest: IReleaseManifest, artifactPath: string): Promise<IReleaseVerification> {
@@ -185,8 +197,7 @@ export class UpdateService {
     return { ok: true };
   }
 
-  /** Persists an update state; also used by CLI/rollback flows. */
-  async recordState(status: IUpdateState['status'], fromVersion: string, toVersion: string, error?: string): Promise<IUpdateState> {
+  private async recordState(status: IUpdateState['status'], fromVersion: string, toVersion: string, error?: string): Promise<IUpdateState> {
     const state: IUpdateState = {
       status,
       fromVersion,
@@ -194,8 +205,7 @@ export class UpdateService {
       at: Date.now(),
       ...(error ? { error } : {}),
     };
-    await mkdir(path.dirname(this.statePath), { recursive: true, mode: 0o700 });
-    await writeFile(this.statePath, `${JSON.stringify(state, null, 2)}\n`, { mode: 0o600 });
+    await writeUpdateStateFile(this.statePath, state);
     return state;
   }
 
@@ -243,7 +253,7 @@ export class UpdateService {
       await state('done');
       return { ok: true, status: 'done', fromVersion: this.currentVersion, toVersion: manifest.appVersion };
     } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
+      const message = errorMessage(error);
       await this.layout.rollbackTo(previous).catch(() => undefined);
       await this.hooks.restore?.().catch(() => undefined);
       await this.hooks.start?.().catch(() => undefined);

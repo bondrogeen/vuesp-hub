@@ -11,6 +11,7 @@ import { buildTileCommands, resolvePublicTiles, type ICloudTileGroup, type IClou
 import { isRecordValue } from '@root/shared/device.ts';
 import type { IDashboardItem } from 'vuesp-dashboard-core';
 import { createCloudConfigStore, type ICloudConfig, type ICloudConfigStore } from '../infrastructure/cloudConfigStore.ts';
+import { errorMessage, errorMessageOr } from '@root/shared/errors.ts';
 
 const DEFAULT_CLOUD_URL = 'https://api.vuesp.ru';
 const PAIR_POLL_MS = 2000;
@@ -378,7 +379,7 @@ export const createCloudService = ({
       }
       return { ok: false, error: 'Device is not connected' };
     } catch (error) {
-      return { ok: false, error: error instanceof Error ? error.message : 'Action failed' };
+      return { ok: false, error: errorMessageOr(error, 'Action failed') };
     }
   };
 
@@ -573,7 +574,7 @@ export const createCloudService = ({
         state = 'error';
       });
     } catch (error) {
-      lastError = error instanceof Error ? error.message : String(error);
+      lastError = errorMessage(error);
       state = 'error';
       scheduleReconnect();
     }
@@ -627,7 +628,7 @@ export const createCloudService = ({
       state = 'disconnected';
       connect();
     } catch (error) {
-      lastError = error instanceof Error ? error.message : String(error);
+      lastError = errorMessage(error);
     }
   };
 
@@ -652,7 +653,7 @@ export const createCloudService = ({
       pairing = { ...result, timer };
       return status();
     } catch (error) {
-      lastError = error instanceof Error ? error.message : String(error);
+      lastError = errorMessage(error);
       state = 'error';
       return status();
     }

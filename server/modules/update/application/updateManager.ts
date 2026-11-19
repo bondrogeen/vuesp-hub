@@ -1,9 +1,12 @@
-import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { createWriteStream } from 'node:fs';
+import { mkdtemp, readFile, rm } from 'node:fs/promises';
+import { Readable } from 'node:stream';
+import { pipeline } from 'node:stream/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 
 import type { IReleaseManifest, IReleaseVerification, IUpdateState } from '@core/application/release.ts';
-import { ReleaseLayout, UpdateService, compareVersions, verifyManifest, type IUpdateHooks, type IUpdateResult } from './releaseService.ts';
+import { ReleaseLayout, UpdateService, compareVersions, readUpdateStateFile, verifyManifest, writeUpdateStateFile, type IUpdateHooks, type IUpdateResult } from './releaseService.ts';
 
 export interface IUpdateManagerOptions {
   releaseRoot: string;
@@ -92,23 +95,27 @@ export class UpdateManager {
     });
   }
 
-  private async readState(): Promise<IUpdateState | null> {
-    try {
-      return JSON.parse(await readFile(this.statePath, 'utf8')) as IUpdateState;
-    } catch {
-      return null;
-    }
+  private async writeState(status: IUpdateState['status'], fromVersion: string, toVersion: string, error?: string): Promise<IUpdateState> {
+    const state: IUpdateState = {
+      status,
+      fromVersion,
+      toVersion,
+      at: Date.now(),
+      ...(error ? { error } : {}),
+    };
+    await writeUpdateStateFile(this.statePath, state);
+    return state;
   }
 
   async status(): Promise<IUpdateStatus> {
     const [current, releases, state] = await Promise.all([
       this.layout.currentVersion(),
       this.layout.list(),
-      this.readState(),
+      readUpdateStateFile(this.statePath),
     ]);
     return {
       enabled: this.enabled,
-      current,
+      current: current ?? this.currentVersion,
       releases,
       state,
       ...(this.manifestSource ? { manifestSource: this.manifestSource } : {}),
@@ -116,8 +123,9 @@ export class UpdateManager {
   }
 
   async check(artifactPath?: string): Promise<IUpdateCheck> {
-    if (!this.manifestSource) return { available: false, current: await this.layout.currentVersion(), reason: 'Manifest source is not configured' };
     const current = await this.layout.currentVersion() ?? this.currentVersion;
+    if (!this.manifestSource) return { available: false, current, reason: 'Manifest source is not configured' };
+    if (!this.publicKey) return { available: false, current, reason: 'Update public key is not configured' };
     const manifest = await loadReleaseManifest(this.manifestSource, this.fetchImpl);
     if (compareVersions(manifest.appVersion, current) <= 0) {
       return { available: false, current, manifest, reason: `Installed version ${current} is up to date` };
@@ -138,11 +146,19 @@ export class UpdateManager {
   }
 
   private async download(manifest: IReleaseManifest): Promise<{ file: string; cleanup: () => Promise<void> }> {
+    const url = new URL(manifest.url);
+    if (url.protocol !== 'https:' && url.protocol !== 'http:') {
+      throw new Error(`Release artifact URL must use HTTP(S): ${manifest.url}`);
+    }
     const directory = await mkdtemp(path.join(tmpdir(), 'vuesp-update-'));
-    const file = path.join(directory, path.basename(new URL(manifest.url).pathname) || 'release.tgz');
+    const file = path.join(directory, path.basename(url.pathname) || 'release.tgz');
     const response = await this.fetchImpl(manifest.url);
     if (!response.ok) throw new Error(`Release download failed: HTTP ${response.status}`);
-    await writeFile(file, Buffer.from(await response.arrayBuffer()), { mode: 0o600 });
+    if (!response.body) throw new Error('Release download returned an empty body');
+    await pipeline(
+      Readable.fromWeb(response.body as unknown as import('node:stream/web').ReadableStream),
+      createWriteStream(file, { mode: 0o600 }),
+    );
     return { file, cleanup: () => rm(directory, { recursive: true, force: true }) };
   }
 
@@ -168,14 +184,15 @@ export class UpdateManager {
 
   async rollback(to?: string): Promise<{ from: string | null; to: string }> {
     const current = await this.layout.currentVersion();
+    if (!current) throw new Error('No current release is installed');
     const releases = await this.layout.list();
-    const target = to ?? (current ? releases[releases.indexOf(current) - 1] : releases.at(-1));
+    const target = to ?? releases[releases.indexOf(current) - 1];
     if (!target) throw new Error('No previous release is available for rollback');
     if (!releases.includes(target)) throw new Error(`Release ${target} is not installed`);
     if (current === target) throw new Error(`Release ${target} is already current`);
 
     await this.layout.rollbackTo(target);
-    await (await this.service(target)).recordState('rolled_back', current ?? 'unknown', target, 'Manual rollback');
+    await this.writeState('rolled_back', current ?? this.currentVersion, target, 'Manual rollback');
     return { from: current, to: target };
   }
 }

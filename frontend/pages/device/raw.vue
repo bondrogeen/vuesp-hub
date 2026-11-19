@@ -120,7 +120,7 @@ const rows = computed<IRawDeviceRow[]>(() => {
   const seen = new Set<string>();
 
   for (const device of registry.value) {
-    const id = String(device.deviceId);
+    const id = device.uuid || device.ip || String(device.deviceId);
     seen.add(id);
     result.push({
       id,
@@ -128,19 +128,20 @@ const rows = computed<IRawDeviceRow[]>(() => {
       ip: device.ip,
       deviceId: device.deviceId,
       uuid: device.uuid,
-      state: (devices.value[id] ?? {}) as Record<string, unknown>,
+      state: (devices.value[id] ?? devices.value[String(device.deviceId)] ?? {}) as Record<string, unknown>,
     });
   }
 
   for (const [id, state] of Object.entries(devices.value)) {
     if (seen.has(id)) continue;
-    const info = state.INFO as { name?: unknown } | undefined;
+    const info = state.INFO as { name?: unknown; id?: unknown } | undefined;
+    const legacyId = typeof info?.id === 'number' ? info.id : 0;
     result.push({
       id,
       name: typeof info?.name === 'string' && info.name ? info.name : t('raw.deviceName', { id }),
-      ip: '',
-      deviceId: Number(id),
-      uuid: '',
+      ip: /^\d+\.\d+\.\d+\.\d+$/.test(id) ? id : '',
+      deviceId: legacyId,
+      uuid: /^[0-9a-f-]{36}$/i.test(id) ? id : '',
       state,
     });
   }
@@ -170,7 +171,7 @@ const pretty = (state: Record<string, unknown>): string => JSON.stringify(state,
 const eventsByDevice = computed<Record<string, TRawEvent[]>>(() => {
   const map: Record<string, TRawEvent[]> = {};
   for (const event of events.value) {
-    const id = String(event.id);
+    const id = event.uuid || event.ip || String(event.id);
     (map[id] ??= []).push(event);
   }
   return map;

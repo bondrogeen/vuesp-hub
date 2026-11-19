@@ -43,12 +43,14 @@
           :title="locked ? t('dashboardPreview.unlock') : t('dashboardPreview.lock')"
           @click="toggleLock"
         >
-          <VIcon name="lock"
+          <VIcon
             v-if="locked"
+            name="lock"
             class="size-5"
           />
-          <VIcon name="lock-open"
+          <VIcon
             v-else
+            name="lock-open"
             class="size-5"
           />
         </VButton>

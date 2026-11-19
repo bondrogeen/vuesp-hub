@@ -113,3 +113,19 @@ test('changing the device IP keeps the same device and entity identity', () => {
   assert.equal(registry.getEntity('uuid-1', 'device.temp')?.id, before);
   assert.equal(registry.listEntities('uuid-1').length, 1);
 });
+
+test('upsertDevice emits only when device details change', () => {
+  const registry = new ObjectRegistry();
+  let events = 0;
+  const unsubscribe = registry.subscribe(() => { events += 1; });
+  try {
+    registry.upsertDevice({ deviceId: 'uuid-1', legacyId: 7, name: 'BMS', ip: '192.0.2.1', online: true });
+    assert.equal(events, 1);
+    registry.upsertDevice({ deviceId: 'uuid-1', legacyId: 7, name: 'BMS', ip: '192.0.2.1', online: true });
+    assert.equal(events, 1);
+    registry.upsertDevice({ deviceId: 'uuid-1', legacyId: 7, name: 'BMS', ip: '192.0.2.1', online: false });
+    assert.equal(events, 2);
+  } finally {
+    unsubscribe();
+  }
+});

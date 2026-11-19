@@ -15,9 +15,9 @@ import type {
   IServiceHealth,
   TCoreEventHandler,
   TCoreEventName,
-  TCoreHealthStatus,
   TCoreLogLevel,
 } from './kernel/types.ts';
+import { errorMessage } from '@root/shared/errors.ts';
 
 export type { ICoreLogEntry, TCoreLogLevel } from './kernel/types.ts';
 export type { ICoreConfig } from './kernel/config.ts';
@@ -32,7 +32,6 @@ export type TCoreModuleFactory = (core: Core) => ICoreModule;
 
 export interface ICoreOptions {
   modules?: TCoreModuleFactory[];
-  workerScriptPath?: string;
   config?: Partial<ICoreConfig>;
   configPath?: string;
 }
@@ -49,8 +48,6 @@ const LEVEL_WEIGHT: Record<TCoreLogLevel, number> = {
   error: 40,
 };
 
-const errorMessage = (error: unknown): string =>
-  error instanceof Error ? error.message : String(error);
 
 const isLogLevel = (value: unknown): value is TCoreLogLevel =>
   typeof value === 'string' && Object.hasOwn(LEVEL_WEIGHT, value);
@@ -70,7 +67,7 @@ export default class Core extends EventEmitter {
   private initialized = false;
   private stopped = false;
 
-  constructor({ modules, workerScriptPath, config, configPath }: ICoreOptions = {}) {
+  constructor({ modules, config, configPath }: ICoreOptions = {}) {
     super();
     this.config = loadCoreConfig({
       filePath: configPath ?? process.env.VUESP_CORE_CONFIG,

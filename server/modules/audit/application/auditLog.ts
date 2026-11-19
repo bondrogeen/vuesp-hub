@@ -1,6 +1,8 @@
 import { appendFile, mkdir, readFile, readdir, rename, rm, stat, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 
+import { fileTimestamp } from '@server/shared/time.ts';
+
 export interface IAuditEntry {
   at: number;
   actor: string;
@@ -90,8 +92,7 @@ export class AuditLog {
   private async rotateIfNeeded(): Promise<void> {
     const info = await stat(this.file).catch(() => null);
     if (!info || info.size < this.maxBytes) return;
-    const stamp = new Date(this.now()).toISOString().replace(/[:.]/g, '-');
-    await rename(this.file, path.join(this.directory, `audit-${stamp}.jsonl`)).catch(() => undefined);
+    await rename(this.file, path.join(this.directory, `audit-${fileTimestamp(new Date(this.now()))}.jsonl`)).catch(() => undefined);
     await writeFile(this.file, '', { mode: 0o600 });
     await this.prune();
   }

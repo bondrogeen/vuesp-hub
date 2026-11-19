@@ -23,6 +23,15 @@ export default tseslint.config(
       '@typescript-eslint/no-unused-expressions': 'warn',
       'no-var': 'warn',
       'prefer-const': 'warn',
+      // The hub uses compact single-line markup on purpose; these rules only
+      // reflow templates and drown real warnings in ~1k formatting notes.
+      'vue/max-attributes-per-line': 'off',
+      'vue/singleline-html-element-content-newline': 'off',
+      'vue/html-indent': 'off',
+      'vue/html-self-closing': 'off',
+      'vue/first-attribute-linebreak': 'off',
+      // Shared components emit camelCase events (for example `setState`).
+      'vue/v-on-event-hyphenation': 'off',
       'vue/multi-word-component-names': 'off',
       'vue/no-dupe-keys': 'warn',
     },

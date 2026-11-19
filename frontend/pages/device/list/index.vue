@@ -188,8 +188,10 @@ const isLegacyIdRegistered = (device: IDiscoveredDevice): boolean =>
   registeredDevices.value.some(saved => saved.deviceId === device.deviceId);
 
 const getStatus = (device: IDeviceRecord, states: Record<string, unknown>): string => {
-  const ping = (states[String(device.deviceId)] as { PING?: { delta?: number } } | undefined)?.PING;
-  const delta = typeof ping?.delta === 'number' ? ping.delta : Number.POSITIVE_INFINITY;
+  const state = (states[device.uuid] ?? states[device.ip] ?? states[String(device.deviceId)]) as
+    | { PING?: { delta?: number } }
+    | undefined;
+  const delta = typeof state?.PING?.delta === 'number' ? state.PING.delta : Number.POSITIVE_INFINITY;
   return delta > 5000 ? 'bg-red-500' : 'bg-emerald-500';
 };
 

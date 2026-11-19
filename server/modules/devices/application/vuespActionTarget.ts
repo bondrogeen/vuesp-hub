@@ -4,6 +4,7 @@ import type { IDeviceConnectionRecord } from '@root/shared/device.ts';
 import type { IDashboardItem } from 'vuesp-dashboard-core';
 import { buildTileCommands } from '@root/shared/dashboardTiles.ts';
 import { normalizeState } from '@server/modules/devices/application/vuespObjectAdapter.ts';
+import { errorMessage } from '@root/shared/errors.ts';
 
 interface IListEntry {
   uuid?: string;
@@ -40,7 +41,7 @@ export class VuespActionTarget implements IActionTarget {
     } catch (error) {
       return {
         commands: [],
-        error: { code: 'transport', message: error instanceof Error ? error.message : String(error), at: Date.now() },
+        error: { code: 'transport', message: errorMessage(error), at: Date.now() },
       };
     }
   }

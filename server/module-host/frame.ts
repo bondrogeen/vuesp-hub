@@ -8,6 +8,8 @@
  */
 export const MODULE_FRAME_PATH = '/module-frame.html';
 
+// Styles are inline because this is a standalone document served outside the
+// Vite/Tailwind bundle; it only resets the page for the embedded component.
 export const MODULE_FRAME_HTML = `<!doctype html>
 <html>
   <head>

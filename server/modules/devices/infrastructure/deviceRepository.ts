@@ -10,6 +10,7 @@ import {
   type IDeviceRecord,
 } from '@root/shared/device.ts';
 import type { ISecretProvider } from '@shared/secrets/secretProvider.ts';
+import { errorMessage } from '@root/shared/errors.ts';
 
 type SqliteInputValue = null | number | bigint | string | NodeJS.ArrayBufferView;
 type SqliteOutputValue = null | number | bigint | string | NodeJS.NonSharedUint8Array;
@@ -190,7 +191,7 @@ export const createDeviceRepository = async ({
         // A credential encrypted by another OS keyring/profile must not prevent
         // the whole hub from starting. The device will simply require the user
         // to enter its password again.
-        const message = error instanceof Error ? error.message : String(error);
+        const message = errorMessage(error);
         console.warn(`Could not decrypt credentials for device ${String(row.id)}: ${message}`);
       }
     }

@@ -11,6 +11,8 @@ import { createJsonSettingsStore, createJsonStoreModel } from '@server/shared/st
 import type { IDeviceRepository } from '@server/modules/devices/infrastructure/deviceRepository.ts';
 import { createAesSecretProvider } from '@server/shared/secrets/aesSecretProvider.ts';
 import { defaultDataDirectory } from './paths.ts';
+import { openWithRecoveryAsync } from '@server/shared/storage/recovery.ts';
+import { errorMessage } from '@root/shared/errors.ts';
 import { runUpdateCommand } from './updateCli.ts';
 
 const usage = `Usage: vuesp-hub [options]
@@ -72,11 +74,15 @@ export const main = async () => {
   migrateLegacyAlisaData(dataDirectory, secretProvider);
 
   let repositoryPromise: Promise<IDeviceRepository> | undefined;
+  const devicesDatabase = path.join(dataDirectory, 'vuesp.sqlite');
   const getDeviceModel = () => {
-    repositoryPromise ??= createDeviceRepository({
-      databasePath: path.join(dataDirectory, 'vuesp.sqlite'),
-      secretProvider,
-    });
+    repositoryPromise ??= openWithRecoveryAsync(
+      devicesDatabase,
+      () => createDeviceRepository({ databasePath: devicesDatabase, secretProvider }),
+      (moved, error) => {
+        console.warn(`Device registry was corrupted (${errorMessage(error)}); moved ${moved.join(', ')} aside`);
+      },
+    );
     return repositoryPromise;
   };
   const closeDeviceModel = async () => {

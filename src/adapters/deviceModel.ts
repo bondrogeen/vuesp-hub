@@ -4,6 +4,8 @@ import { mkdirSync } from 'node:fs';
 import path from 'node:path';
 
 import { createDeviceRepository } from '@server/modules/devices/infrastructure/deviceRepository.ts';
+import { openWithRecoveryAsync } from '@server/shared/storage/recovery.ts';
+import { errorMessage } from '@root/shared/errors.ts';
 import type { ISecretProvider } from '@shared/secrets/secretProvider.ts';
 
 interface LegacyDevice {
@@ -43,11 +45,13 @@ export const getDeviceModel = () => {
     const legacyDevices = legacyStore.get('device', []);
     const databasePath = path.join(app.getPath('userData'), 'vuesp.sqlite');
     mkdirSync(path.dirname(databasePath), { recursive: true });
-    repositoryPromise = createDeviceRepository({
+    repositoryPromise = openWithRecoveryAsync(
       databasePath,
-      legacyDevices,
-      secretProvider,
-    }).then(model => {
+      () => createDeviceRepository({ databasePath, legacyDevices, secretProvider }),
+      (moved, error) => {
+        console.warn(`Device registry was corrupted (${errorMessage(error)}); moved ${moved.join(', ')} aside`);
+      },
+    ).then(model => {
       if (Array.isArray(legacyDevices)) {
         const addresses = legacyDevices.map(device => device?.ip);
         const importedAddresses = new Set(model.getAll().map(device => device.ip));

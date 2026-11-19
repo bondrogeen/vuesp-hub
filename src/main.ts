@@ -10,6 +10,7 @@ import { createAuthService } from '@server/modules/auth/application/authService.
 import { createJsonAccessRepository } from '@server/modules/access/infrastructure/jsonAccessRepository.ts';
 import { closeDeviceModel, getDeviceModel, secretProvider } from './adapters/deviceModel.ts';
 import storeModel from './adapters/storeModel.ts';
+import { errorMessage } from '@root/shared/errors.ts';
 
 const appPath = app.getAppPath();
 const buildDirectory = path.join(app.isPackaged ? `${appPath}.unpacked` : appPath, '.vite', 'build');
@@ -138,7 +139,7 @@ const start = (): void => {
   void startupPromise.catch(error => {
     console.error('Application startup failed:', error);
     if (!isQuitting) {
-      dialog.showErrorBox('Vuesp could not start', error instanceof Error ? error.message : String(error));
+      dialog.showErrorBox('Vuesp could not start', errorMessage(error));
     }
     app.quit();
   });

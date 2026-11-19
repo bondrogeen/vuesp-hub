@@ -17,6 +17,30 @@
       </VCard>
     </div>
 
+    <VCard :title="t('system.update')" class="mt-4">
+      <div class="mb-4 flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-gray-dark-25 dark:text-gray-main">
+        <span>{{ t('system.currentVersion') }}: <span class="font-mono text-gray-dark-40 dark:text-white">{{ updateStatus?.current ?? '—' }}</span></span>
+        <span v-if="updateStatus?.state">{{ t('system.updateState') }}: <span class="uppercase">{{ updateStatus.state.status }}</span></span>
+      </div>
+
+      <p v-if="!updateStatus?.enabled" class="text-sm text-gray-dark-25 dark:text-gray-main">{{ t('system.updateNotConfigured') }}</p>
+      <template v-else>
+        <p class="text-sm text-gray-dark-25 dark:text-gray-main">
+          {{ t('system.updateSource') }}: <span class="font-mono">{{ updateStatus.manifestSource }}</span>
+        </p>
+        <p v-if="updateStatus.releases.length" class="mt-2 text-xs text-gray-dark-25 dark:text-gray-main">
+          {{ t('system.installedReleases') }}: <span class="font-mono">{{ updateStatus.releases.join(', ') }}</span>
+        </p>
+        <div class="mt-4 flex flex-wrap items-center gap-2">
+          <VButton color="gray" variant="outline" :loading="isCheckingUpdate" @click="checkUpdate">{{ t('system.checkUpdate') }}</VButton>
+          <VButton color="blue" :disabled="!updateStatus.selfUpdate || !updateCheck?.available" :loading="isUpdating" @click="applyUpdate">{{ t('system.applyUpdate') }}</VButton>
+          <VButton color="gray" variant="outline" :disabled="!updateStatus.selfUpdate || updateStatus.releases.length < 2" :loading="isUpdating" @click="rollbackUpdate">{{ t('system.rollback') }}</VButton>
+        </div>
+        <p v-if="updateMessage" class="mt-4 text-sm text-gray-dark-25 dark:text-gray-main">{{ updateMessage }}</p>
+        <p v-if="!updateStatus.selfUpdate" class="mt-2 text-xs text-gray-dark-25 dark:text-gray-main">{{ t('system.selfUpdateDisabled') }}</p>
+      </template>
+    </VCard>
+
     <div class="mt-4 grid gap-4 lg:grid-cols-2">
       <VCard :title="t('system.backups')">
         <div class="mb-4 flex items-center gap-2">
@@ -62,6 +86,21 @@ interface ILogEntry { timestamp: string; level: string; message: string; context
 interface IHealth { status: string; services: Record<string, unknown> }
 interface IMetrics { startedAt: number; eventsEmitted: number; eventErrors: number; logsWritten: number; logsDropped: number; timersActive: number }
 interface IAuditEntry { at: number; actor: string; role?: string; action: string; target?: string; result: string }
+interface IUpdateStateInfo { status: string; fromVersion: string; toVersion: string; at: number; error?: string }
+interface IUpdateStatusInfo {
+  enabled: boolean;
+  current: string | null;
+  releases: string[];
+  state: IUpdateStateInfo | null;
+  manifestSource?: string;
+  selfUpdate: boolean;
+}
+interface IUpdateCheckInfo {
+  available: boolean;
+  reason?: string;
+  manifest?: { appVersion: string };
+  verification?: { ok: boolean; error?: string };
+}
 
 const { t } = useI18n();
 const health = ref<IHealth | null>(null);
@@ -69,6 +108,11 @@ const metrics = ref<IMetrics | null>(null);
 const logs = ref<ILogEntry[]>([]);
 const backups = ref<string[]>([]);
 const audit = ref<IAuditEntry[]>([]);
+const updateStatus = ref<IUpdateStatusInfo | null>(null);
+const updateCheck = ref<IUpdateCheckInfo | null>(null);
+const updateMessage = ref('');
+const isCheckingUpdate = ref(false);
+const isUpdating = ref(false);
 const errorMessage = ref('');
 const isBackingUp = ref(false);
 
@@ -77,16 +121,18 @@ const loadBackups = async () => {
 };
 
 const loadSystem = async () => {
-  const [healthResponse, metricsResponse, logsResponse, auditResponse] = await Promise.all([
+  const [healthResponse, metricsResponse, logsResponse, auditResponse, updateResponse] = await Promise.all([
     api.get<IHealth>('/system/health'),
     api.get<IMetrics>('/system/metrics'),
     api.get<{ items: ILogEntry[] }>('/system/logs?limit=100'),
     api.get<{ entries: IAuditEntry[] }>('/system/audit?limit=50'),
+    api.get<IUpdateStatusInfo>('/system/update'),
   ]);
   health.value = healthResponse;
   metrics.value = metricsResponse;
   logs.value = logsResponse.items;
   audit.value = auditResponse.entries;
+  updateStatus.value = updateResponse;
   await loadBackups();
 };
 
@@ -99,6 +145,50 @@ const createBackup = async () => {
     errorMessage.value = error instanceof Error ? error.message : t('system.loadError');
   } finally {
     isBackingUp.value = false;
+  }
+};
+
+const checkUpdate = async () => {
+  isCheckingUpdate.value = true;
+  updateMessage.value = '';
+  try {
+    const result = await api.post<IUpdateCheckInfo>('/system/update/check');
+    updateCheck.value = result;
+    updateMessage.value = result.available
+      ? t('system.updateAvailable', { version: result.manifest?.appVersion ?? '' })
+      : result.reason ?? t('system.updateUpToDate');
+  } catch (error) {
+    updateMessage.value = error instanceof Error ? error.message : t('system.loadError');
+  } finally {
+    isCheckingUpdate.value = false;
+  }
+};
+
+const applyUpdate = async () => {
+  if (!window.confirm(t('system.updateApplyConfirm'))) return;
+  isUpdating.value = true;
+  updateMessage.value = '';
+  try {
+    await api.post('/system/update/apply');
+    updateMessage.value = t('system.updateScheduled');
+  } catch (error) {
+    updateMessage.value = error instanceof Error ? error.message : t('system.loadError');
+  } finally {
+    isUpdating.value = false;
+  }
+};
+
+const rollbackUpdate = async () => {
+  if (!window.confirm(t('system.updateRollbackConfirm'))) return;
+  isUpdating.value = true;
+  updateMessage.value = '';
+  try {
+    const result = await api.post<{ from: string | null; to: string }>('/system/update/rollback');
+    updateMessage.value = t('system.updateRolledBack', { to: result.to });
+  } catch (error) {
+    updateMessage.value = error instanceof Error ? error.message : t('system.loadError');
+  } finally {
+    isUpdating.value = false;
   }
 };
 

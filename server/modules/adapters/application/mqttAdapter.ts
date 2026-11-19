@@ -5,6 +5,7 @@ import type {
   IDeviceAdapter,
   IDeviceDescriptor,
 } from '@core/application/deviceAdapter.ts';
+import { errorMessage } from '@root/shared/errors.ts';
 
 export interface IMqttTransport {
   connect(): Promise<void> | void;
@@ -112,7 +113,7 @@ export class MqttAdapter implements IDeviceAdapter {
       await this.transport.publish(device.commandTopic, JSON.stringify({ entity: entityKey, value }));
       return { ok: true };
     } catch (error) {
-      return { ok: false, error: error instanceof Error ? error.message : String(error) };
+      return { ok: false, error: errorMessage(error) };
     }
   }
 

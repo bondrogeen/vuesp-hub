@@ -41,7 +41,7 @@ export const socketSerial = (io: Server, store: ISettingsStore) => {
 
                 io.emit('serial:status', { status: serial.getStatus(), options: savedOptions });
                 callback({ status: 'success', message: 'Service started' });
-            } catch (error) {
+            } catch {
                 callback({ status: 'error', message: 'serial:start' });
             }
         });
@@ -50,7 +50,7 @@ export const socketSerial = (io: Server, store: ISettingsStore) => {
             try {
                 const ports = await serial.getList()
                 callback({ data: ports.map(p => p) });
-            } catch (error) {
+            } catch {
                 callback({ status: 'error', message: 'serial:list' });
             }
         });
@@ -60,7 +60,7 @@ export const socketSerial = (io: Server, store: ISettingsStore) => {
 
             try {
                 serial.write(data as Buffer)
-            } catch (error) {
+            } catch {
                 callback({ status: 'error', message: 'serial:send' });
             }
         });
@@ -77,7 +77,7 @@ export const socketSerial = (io: Server, store: ISettingsStore) => {
                 await serial.disconnection()
                 io.emit('serial:status', { status: serial.getStatus(), options: savedOptions });
                 callback({ status: 'success', message: 'Service stopped' });
-            } catch (error) {
+            } catch {
                 callback({ status: 'error', message: 'Stop failed' });
             }
         });

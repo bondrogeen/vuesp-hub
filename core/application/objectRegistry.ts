@@ -103,17 +103,26 @@ export class ObjectRegistry {
   upsertDevice(input: IDeviceRegistration): IRegisteredDevice {
     const existing = this.devices.get(input.deviceId);
     const now = Date.now();
+    const online = input.online ?? existing?.online ?? false;
+    const legacyId = input.legacyId ?? existing?.legacyId;
     const device: IRegisteredDevice = {
       deviceId: input.deviceId,
-      ...(input.legacyId === undefined ? {} : { legacyId: input.legacyId }),
+      ...(legacyId === undefined ? {} : { legacyId }),
       name: input.name,
       ip: input.ip,
-      online: input.online ?? existing?.online ?? false,
-      lastSeen: existing?.lastSeen ?? now,
+      online,
+      // While online, `lastSeen` tracks the latest successful sync; when
+      // offline it keeps the moment the device was last reachable.
+      lastSeen: online ? now : existing?.lastSeen ?? now,
       entities: existing?.entities ?? new Map(),
     };
     this.devices.set(input.deviceId, device);
-    this.emit({ type: 'device', deviceId: input.deviceId });
+    const changed = !existing
+      || existing.name !== device.name
+      || existing.ip !== device.ip
+      || existing.online !== device.online
+      || existing.legacyId !== device.legacyId;
+    if (changed) this.emit({ type: 'device', deviceId: input.deviceId });
     return device;
   }
 

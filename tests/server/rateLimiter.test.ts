@@ -27,3 +27,15 @@ test('rate limiter reset and cleanup release memory', () => {
   limiter.cleanup(10_000);
   assert.equal(limiter.take('stale', 10_001).allowed, true);
 });
+
+test('check reports the limit without consuming attempts', () => {
+  const limiter = new RateLimiter({ limit: 2, windowMs: 1_000 });
+  for (let index = 0; index < 5; index += 1) {
+    assert.equal(limiter.check('key', 0).allowed, true);
+  }
+  limiter.take('key', 0);
+  limiter.take('key', 1);
+  const state = limiter.check('key', 2);
+  assert.equal(state.allowed, false);
+  assert.equal(state.remaining, 0);
+});

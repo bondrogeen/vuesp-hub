@@ -8,13 +8,12 @@ import type {
   IDeviceMenu,
   IObjectDevice,
   IObjectEntity,
-  IObjectsSnapshot,
   TTargetedDeviceCommand,
 } from '@/types';
 import { isDeviceEventPayload, isRecordValue } from '../../shared/device.ts';
 import { isServiceStatusPayload } from '../../shared/socket.ts';
 import type { TDeviceSocketAcknowledgement } from '../../shared/socket.ts';
-import { clearSession, isAuthenticated } from '@/utils/auth.ts';
+import { clearSession } from '@/utils/auth.ts';
 import { translate } from '@/i18n/index.ts';
 
 type DeviceTelemetry = {
@@ -163,6 +162,8 @@ export const useWebSocketStore = defineStore('websocketstore', {
       const stateKey = payload.ip || String(id);
       const main = (this.mains[stateKey] ??= emptyMain());
 
+      if (event === 'ping' && isRecordValue(data)) main.ping = data;
+
       if (event === 'message' && key) {
         const name = key.toLowerCase();
         if (isRecordValue(data)) {
@@ -176,10 +177,14 @@ export const useWebSocketStore = defineStore('websocketstore', {
       }
 
       if (!key) return;
-      if (!Object.hasOwn(this.devices, id)) {
-        this.devices[id] = {}
+      // UUID or IP stays stable before INFO arrives; the numeric protocol id
+      // is `-1` until then and would merge unrelated devices into one bucket.
+      const deviceKey = payload.uuid || payload.ip || String(id);
+      if (!deviceKey) return;
+      if (!Object.hasOwn(this.devices, deviceKey)) {
+        this.devices[deviceKey] = {}
       }
-      this.devices[id][key] = data
+      this.devices[deviceKey][key] = data
     },
 
     clearEvents(): void {

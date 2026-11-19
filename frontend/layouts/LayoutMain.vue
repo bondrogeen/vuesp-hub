@@ -3,7 +3,7 @@
     <AppDialog v-if="dialog.value" v-bind="dialog" @close="dialog = { value: false }" />
 
     <div class="hub-shell flex h-screen overflow-hidden">
-      <AppAside :isSidebar="sidebarToggle" @sidebar="sidebarToggle = $event">
+      <AppAside :is-sidebar="sidebarToggle" @sidebar="sidebarToggle = $event">
         <AppNav :groups="getMenu" :is-sidebar="sidebarToggle" :full-path="route.path" @sidebar="sidebarToggle = $event" />
         <div class="mt-auto pt-4 text-xs text-gray-main dark:text-gray-dark-25" :class="sidebarToggle ? 'lg:hidden' : ''">
           {{ t('common.appName') }}

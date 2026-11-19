@@ -12,7 +12,7 @@
         <template #header>
           <span class="rounded-full bg-amber-100 px-2.5 py-1 text-xs font-medium text-amber-700 dark:bg-amber-950/50 dark:text-amber-300">{{ t('common.preview') }}</span>
         </template>
-        <BlockSerial v-bind="settings" :list="listPort" :isConnect="isConnect" @change="onChange" @connect="onConnect" />
+        <BlockSerial v-bind="settings" :list="listPort" :is-connect="isConnect" @change="onChange" @connect="onConnect" />
       </VCard>
 
       <VCard :title="t('modbus.config')" disabled hover>

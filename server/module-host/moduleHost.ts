@@ -15,6 +15,7 @@ import type { IModuleInfo, IModuleLogEntry, IModuleManifest } from '@root/shared
 import { modulePublicRoute, validateModuleRoute } from './publicRoute.ts';
 import { assertModuleArchiveTrusted, moduleArchiveSha256, type IModuleTrustPolicy } from '@server/modules/modules/application/moduleTrust.ts';
 import { serializeModuleStorage } from './storage.ts';
+import { errorMessage } from '@root/shared/errors.ts';
 
 interface ModuleHostOptions {
   modulesDirectory: string;
@@ -266,7 +267,7 @@ export const createModuleHost = ({ modulesDirectory, dataDirectory, runnerPath, 
       }
       runtime.child.send({ type: 'rpc_result', id, result });
     } catch (error) {
-      runtime.child.send({ type: 'rpc_result', id, error: error instanceof Error ? error.message : String(error) });
+      runtime.child.send({ type: 'rpc_result', id, error: errorMessage(error) });
     }
   };
 
@@ -388,7 +389,7 @@ export const createModuleHost = ({ modulesDirectory, dataDirectory, runnerPath, 
           logs: runtime?.logs ?? [],
         });
       } catch (error) {
-        console.warn(`Skipping invalid module ${entry.name}: ${error instanceof Error ? error.message : String(error)}`);
+        console.warn(`Skipping invalid module ${entry.name}: ${errorMessage(error)}`);
       }
     }
     return modules;
@@ -513,7 +514,7 @@ export const createModuleHost = ({ modulesDirectory, dataDirectory, runnerPath, 
       try {
         await start(module.manifest.id);
       } catch (error) {
-        console.warn(`Module ${module.manifest.id} failed to start: ${error instanceof Error ? error.message : String(error)}`);
+        console.warn(`Module ${module.manifest.id} failed to start: ${errorMessage(error)}`);
       }
     }
   };

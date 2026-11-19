@@ -3,6 +3,7 @@ import { dirname } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 
 import { CONFIG_SCHEMA_VERSION, type IConfigStore } from '@core/application/configStore.ts';
+import { errorMessage } from '@root/shared/errors.ts';
 
 const asString = (value: unknown, fallback = ''): string => typeof value === 'string' ? value : fallback;
 
@@ -84,7 +85,7 @@ export class SqliteConfigStore implements IConfigStore {
       const result = asString(check?.quick_check, 'unknown');
       return result === 'ok' ? { ok: true, status: 'ok' } : { ok: false, status: 'error', message: result };
     } catch (error) {
-      return { ok: false, status: 'error', message: error instanceof Error ? error.message : String(error) };
+      return { ok: false, status: 'error', message: errorMessage(error) };
     }
   }
 

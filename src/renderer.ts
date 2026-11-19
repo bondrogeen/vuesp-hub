@@ -30,4 +30,4 @@
 
 import { useApp } from '@/main.ts';
 
-const app = useApp()
+useApp()

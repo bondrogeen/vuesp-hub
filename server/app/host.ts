@@ -15,7 +15,7 @@ import { AdapterManager } from '@server/modules/adapters/application/adapterMana
 import { CompositeActionTarget } from '@server/modules/adapters/application/compositeActionTarget.ts';
 import { SqliteStateStore } from '@server/shared/storage/sqliteStateStore.ts';
 import { SqliteConfigStore } from '@server/shared/storage/sqliteConfigStore.ts';
-import { createConfigStoreModel } from '@server/shared/storage/configStoreModel.ts';
+import { CONFIG_SECTIONS, createHubStoreModel } from '@server/shared/storage/hubStoreModel.ts';
 import { SqliteHistoryStore } from '@server/shared/storage/sqliteHistoryStore.ts';
 import { AutomationEngine } from '@server/modules/automations/application/automationEngine.ts';
 import { ScriptRuntime } from '@core/application/scriptRuntime.ts';
@@ -26,6 +26,7 @@ import { loadModuleTrustPolicy } from '@server/modules/modules/application/modul
 import { openWithRecovery } from '@server/shared/storage/recovery.ts';
 import { UpdateManager } from '@server/modules/update/application/updateManager.ts';
 import { APP_VERSION, DATA_SCHEMA_VERSION } from '@server/shared/version.ts';
+import { backupFileName } from '@server/modules/backup/application/backupNaming.ts';
 import { HistoryRecorder } from '@server/modules/history/application/historyRecorder.ts';
 import type { IDeviceRepository } from '@server/modules/devices/infrastructure/deviceRepository.ts';
 import type { TStoreModelFactory } from '@shared/stores/types.ts';
@@ -37,6 +38,7 @@ import path from 'node:path';
 import { createModuleHost, type TModuleHost } from '@server/module-host/moduleHost.ts';
 import { createModuleCatalog, type TModuleCatalog } from '@server/modules/modules/application/moduleCatalog.ts';
 import { server } from './server.ts';
+import { errorMessage } from '@root/shared/errors.ts';
 
 export interface ISettingsStore {
   get<T>(key: string, defaultValue?: T): T | undefined;
@@ -55,7 +57,6 @@ export interface IHubOptions {
   closeDeviceModel?: () => Promise<void> | void;
   storeModel: TStoreModelFactory;
   serialSettingsStore: ISettingsStore;
-  workerScriptPath?: string;
   scriptRunnerPath?: string;
   staticDirectory?: string;
   auth?: IAuthService;
@@ -103,7 +104,6 @@ export const createHub = ({
   closeDeviceModel,
   storeModel,
   serialSettingsStore,
-  workerScriptPath,
   scriptRunnerPath,
   staticDirectory,
   auth,
@@ -122,10 +122,10 @@ export const createHub = ({
     createConnections: devices => new VuespDevices(devices),
   });
 
-  const core = new Core({ workerScriptPath });
+  const core = new Core();
   const recovery = (name: string) => (moved: string[], error: unknown) => {
     core.log(
-      `${name} store was corrupted (${error instanceof Error ? error.message : String(error)}); moved ${moved.join(', ')} aside`,
+      `${name} store was corrupted (${errorMessage(error)}); moved ${moved.join(', ')} aside`,
       'error',
       name,
     );
@@ -140,7 +140,7 @@ export const createHub = ({
         recovery('state'),
       );
     } catch (error) {
-      core.log(`State store could not be opened: ${error instanceof Error ? error.message : String(error)}`, 'error', 'state');
+      core.log(`State store could not be opened: ${errorMessage(error)}`, 'error', 'state');
       core.markDegraded('state store unavailable');
     }
   }
@@ -151,12 +151,7 @@ export const createHub = ({
         recovery('config'),
       )
     : undefined;
-  const configSections = ['areas', 'panels', 'areaAssignments', 'automations', 'scenes', 'notifications', 'scripts'] as const;
-  const effectiveStoreModel: TStoreModelFactory = configStore
-    ? key => configSections.includes(key as typeof configSections[number])
-      ? createConfigStoreModel(configStore, key, { softDelete: key === 'panels' })
-      : storeModel(key)
-    : storeModel;
+  const effectiveStoreModel = createHubStoreModel({ ...(configStore ? { configStore } : {}), fallback: storeModel });
 
   const { registry: objects, detach: detachObjects } = attachVuespObjects(runtime, undefined, {
     onChange: entityId => core.emitEvent('entity:changed', { entityId, at: Date.now() }),
@@ -176,7 +171,7 @@ export const createHub = ({
         registry: objects,
         history: historyStore,
         onError: error => {
-          core.log(`History append failed: ${error instanceof Error ? error.message : String(error)}`, 'error', 'history');
+          core.log(`History append failed: ${errorMessage(error)}`, 'error', 'history');
           core.markDegraded('history persistence failed');
         },
       })
@@ -213,10 +208,7 @@ export const createHub = ({
             if (!backup) return;
             const directory = path.join(dataDirectory, 'backups');
             await mkdir(directory, { recursive: true, mode: 0o700 });
-            const file = path.join(
-              directory,
-              `pre-update-${new Date().toISOString().replace(/[:.]/g, '-')}.tgz${backup.encrypts ? '.enc' : ''}`,
-            );
+            const file = path.join(directory, backupFileName('pre-update', backup.encrypts));
             await backup.create(file);
           },
         },
@@ -277,7 +269,7 @@ export const createHub = ({
     stateSaveTimer = setTimeout(() => {
       stateSaveTimer = undefined;
       void saveState().catch(error => {
-        core.log(`State save failed: ${error instanceof Error ? error.message : String(error)}`, 'error', 'state');
+        core.log(`State save failed: ${errorMessage(error)}`, 'error', 'state');
         core.markDegraded('state persistence failed');
       });
     }, 2_000);
@@ -348,7 +340,7 @@ export const createHub = ({
     if (historyStore) {
       const runRetention = (): void => {
         void historyStore.retention({ days: 30 }).catch(error => {
-          core.log(`History retention failed: ${error instanceof Error ? error.message : String(error)}`, 'error', 'history');
+          core.log(`History retention failed: ${errorMessage(error)}`, 'error', 'history');
         });
       };
       runRetention();
@@ -356,7 +348,7 @@ export const createHub = ({
       historyRetentionTimer.unref?.();
     }
     if (configStore) {
-      for (const section of configSections) {
+      for (const section of CONFIG_SECTIONS) {
         const existing = await configStore.list(section);
         if (Object.keys(existing).length) continue;
         const legacy = await storeModel(section).getAll();
@@ -367,7 +359,7 @@ export const createHub = ({
       try {
         objects.restore(await stateStore.load());
       } catch (error) {
-        core.log(`State load failed: ${error instanceof Error ? error.message : String(error)}`, 'error', 'state');
+        core.log(`State load failed: ${errorMessage(error)}`, 'error', 'state');
         core.markDegraded('state store unavailable');
       }
     }

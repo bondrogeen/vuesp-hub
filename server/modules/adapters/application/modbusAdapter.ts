@@ -5,6 +5,7 @@ import type {
   IDeviceAdapter,
   IDeviceDescriptor,
 } from '@core/application/deviceAdapter.ts';
+import { errorMessage } from '@root/shared/errors.ts';
 
 export interface IModbusTransport {
   read(unit: number, address: number, length: number): Promise<number[]>;
@@ -99,7 +100,7 @@ export class ModbusAdapter implements IDeviceAdapter {
       await this.transport.write(device.unit, register.address, [raw]);
       return { ok: true };
     } catch (error) {
-      return { ok: false, error: error instanceof Error ? error.message : String(error) };
+      return { ok: false, error: errorMessage(error) };
     }
   }
 

@@ -4,6 +4,7 @@ import path from 'node:path';
 
 import { createAesSecretProvider } from '@server/shared/secrets/aesSecretProvider.ts';
 import type { ISecretProvider } from '@server/shared/secrets/secretProvider.ts';
+import { errorMessage } from '@root/shared/errors.ts';
 
 const CAMERA_MODULE_ID = 'vuesp-hub.video.cameras';
 const LEGACY_MODULE_IDS = ['vuesp.cameras'];
@@ -27,7 +28,7 @@ export const migrateLegacyCameraData = (dataDirectory: string): void => {
       renameSync(oldStorage, destination);
       console.log(`Migrated module data: ${legacyId} -> ${CAMERA_MODULE_ID}`);
     } catch (error) {
-      console.warn(`Could not migrate module data ${legacyId}: ${error instanceof Error ? error.message : String(error)}`);
+      console.warn(`Could not migrate module data ${legacyId}: ${errorMessage(error)}`);
     }
   }
 
@@ -45,7 +46,7 @@ export const migrateLegacyCameraData = (dataDirectory: string): void => {
     renameSync(legacy, `${legacy}.migrated`);
     console.log(`Migrated ${parsed.length} camera(s) to the ${CAMERA_MODULE_ID} module`);
   } catch (error) {
-    console.warn(`Could not migrate legacy cameras: ${error instanceof Error ? error.message : String(error)}`);
+    console.warn(`Could not migrate legacy cameras: ${errorMessage(error)}`);
   }
 };
 
@@ -108,6 +109,6 @@ export const migrateLegacyAlisaData = (dataDirectory: string, source?: ISecretPr
     renameSync(legacy, `${legacy}.migrated`);
     console.log('Migrated Alisa accounts to the Yandex module');
   } catch (error) {
-    console.warn(`Could not migrate legacy Alisa data: ${error instanceof Error ? error.message : String(error)}`);
+    console.warn(`Could not migrate legacy Alisa data: ${errorMessage(error)}`);
   }
 };

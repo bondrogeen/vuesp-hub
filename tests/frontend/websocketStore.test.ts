@@ -107,6 +107,12 @@ test('aggregates per-device dashboard state keyed by device ip', () => {
   assert.deepEqual(main.dallas['280102'], { address: [40, 1, 2], value: 21.5 });
   assert.deepEqual(main.ping, { delta: 120 });
 
-  // Raw transport state stays available and is still keyed by the legacy device id.
-  assert.deepEqual(store.devices['42'].INFO, { id: 42, name: 'lamp' });
+  // Real liveness pings arrive as `event: 'ping'` and must update both the
+  // dashboard state and the raw per-device state.
+  store.onData({ event: 'ping', id: -1, uuid: 'uuid-42', ip: '192.168.1.11', key: 'PING', data: { delta: 300 } });
+  assert.deepEqual(store.mains['192.168.1.11'].ping, { delta: 300 });
+  assert.deepEqual(store.devices['uuid-42'].PING, { delta: 300 });
+
+  // Raw transport state is keyed by a stable identity (ip when uuid is absent).
+  assert.deepEqual(store.devices['192.168.1.10'].INFO, { id: 42, name: 'lamp' });
 });

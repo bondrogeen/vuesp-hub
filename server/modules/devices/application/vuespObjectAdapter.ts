@@ -21,6 +21,10 @@ interface IDeviceEvent {
 }
 
 const COALESCE_MS = 100;
+/** A device that answered within this window is online. */
+const ONLINE_WITHIN_MS = 5_000;
+/** After this much silence the device is considered offline. */
+const OFFLINE_AFTER_MS = 15_000;
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -160,17 +164,46 @@ export const attachVuespObjects = (
     }, COALESCE_MS));
   };
 
+  const pingDelta = (payload: IDeviceEvent): number | null => {
+    if (payload.event !== 'ping') return null;
+    const data = (payload as IDeviceEvent & { data?: unknown }).data;
+    if (!isRecord(data)) return null;
+    const delta = data.delta;
+    return typeof delta === 'number' && Number.isFinite(delta) ? delta : null;
+  };
+
   const onData = (payload: IDeviceEvent): void => {
     const entry = findEntry(payload);
     if (!entry) return;
     const deviceId = String(entry.uuid ?? entry.id ?? entry.ip);
+    const previous = online.get(deviceId);
+    const isKnown = registry.getDevice(deviceId) !== null;
 
-    if (payload.event === 'open') online.set(deviceId, true);
-    if (payload.event === 'close' || payload.event === 'error') online.set(deviceId, false);
-    if (payload.event === 'message') online.set(deviceId, true);
+    let next = previous ?? false;
+    if (payload.event === 'open' || payload.event === 'message') next = true;
+    if (payload.event === 'close' || payload.event === 'error') next = false;
+    const delta = pingDelta(payload);
+    if (delta !== null) {
+      // Ping carries `now - lastMessageAt`, so it doubles as a liveness signal
+      // even before INFO/protocol are available.
+      if (delta <= ONLINE_WITHIN_MS) next = true;
+      else if (delta > OFFLINE_AFTER_MS) next = false;
+    }
+    online.set(deviceId, next);
 
-    if (payload.event === 'open' || payload.event === 'message') schedule(payload);
-    if (payload.event === 'close' || payload.event === 'error') schedule(payload, true);
+    if (payload.event === 'close' || payload.event === 'error') {
+      schedule(payload, true);
+      return;
+    }
+    if (payload.event === 'open' || payload.event === 'message') {
+      schedule(payload);
+      return;
+    }
+    // Create the registry entry on the first ping/init even when the device
+    // never reaches `open` (for example, a missing protocol.json).
+    if (payload.event === 'init' || payload.event === 'ready' || payload.event === 'compatibility-warning' || previous !== next || !isKnown) {
+      schedule(payload, true);
+    }
   };
 
   runtime.on('data', onData);

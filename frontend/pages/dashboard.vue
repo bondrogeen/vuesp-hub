@@ -113,7 +113,6 @@ const sections = computed(() =>
   }),
 );
 
-const isLoading = computed(() => serviceRunning.value && !list.value.length);
 
 const onSetState = (device: IDeviceListItem, item: IDashboardItem, value: unknown): void => {
   for (const command of buildTileCommands(item, value, mainFor(device), device.enums)) {

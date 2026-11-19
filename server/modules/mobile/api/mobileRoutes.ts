@@ -2,6 +2,7 @@ import { Router } from 'express';
 import type { Request, Response } from 'express';
 
 import type { ICloudService, IMobileTokenRecord } from '@server/modules/cloud/application/cloudService.ts';
+import { errorMessageOr } from '@root/shared/errors.ts';
 
 interface MobileRequest extends Request {
   mobileUser?: IMobileTokenRecord;
@@ -28,7 +29,7 @@ export const createMobileRouter = (cloud: ICloudService) => {
     try {
       response.json(await cloud.mobileSession(accessToken));
     } catch (error) {
-      response.status(401).json({ error: error instanceof Error ? error.message : 'Access denied' });
+      response.status(401).json({ error: errorMessageOr(error, 'Access denied') });
     }
   });
 
@@ -46,7 +47,7 @@ export const createMobileRouter = (cloud: ICloudService) => {
     try {
       response.json(await cloud.mobileHub());
     } catch (error) {
-      response.status(502).json({ error: error instanceof Error ? error.message : 'Could not load hub' });
+      response.status(502).json({ error: errorMessageOr(error, 'Could not load hub') });
     }
   });
 

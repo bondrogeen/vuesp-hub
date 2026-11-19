@@ -16,6 +16,8 @@ export const createAuthRouter = (auth: IAuthService) => {
   const router = Router();
   // Ten failed attempts per client per five minutes, then a fifteen minute block.
   const loginLimiter = new RateLimiter({ limit: 10, windowMs: 5 * 60_000, blockMs: 15 * 60_000 });
+  const limiterCleanup = setInterval(() => loginLimiter.cleanup(), 60_000);
+  limiterCleanup.unref?.();
   const loginKey = (request: { ip?: string; body?: unknown }): string => {
     const username = typeof (request.body as { username?: unknown } | undefined)?.username === 'string'
       ? String((request.body as { username: string }).username).toLowerCase()
@@ -35,7 +37,7 @@ export const createAuthRouter = (auth: IAuthService) => {
     }
 
     const key = loginKey(request);
-    const limit = loginLimiter.take(key);
+    const limit = loginLimiter.check(key);
     if (!limit.allowed) {
       response.setHeader('Retry-After', String(Math.ceil(limit.retryAfterMs / 1000)));
       response.status(429).json({ error: 'Too many login attempts, try again later' });
@@ -44,6 +46,7 @@ export const createAuthRouter = (auth: IAuthService) => {
 
     const session = auth.login(username, password);
     if (!session) {
+      loginLimiter.take(key);
       response.status(401).json({ error: 'Invalid username or password' });
       return;
     }

@@ -3,6 +3,7 @@ import { randomUUID } from 'node:crypto';
 import type { ActionService } from '@core/application/actionService.ts';
 import type { IHistoryStore } from '@core/application/historyStore.ts';
 import type { ObjectRegistry } from '@core/application/objectRegistry.ts';
+import { errorMessage } from '@root/shared/errors.ts';
 
 export type TAutomationMode = 'single' | 'restart' | 'queued';
 export type TAutomationLevel = 'info' | 'warn' | 'error';
@@ -62,7 +63,6 @@ export interface IAutomationEngineOptions {
   now?: () => number;
 }
 
-const errorMessage = (error: unknown): string => error instanceof Error ? error.message : String(error);
 
 const isRule = (value: Record<string, unknown>): value is Record<string, unknown> & IAutomationRule =>
   typeof value.id === 'number'
@@ -191,7 +191,6 @@ export class AutomationEngine {
       } else if (trigger.at) {
         const current = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
         if (current !== trigger.at) continue;
-        const dayKey = now.toDateString();
         if ((this.lastTime.get(rule.id) ?? 0) >= now.getTime() - 60_000) continue;
         this.lastTime.set(rule.id, now.getTime());
       } else continue;

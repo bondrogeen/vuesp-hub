@@ -4,6 +4,7 @@ import AxiosDigestAuth from '@mhoc/axios-digest-auth';
 import { parseLegacyDashboard } from '@server/modules/devices/domain/legacyDashboard.ts';
 import { DeviceProtocol, type TProtocolEnums } from '@server/modules/devices/domain/protocols/deviceProtocol.ts';
 import type { TDeviceCommandPayload } from '@root/shared/device.ts';
+import { errorMessage } from '@root/shared/errors.ts';
 
 interface WebSocketClient {
   readyState: number;
@@ -31,6 +32,8 @@ interface DeviceDependencies {
 interface DeviceOptions {
   name?: string;
   uuid?: string;
+  /** Numeric protocol id from the hub registry; used until INFO arrives. */
+  deviceId?: number;
   ip: string;
   username?: string;
   password?: string;
@@ -40,13 +43,14 @@ interface DeviceOptions {
   maxReconnectDelay?: number;
 }
 
+const HTTP_TIMEOUT_MS = 5_000;
+
 const basicAuthHeader = (username: string, password: string) =>
   `Basic ${Buffer.from(`${username}:${password}`).toString('base64')}`;
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
 
-const errorMessage = (error: unknown): string => error instanceof Error ? error.message : String(error);
 
 const createHttpClient = (username: string, password: string): HttpClient => {
   const hasCredentials = Boolean(username || password);
@@ -57,9 +61,12 @@ const createHttpClient = (username: string, password: string): HttpClient => {
     async get({ url }) {
       // New Vuesp firmware protects HTTP and WebSocket with HTTP Basic auth.
       // Legacy devices may still answer only to digest auth, so retry with it.
-      const response = await globalThis.fetch(url, headers ? { headers } : undefined);
+      const response = await globalThis.fetch(url, {
+        ...(headers ? { headers } : {}),
+        signal: AbortSignal.timeout(HTTP_TIMEOUT_MS),
+      });
       if (response.status === 401 && hasCredentials) {
-        return digestClient.request({ url, method: 'GET' });
+        return digestClient.request({ url, method: 'GET', timeout: HTTP_TIMEOUT_MS });
       }
       if (!response.ok) throw new Error(`Request failed with status ${response.status}`);
 
@@ -80,6 +87,7 @@ class VuespDevice extends EventEmitter {
   #time: number;
   #name: string;
   #uuid: string;
+  #deviceId: number;
   #list: unknown[];
   #fetch: HttpClient;
   #state: Record<string, unknown>;
@@ -104,6 +112,7 @@ class VuespDevice extends EventEmitter {
     {
       name = '',
       uuid = '',
+      deviceId,
       ip,
       username = '',
       password = '',
@@ -121,6 +130,7 @@ class VuespDevice extends EventEmitter {
     this.#ws = null;
     this.#name = name;
     this.#uuid = uuid;
+    this.#deviceId = Number.isSafeInteger(deviceId) ? Number(deviceId) : -1;
     this.#time = Date.now();
     this.#list = [];
     this.#state = {};
@@ -171,7 +181,9 @@ class VuespDevice extends EventEmitter {
 
   get id(): number {
     const id = this.getInfo().id;
-    return typeof id === 'number' ? id : -1;
+    // Before INFO arrives the registry id is the only stable identifier, so
+    // events do not collapse into a shared `-1` bucket.
+    return typeof id === 'number' ? id : this.#deviceId;
   }
 
   async #loadDefaultConfig() {
@@ -273,8 +285,6 @@ class VuespDevice extends EventEmitter {
   }
 
   #onEvent(event: string, data: unknown = {}) {
-    const device = this.getInfo();
-    const id = device?.id || 0;
     const details = data instanceof Error ? { error: data } : data && typeof data === 'object' ? data : { data };
     const payload = { event, ...details, id: this.id, uuid: this.#uuid, legacyId: this.id, ip: this.#ip, name: this.#name };
     if (event === 'error' && this.listenerCount('error') === 0) {
@@ -293,15 +303,29 @@ class VuespDevice extends EventEmitter {
     if (delta > this.#reconnectTime && this.#ws) this.#onReconnect();
   }
 
-  async #onOpen(ws: WebSocketClient, e: Event) {
+  #onOpen(ws: WebSocketClient, e: Event) {
     if (ws !== this.#ws || this.#manualDisconnect) return;
     this.#isConnect = true;
     this.#time = Date.now();
     this.#reconnectAttempt = 0;
-    await this.onInit();
-    await this.onList();
-    await this.onMenu();
-    if (ws === this.#ws) this.#onEvent('open', e);
+    // Liveness must not depend on `/protocol.json`, `/fs` or `/menu.json`:
+    // a device that answers on the socket is online even while those files
+    // are slow or missing.
+    this.#onEvent('open', e);
+    void this.#warmUp(ws);
+  }
+
+  async #warmUp(ws: WebSocketClient): Promise<void> {
+    try {
+      await this.onInit();
+      if (ws !== this.#ws) return;
+      await this.onList();
+      if (ws !== this.#ws) return;
+      await this.onMenu();
+      if (ws === this.#ws) this.#onEvent('ready', true);
+    } catch (error) {
+      this.#onEvent('error', error);
+    }
   }
 
   #onMessage(ws: WebSocketClient, message: WebSocket.RawData) {

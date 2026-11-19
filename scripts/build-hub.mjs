@@ -111,7 +111,29 @@ device credentials is refused with an explicit error.
 - \`--secret-key <key>\` — master key (alternative to \`VUESP_SECRET_KEY\`)
 
 Data defaults to \`$XDG_DATA_HOME/vuesp-hub\` (\`~/.local/share/vuesp-hub\` on Linux).
-The HTTP API is loopback-only by default; exposing it to LAN is not authenticated
-yet, so keep the default unless you understand the risk.
+The HTTP API is loopback-only by default. LAN access requires a TLS-terminating
+reverse proxy; the API itself is authenticated (HttpOnly session cookie).
+
+## Update
+
+\`\`\`bash
+vuesp-hub update status --release-root /opt/vuesp-hub --data-dir /var/lib/vuesp-hub
+vuesp-hub update check  --manifest https://updates.example/stable.json --public-key /etc/vuesp-hub/update.pub
+vuesp-hub update apply  --manifest https://updates.example/stable.json --public-key /etc/vuesp-hub/update.pub
+vuesp-hub update apply  --manifest ./stable.json --artifact ./vuesp-hub.tgz --public-key ./update.pub
+vuesp-hub update rollback --to 1.0.0
+\`\`\`
+
+Updates are Ed25519-signed, verified by SHA-256 and installed into an atomic
+\`releases/<version>\` layout with a \`current\` symlink. Stop the service before
+\`apply\` unless a supervisor restarts it.
+
+## Environment
+
+- \`VUESP_SECRET_KEY\` — master key for device credentials
+- \`VUESP_BACKUP_PASSPHRASE\` — encrypt backups (AES-256-GCM)
+- \`VUESP_MODULE_PUBLIC_KEYS\`, \`VUESP_MODULE_ALLOWLIST\`, \`VUESP_MODULE_REQUIRE_SIGNATURE\` — module trust
+- \`VUESP_RELEASE_ROOT\`, \`VUESP_UPDATE_MANIFEST_URL\`, \`VUESP_UPDATE_PUBLIC_KEY\` — updates
+- \`VUESP_ALLOW_SELF_UPDATE=1\` — allow apply/rollback from the UI (hub restarts)
 `,
 );

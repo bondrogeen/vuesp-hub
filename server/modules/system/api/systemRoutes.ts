@@ -7,6 +7,7 @@ import type { BackupService } from '@server/modules/backup/application/backupSer
 import type { AuditLog } from '@server/modules/audit/application/auditLog.ts';
 import type { UpdateManager } from '@server/modules/update/application/updateManager.ts';
 import { createUpdateRouter } from '@server/modules/update/api/updateRoutes.ts';
+import { backupFileName } from '@server/modules/backup/application/backupNaming.ts';
 
 type TAuthedRequest = express.Request & { auth?: { role?: string; username?: string } };
 import type { TCoreLogLevel } from '@core/kernel/types.ts';
@@ -61,7 +62,7 @@ export const createSystemRouter = (core: Core, backup?: BackupService, audit?: A
     try {
       const directory = path.join(backup.dataDirectory, 'backups');
       await mkdir(directory, { recursive: true, mode: 0o700 });
-      const file = `backup-${new Date().toISOString().replace(/[:.]/g, '-')}.tgz${backup.encrypts ? '.enc' : ''}`;
+      const file = backupFileName('backup', backup.encrypts);
       const manifest = await backup.create(path.join(directory, file));
       const auth = (request as TAuthedRequest).auth;
       void audit?.record({

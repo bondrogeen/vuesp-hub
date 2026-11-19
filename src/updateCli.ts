@@ -4,6 +4,7 @@ import path from 'node:path';
 import { parseArgs } from 'node:util';
 
 import { BackupService } from '@server/modules/backup/application/backupService.ts';
+import { backupFileName } from '@server/modules/backup/application/backupNaming.ts';
 import { UpdateManager } from '@server/modules/update/application/updateManager.ts';
 import { defaultDataDirectory } from './paths.ts';
 
@@ -78,7 +79,7 @@ export const runUpdateCommand = async (argv: string[]): Promise<void> => {
     if (values['no-backup']) return;
     const directory = path.join(dataDirectory, 'backups');
     await mkdir(directory, { recursive: true, mode: 0o700 });
-    const file = path.join(directory, `pre-update-${version}-${new Date().toISOString().replace(/[:.]/g, '-')}.tgz`);
+    const file = path.join(directory, backupFileName(`pre-update-${version}`));
     const service = new BackupService({ dataDirectory, appVersion: readVersion() });
     await service.create(file);
     process.stderr.write(`Backup: ${file}\n`);

@@ -10,6 +10,7 @@ import {
   type IStoreHealth,
   type IStoredStateDevice,
 } from '@core/application/stateStore.ts';
+import { errorMessage } from '@root/shared/errors.ts';
 
 type TDbValue = null | number | bigint | string | Uint8Array;
 type TDbRow = Record<string, TDbValue>;
@@ -168,7 +169,7 @@ export class SqliteStateStore implements IStateStore {
       const sizeBytes = this.path === ':memory:' || !existsSync(this.path) ? undefined : statSync(this.path).size;
       return { ok: true, status: 'ok', ...(sizeBytes === undefined ? {} : { sizeBytes }) };
     } catch (error) {
-      return { ok: false, status: 'error', message: error instanceof Error ? error.message : String(error) };
+      return { ok: false, status: 'error', message: errorMessage(error) };
     }
   }
 

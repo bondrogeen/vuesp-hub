@@ -32,6 +32,19 @@ export class RateLimiter {
     this.blockMs = Math.max(blockMs, windowMs);
   }
 
+  /** Reports the current state without recording an attempt. */
+  check(key: string, now = Date.now()): IRateLimiterResult {
+    const blocked = this.blockedUntil.get(key) ?? 0;
+    if (blocked > now) return { allowed: false, remaining: 0, retryAfterMs: blocked - now };
+    const since = now - this.windowMs;
+    const recent = (this.attempts.get(key) ?? []).filter(at => at > since);
+    return {
+      allowed: recent.length < this.limit,
+      remaining: Math.max(this.limit - recent.length, 0),
+      retryAfterMs: recent.length < this.limit ? 0 : this.windowMs,
+    };
+  }
+
   take(key: string, now = Date.now()): IRateLimiterResult {
     const blocked = this.blockedUntil.get(key) ?? 0;
     if (blocked > now) return { allowed: false, remaining: 0, retryAfterMs: blocked - now };

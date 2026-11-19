@@ -319,3 +319,25 @@ test('device identity keeps the registry uuid separate from the numeric device i
   assert.equal(device.id, -1);
   assert.equal(device.getStatus().uuid, 'uuid-13');
 });
+
+test('uses the registry id before INFO and opens without waiting for device files', async () => {
+  const device = new Device(
+    { ip: '192.0.2.44', deviceId: 777, reconnectDelay: 10, maxReconnectDelay: 20 },
+    {
+      WebSocketClass: FakeWebSocket,
+      // A device that never answers /protocol.json must still be reachable.
+      fetchClient: { get: () => new Promise(() => undefined) },
+    },
+  );
+  devices.push(device);
+  const events: string[] = [];
+  device.on('*', payload => events.push(payload.event));
+
+  assert.equal(device.id, 777);
+  device.connect();
+  FakeWebSocket.instances[0].emit('open', {});
+  await delay(5);
+
+  assert.ok(events.includes('open'));
+  assert.equal(device.id, 777);
+});
