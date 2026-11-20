@@ -282,3 +282,67 @@ test('module host rejects unsupported versions and permissions', async () => {
     await rm(root, { recursive: true, force: true });
   }
 });
+
+test('orders modules by dependencies and blocks unsatisfied ones', async () => {
+  const root = await mkdtemp(path.join(tmpdir(), 'vuesp-module-deps-'));
+  const modulesDirectory = path.join(root, 'modules');
+  const dataDirectory = path.join(root, 'data');
+  const source = path.join(root, 'hello');
+
+  const copyWith = async (name: string, patch: Record<string, unknown>) => {
+    const target = path.join(root, name);
+    await cp(source, target, { recursive: true });
+    const manifestPath = path.join(target, 'manifest.json');
+    const manifest = JSON.parse(await readFile(manifestPath, 'utf8')) as Record<string, unknown>;
+    await writeFile(manifestPath, JSON.stringify({ ...manifest, ...patch }, null, 2));
+    return target;
+  };
+
+  await cp(path.resolve('modules-dev/hello'), source, { recursive: true });
+
+  const host = createModuleHost({
+    modulesDirectory,
+    dataDirectory,
+    runnerPath: path.resolve('server/module-host/module-runner.cjs'),
+    coreVersion: '1.0.1',
+  });
+
+  try {
+    await host.install(await copyWith('provider', { id: 'test.provider', slug: 'provider', version: '1.0.0', provides: ['storage:state'] }));
+    await host.install(await copyWith('consumer', { id: 'test.consumer', slug: 'consumer', version: '1.0.0', requires: ['storage:state:^1.0'] }));
+    await host.install(await copyWith('blocked', { id: 'test.blocked', slug: 'blocked', version: '1.0.0', requires: ['storage:missing:^1.0'] }));
+
+    await host.startAll();
+    const modules = await host.list();
+    const byId = new Map(modules.map(item => [item.manifest.id, item]));
+    assert.equal(byId.get('test.provider')?.status, 'running');
+    assert.equal(byId.get('test.consumer')?.status, 'running');
+    assert.equal(byId.get('test.blocked')?.status, 'blocked');
+    assert.match(byId.get('test.blocked')?.error ?? '', /Missing dependency storage:missing/);
+
+    await assert.rejects(host.start('test.blocked'), /Missing dependency storage:missing/);
+  } finally {
+    await host.stopAll();
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+test('rejects manifests with invalid dependency syntax', async () => {
+  const root = await mkdtemp(path.join(tmpdir(), 'vuesp-module-invalid-dep-'));
+  const source = path.join(root, 'hello');
+  await cp(path.resolve('modules-dev/hello'), source, { recursive: true });
+  const manifestPath = path.join(source, 'manifest.json');
+  const manifest = JSON.parse(await readFile(manifestPath, 'utf8')) as Record<string, unknown>;
+  await writeFile(manifestPath, JSON.stringify({ ...manifest, requires: ['not-a-requirement'] }));
+
+  const host = createModuleHost({
+    modulesDirectory: path.join(root, 'modules'),
+    dataDirectory: path.join(root, 'data'),
+    runnerPath: path.resolve('server/module-host/module-runner.cjs'),
+  });
+  try {
+    await assert.rejects(host.install(source), /Invalid module requirement/);
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});

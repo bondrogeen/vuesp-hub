@@ -1,0 +1,61 @@
+schema: spec-driven
+
+# Project context (optional)
+# Add only constraints that should guide OpenSpec artifacts and workflows.
+# Include constraints an agent cannot infer by reading the code.
+# Keep general project documentation and discoverable codebase facts out.
+# Example:
+#   context: |
+#     Designs and tasks must cover Windows, macOS, and Linux
+#     Write all artifacts in Spanish
+
+# Per-artifact rules (optional)
+# Add custom rules for specific artifacts.
+# Example:
+#   rules:
+#     proposal:
+#       - Keep proposals under 500 words
+#       - Always state what is out of scope
+#     tasks:
+#       - Break tasks into chunks of max 2 hours
+
+# Per-operation guidance (optional)
+# Add advisory guidance for how apply and archive work should be conducted.
+# This is separate from artifact rules above.
+# Example:
+#   operations:
+#     apply:
+#       guidance:
+#         - Keep test summaries concise
+#     archive:
+#       guidance:
+#         - Summarize the archive outcome before finishing
+
+context: |
+  vuesp-hub — локальный сервер умного дома (Vue 3 + Node/TypeScript).
+  Архитектура, ADR, этапы и эксплуатация: ../vuesp-workspace/docs/hub.
+  Типы: интерфейсы I*, type-алиасы T*.
+  Перед «готово»: npm run typecheck && npm test && npm run lint && npm run build:hub && npm run smoke:hub.
+  Ничего не коммитить и не пушить без явной просьбы.
+
+rules:
+  proposal:
+    - "Referenced store is read-only: ссылайся на spec id и не копируй текст, summary или приватные документы в этот репозиторий."
+    - "Не переносить в артефакты секреты, токены, приватные URL и персональные данные."
+  design:
+    - "Приватные детали store не переносятся в design; только ссылка на spec id."
+  specs:
+    - "Локальные specs описывают только поведение этого репозитория; общие контракты живут в referenced store."
+    - "Не вставлять содержимое store в локальные specs — только ссылка на spec id."
+  tasks:
+    - "Каждая задача заканчивается проверками typecheck, tests, lint, build."
+    - "Не расширять протокол без записи в ../vuesp-workspace/docs/hub/decisions.md."
+
+operations:
+  apply:
+    guidance:
+      - "Если для задачи нужен приватный контекст, не копируй его в код, комментарии или артефакты — сошлись на spec id."
+
+references:
+  - id: vuesp-workspace
+    remote: https://github.com/bondrogeen/vuesp-workspace.git

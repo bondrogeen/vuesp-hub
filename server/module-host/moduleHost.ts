@@ -15,6 +15,8 @@ import type { IModuleInfo, IModuleLogEntry, IModuleManifest } from '@root/shared
 import { modulePublicRoute, validateModuleRoute } from './publicRoute.ts';
 import { assertModuleArchiveTrusted, moduleArchiveSha256, type IModuleTrustPolicy } from '@server/modules/modules/application/moduleTrust.ts';
 import { serializeModuleStorage } from './storage.ts';
+import { parseModuleRequirement, resolveModuleDependencies } from '@server/modules/modules/application/moduleDependencies.ts';
+import { APP_VERSION } from '@server/shared/version.ts';
 import { errorMessage } from '@root/shared/errors.ts';
 
 interface ModuleHostOptions {
@@ -27,6 +29,8 @@ interface ModuleHostOptions {
   gateway?: IModuleGateway;
   /** Optional signing/allowlist policy for distributed module archives. */
   trust?: IModuleTrustPolicy;
+  /** Hub version used for `core:` dependency ranges. */
+  coreVersion?: string;
 }
 
 export interface IModuleGateway {
@@ -81,6 +85,12 @@ const readManifest = async (directory: string): Promise<IModuleManifest> => {
       throw new Error(`Module ${field} must be an array of strings`);
     }
   }
+  for (const provider of manifest.provides ?? []) {
+    if (!/^[a-z0-9][a-z0-9:._-]{1,63}$/i.test(provider)) throw new Error(`Invalid module provider name: ${provider}`);
+  }
+  for (const requirement of manifest.requires ?? []) {
+    if (!parseModuleRequirement(requirement)) throw new Error(`Invalid module requirement: ${requirement}`);
+  }
   if (manifest.permissions !== undefined) {
     if (!Array.isArray(manifest.permissions) || !manifest.permissions.every(permission => typeof permission === 'string' && MODULE_PERMISSIONS.has(permission))) {
       throw new Error('Module permissions contain an unsupported value');
@@ -101,7 +111,7 @@ const readManifest = async (directory: string): Promise<IModuleManifest> => {
   return manifest as IModuleManifest;
 };
 
-export const createModuleHost = ({ modulesDirectory, dataDirectory, runnerPath, verifyModuleToken, gateway, trust }: ModuleHostOptions) => {
+export const createModuleHost = ({ modulesDirectory, dataDirectory, runnerPath, verifyModuleToken, gateway, trust, coreVersion = APP_VERSION }: ModuleHostOptions) => {
   const runtimes = new Map<string, Runtime>();
   const assetCacheDirectory = path.join(dataDirectory, 'module-cache');
 
@@ -386,13 +396,30 @@ export const createModuleHost = ({ modulesDirectory, dataDirectory, runnerPath, 
           manifest,
           directory,
           running: Boolean(runtime?.running),
+          status: runtime?.running ? 'running' : 'stopped',
           logs: runtime?.logs ?? [],
         });
       } catch (error) {
         console.warn(`Skipping invalid module ${entry.name}: ${errorMessage(error)}`);
       }
     }
+    const resolution = resolveModuleDependencies(modules.map(info => info.manifest), coreVersion);
+    for (const info of modules) {
+      const problem = resolution.problems[info.manifest.id];
+      if (!problem) continue;
+      info.status = 'blocked';
+      info.error = problem;
+    }
     return modules;
+  };
+
+  const resolutionFor = async (id: string) => {
+    const modules = await list();
+    return {
+      modules,
+      resolution: resolveModuleDependencies(modules.map(info => info.manifest), coreVersion),
+      info: modules.find(info => info.manifest.id === id),
+    };
   };
 
   const start = async (id: string): Promise<void> => {
@@ -400,9 +427,13 @@ export const createModuleHost = ({ modulesDirectory, dataDirectory, runnerPath, 
     if (existing?.running) return;
     if (existing) runtimes.delete(id);
 
-    const directories = await list();
-    const info = directories.find(item => item.manifest.id === id);
+    const { info, resolution } = await resolutionFor(id);
     if (!info) throw new Error(`Module not found: ${id}`);
+    if (resolution.problems[id]) throw new Error(resolution.problems[id]);
+
+    for (const dependency of resolution.dependencies[id] ?? []) {
+      if (!runtimes.get(dependency)?.running) await start(dependency);
+    }
 
     const dataDir = moduleDataDirectory(id);
     await mkdir(dataDir, { recursive: true, mode: 0o700 });
@@ -510,11 +541,15 @@ export const createModuleHost = ({ modulesDirectory, dataDirectory, runnerPath, 
 
   const startAll = async (): Promise<void> => {
     const modules = await list();
-    for (const module of modules) {
+    const resolution = resolveModuleDependencies(modules.map(info => info.manifest), coreVersion);
+    for (const [id, reason] of Object.entries(resolution.problems)) {
+      console.warn(`Module ${id} is blocked: ${reason}`);
+    }
+    for (const id of resolution.order) {
       try {
-        await start(module.manifest.id);
+        await start(id);
       } catch (error) {
-        console.warn(`Module ${module.manifest.id} failed to start: ${errorMessage(error)}`);
+        console.warn(`Module ${id} failed to start: ${errorMessage(error)}`);
       }
     }
   };

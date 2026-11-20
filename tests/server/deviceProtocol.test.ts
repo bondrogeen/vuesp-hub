@@ -93,3 +93,30 @@ test('dashboard keeps the first tile when ids are duplicated', async () => {
   assert.equal(items?.length, 1);
   assert.equal(items?.[0]?.name, 'charge');
 });
+
+test('accepts the full parseProtocol shape from default.json', () => {
+  const full = {
+    protocol: 2,
+    enums: definition.enums,
+    flagGroups: [],
+    descriptions: {},
+    structs: Object.fromEntries(
+      Object.entries(definition.structs).map(([name, fields]) => [name, { size: 16, fields }]),
+    ),
+  };
+  const parsed = parseProtocolDefinition(full);
+  assert.deepEqual(parsed.structs.Custom, definition.structs.Custom);
+
+  const protocol = new DeviceProtocol();
+  protocol.initialize(full);
+  const encoded = protocol.encode('CUSTOM', { value: 7 });
+  assert.ok(encoded instanceof ArrayBuffer);
+  assert.deepEqual(protocol.decode(encoded), { key: 'CUSTOM', object: { key: 1, value: 7 } });
+});
+
+test('rejects a newer protocol field from default.json', () => {
+  assert.throws(
+    () => parseProtocolDefinition({ protocol: 3, enums: definition.enums, structs: definition.structs }),
+    /Unsupported device protocol version: 3/,
+  );
+});

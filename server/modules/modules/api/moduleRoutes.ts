@@ -29,6 +29,10 @@ const toSummary = (info: IModuleInfo): IModuleSummary => {
     ...(manifest.group ? { group: manifest.group } : {}),
     slug: moduleSlug(manifest),
     route,
+    status: info.status,
+    ...(info.error ? { error: info.error } : {}),
+    ...(manifest.provides?.length ? { provides: manifest.provides } : {}),
+    ...(manifest.requires?.length ? { requires: manifest.requires } : {}),
     ...(entry && element
       ? {
           web: {

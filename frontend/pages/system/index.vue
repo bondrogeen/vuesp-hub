@@ -41,6 +41,35 @@
       </template>
     </VCard>
 
+    <VCard :title="t('system.adapters')" class="mt-4">
+      <p v-if="!adapterStatus?.adapters.length" class="text-sm text-gray-dark-25 dark:text-gray-main">{{ t('system.noAdapters') }}</p>
+      <template v-else>
+        <ul class="divide-y divide-gray-light-10/60 dark:divide-white/5">
+          <li v-for="adapter in adapterStatus.adapters" :key="adapter.id" class="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 py-2">
+            <div class="min-w-0">
+              <p class="truncate font-medium text-gray-dark-40 dark:text-white">{{ adapter.id }}</p>
+              <p class="text-xs text-gray-dark-25 dark:text-gray-main">
+                {{ adapter.protocol }} · {{ adapter.mode }} · {{ t('system.adapterDevices', { count: adapter.devices }) }}
+              </p>
+              <p v-if="adapter.health?.message" class="text-xs text-red-600 dark:text-red-300">{{ adapter.health.message }}</p>
+            </div>
+            <span class="rounded-full px-2 py-0.5 text-xs font-semibold uppercase tracking-wide" :class="adapterHealthClass(adapter)">
+              {{ adapter.health?.status ?? 'unknown' }}
+            </span>
+          </li>
+        </ul>
+        <p class="mt-3 text-xs text-gray-dark-25 dark:text-gray-main">
+          {{ t('system.adapterQueue', {
+            pending: adapterStatus.queue.pending,
+            inFlight: adapterStatus.queue.inFlight,
+            failed: adapterStatus.queue.failed,
+            timedOut: adapterStatus.queue.timedOut,
+            rejected: adapterStatus.queue.rejected,
+          }) }}
+        </p>
+      </template>
+    </VCard>
+
     <div class="mt-4 grid gap-4 lg:grid-cols-2">
       <VCard :title="t('system.backups')">
         <div class="mb-4 flex items-center gap-2">
@@ -95,6 +124,19 @@ interface IUpdateStatusInfo {
   manifestSource?: string;
   selfUpdate: boolean;
 }
+interface IAdapterHealthInfo { status: string; message?: string; updatedAt?: number }
+interface IAdapterInfo {
+  id: string;
+  protocol: string;
+  mode: string;
+  health?: IAdapterHealthInfo;
+  devices: number;
+}
+interface IAdapterStatusInfo {
+  status: string;
+  adapters: IAdapterInfo[];
+  queue: { pending: number; inFlight: number; completed: number; failed: number; rejected: number; timedOut: number; maxPending: number };
+}
 interface IUpdateCheckInfo {
   available: boolean;
   reason?: string;
@@ -108,6 +150,7 @@ const metrics = ref<IMetrics | null>(null);
 const logs = ref<ILogEntry[]>([]);
 const backups = ref<string[]>([]);
 const audit = ref<IAuditEntry[]>([]);
+const adapterStatus = ref<IAdapterStatusInfo | null>(null);
 const updateStatus = ref<IUpdateStatusInfo | null>(null);
 const updateCheck = ref<IUpdateCheckInfo | null>(null);
 const updateMessage = ref('');
@@ -121,18 +164,20 @@ const loadBackups = async () => {
 };
 
 const loadSystem = async () => {
-  const [healthResponse, metricsResponse, logsResponse, auditResponse, updateResponse] = await Promise.all([
+  const [healthResponse, metricsResponse, logsResponse, auditResponse, updateResponse, adaptersResponse] = await Promise.all([
     api.get<IHealth>('/system/health'),
     api.get<IMetrics>('/system/metrics'),
     api.get<{ items: ILogEntry[] }>('/system/logs?limit=100'),
     api.get<{ entries: IAuditEntry[] }>('/system/audit?limit=50'),
     api.get<IUpdateStatusInfo>('/system/update'),
+    api.get<IAdapterStatusInfo>('/adapters'),
   ]);
   health.value = healthResponse;
   metrics.value = metricsResponse;
   logs.value = logsResponse.items;
   audit.value = auditResponse.entries;
   updateStatus.value = updateResponse;
+  adapterStatus.value = adaptersResponse;
   await loadBackups();
 };
 
@@ -146,6 +191,14 @@ const createBackup = async () => {
   } finally {
     isBackingUp.value = false;
   }
+};
+
+const adapterHealthClass = (adapter: IAdapterInfo): string => {
+  if (adapter.health?.status === 'ready') return 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400';
+  if (adapter.health?.status === 'error' || adapter.health?.status === 'degraded') {
+    return 'bg-red-500/15 text-red-600 dark:text-red-300';
+  }
+  return 'bg-gray-dark-25/15 text-gray-dark-25 dark:text-gray-main';
 };
 
 const checkUpdate = async () => {

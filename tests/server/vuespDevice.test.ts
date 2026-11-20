@@ -115,7 +115,7 @@ test('device transport encodes INFO and forwards declared device state without i
       WebSocketClass: FakeWebSocket,
       fetchClient: {
         get: async ({ url }) => {
-          if (url.endsWith('/protocol.json')) return { data: definition };
+          if (url.endsWith('/default.json')) return { data: { struct: definition, dashboard: [], menu: [] } };
           if (url.endsWith('/menu.json')) return { data: [] };
           return { data: [] };
         },
@@ -170,7 +170,7 @@ test('device transport retries after a socket error and ignores later events fro
       fetchClient: {
         get: async ({ url }) => {
           fetchCalls += 1;
-          if (url.endsWith('/protocol.json')) return { data: definition };
+          if (url.endsWith('/default.json')) return { data: { struct: definition, dashboard: [], menu: [] } };
           if (url.endsWith('/menu.json')) return { data: [] };
           return { data: [] };
         },
@@ -224,8 +224,8 @@ test('device transport does not send INFO when the device protocol definition is
       WebSocketClass: FakeWebSocket,
       fetchClient: {
         get: async ({ url }) => {
-          if (url.endsWith('/protocol.json')) {
-            return { data: { enums: { KEY: { INFO: 0 } }, structs: { Info: [{ name: 'key' }] } } };
+          if (url.endsWith('/default.json')) {
+            return { data: { struct: { enums: { KEY: { INFO: 0 } }, structs: { Info: [{ name: 'key' }] } } } };
           }
           if (url.endsWith('/menu.json')) return { data: [] };
           return { data: [] };
@@ -282,9 +282,8 @@ test('loads the device dashboard into tile list and tags events with ip and name
       WebSocketClass: FakeWebSocket,
       fetchClient: {
         get: async ({ url }) => {
-          if (url.endsWith('/protocol.json')) return { data: definition };
           if (url.includes('/fs?file=/tmp/dashboard.json')) throw new Error('not found');
-          if (url.endsWith('/default.json')) return { data: { dashboard, menu: [] } };
+          if (url.endsWith('/default.json')) return { data: { struct: definition, dashboard, menu: [] } };
           if (url.endsWith('/menu.json')) return { data: [] };
           return { data: [] };
         },
@@ -325,7 +324,7 @@ test('uses the registry id before INFO and opens without waiting for device file
     { ip: '192.0.2.44', deviceId: 777, reconnectDelay: 10, maxReconnectDelay: 20 },
     {
       WebSocketClass: FakeWebSocket,
-      // A device that never answers /protocol.json must still be reachable.
+      // A device that never answers /default.json must still be reachable.
       fetchClient: { get: () => new Promise(() => undefined) },
     },
   );

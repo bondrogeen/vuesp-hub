@@ -65,11 +65,25 @@ export interface IModuleLogEntry {
   message: string;
 }
 
+export type TModuleStatus = 'running' | 'stopped' | 'blocked' | 'error';
+
 export interface IModuleInfo {
   manifest: IModuleManifest;
   directory: string;
   running: boolean;
+  status: TModuleStatus;
+  /** Human-readable reason for a blocked or failed module. */
+  error?: string;
   logs: IModuleLogEntry[];
+}
+
+export interface IModuleWebSummary {
+  entry: string;
+  element: string;
+  url: string;
+  route: string;
+  ws: string;
+  nav?: IModuleWebNav;
 }
 
 /** Public module shape sent to the hub UI. */
@@ -83,13 +97,10 @@ export interface IModuleSummary {
   slug: string;
   /** Public UI route, for example `/modules/video/cameras`. */
   route: string;
-  web?: {
-    entry: string;
-    element: string;
-    url: string;
-    route: string;
-    ws: string;
-    nav?: IModuleWebNav;
-  };
+  web?: IModuleWebSummary;
   running: boolean;
+  status: TModuleStatus;
+  error?: string;
+  provides?: string[];
+  requires?: string[];
 }

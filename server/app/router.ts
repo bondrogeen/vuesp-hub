@@ -29,6 +29,8 @@ import type { ScriptRuntime } from '@core/application/scriptRuntime.ts';
 import type { BackupService } from '@server/modules/backup/application/backupService.ts';
 import type { AuditLog } from '@server/modules/audit/application/auditLog.ts';
 import type { UpdateManager } from '@server/modules/update/application/updateManager.ts';
+import type { AdapterManager } from '@server/modules/adapters/application/adapterManager.ts';
+import { createAdapterRouter } from '@server/modules/adapters/api/adapterRoutes.ts';
 
 export const createRouter = ({
   getDeviceModel,
@@ -46,6 +48,7 @@ export const createRouter = ({
   backup,
   audit,
   update,
+  adapters,
 }: {
   getDeviceModel: () => Promise<IDeviceRepository>;
   storeModel: TStoreModelFactory;
@@ -62,6 +65,7 @@ export const createRouter = ({
   backup?: BackupService;
   audit?: AuditLog;
   update?: UpdateManager;
+  adapters?: AdapterManager;
 }) => {
   const router = express.Router();
 
@@ -72,6 +76,7 @@ export const createRouter = ({
   if (moduleHost) router.use('/modules', createModuleRouter({ moduleHost, auth, catalog: moduleCatalog }));
   if (core) router.use('/system', createSystemRouter(core, backup, audit, update));
   if (objects) router.use('/objects', createObjectRouter(objects));
+  if (adapters) router.use('/adapters', createAdapterRouter(adapters));
   router.use('/panels', createPanelsRouter(storeModel));
   router.use('/areas', createAreasRouter(storeModel));
   if (actions) router.use('/actions', createActionsRouter(actions, audit));

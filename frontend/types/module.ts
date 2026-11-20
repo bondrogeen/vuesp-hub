@@ -1,42 +1,19 @@
-export interface IModuleGroupInfo {
-  id: string;
-  slug?: string;
-  name: string;
-  icon?: string;
-  order?: number;
-}
+export type {
+  IModuleGroup as IModuleGroupInfo,
+  IModuleLogEntry,
+  IModuleSummary,
+  IModuleWebSummary as IModuleWebInfo,
+  TModuleStatus,
+} from '../../shared/module.ts';
 
-export interface IModuleWebInfo {
-  entry: string;
-  element: string;
-  url: string;
-  route: string;
-  ws: string;
-  nav?: {
-    label: string;
-    icon?: string;
-  };
-}
-
-export interface IModuleSummary {
-  id: string;
-  name: string;
-  version: string;
-  description?: string;
-  permissions: string[];
-  group?: IModuleGroupInfo;
-  slug: string;
-  route: string;
-  web?: IModuleWebInfo;
-  running: boolean;
-}
+import type { IModuleGroup } from '../../shared/module.ts';
 
 export interface ICatalogModule {
   id: string;
   name: string;
   version: string;
   description?: string;
-  group?: IModuleGroupInfo;
+  group?: IModuleGroup;
   slug?: string;
   permissions?: string[];
   platforms?: string[];
@@ -47,10 +24,4 @@ export interface ICatalogModule {
   compatible?: boolean;
   installed?: boolean;
   running?: boolean;
-}
-
-export interface IModuleLogEntry {
-  at: string;
-  level: 'info' | 'warn' | 'error';
-  message: string;
 }

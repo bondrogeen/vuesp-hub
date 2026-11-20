@@ -16,6 +16,7 @@ import type { BackupService } from '@server/modules/backup/application/backupSer
 import { applySecurityHeaders } from '@server/shared/security/securityHeaders.ts';
 import type { AuditLog } from '@server/modules/audit/application/auditLog.ts';
 import type { UpdateManager } from '@server/modules/update/application/updateManager.ts';
+import type { AdapterManager } from '@server/modules/adapters/application/adapterManager.ts';
 import type { IAuthService } from '@server/modules/auth/application/authService.ts';
 import { requireAuth, requirePasswordChanged, requireSameOrigin, socketAuth } from '@server/modules/auth/api/middleware.ts';
 import { createAuthRouter } from '@server/modules/auth/api/authRoutes.ts';
@@ -62,6 +63,7 @@ interface ServerOptions {
   backup?: BackupService;
   audit?: AuditLog;
   update?: UpdateManager;
+  adapters?: AdapterManager;
   host?: string;
   port?: number;
 }
@@ -86,6 +88,7 @@ export const server = ({
   backup,
   audit,
   update,
+  adapters,
   host = defaultHost,
   port = defaultPort,
 }: ServerOptions) => {
@@ -206,7 +209,7 @@ export const server = ({
       );
     }
 
-    const apiRouter = createRouter({ getDeviceModel, storeModel, auth, cloud, moduleHost, moduleCatalog, core, objects, actions, history, automation, scripts, backup, audit, update });
+    const apiRouter = createRouter({ getDeviceModel, storeModel, auth, cloud, moduleHost, moduleCatalog, core, objects, actions, history, automation, scripts, backup, audit, update, adapters });
     // Mobile LAN access has its own long-lived token and must be mounted
     // before the admin-session middleware for /api/v1.
     if (cloud) app.use('/api/v1/mobile', createMobileRouter(cloud));

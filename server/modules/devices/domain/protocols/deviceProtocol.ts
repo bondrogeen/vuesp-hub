@@ -40,8 +40,9 @@ const isProtocolField = (value: unknown): value is IProtocolField =>
 
 export const parseProtocolDefinition = (value: unknown): IProtocolDefinition => {
   if (!isRecord(value)) throw new TypeError('Device protocol definition must be an object');
-  if (value.protocolVersion !== undefined && value.protocolVersion !== SUPPORTED_PROTOCOL_VERSION) {
-    throw new TypeError(`Unsupported device protocol version: ${String(value.protocolVersion)}`);
+  const protocolVersion = value.protocolVersion ?? value.protocol;
+  if (protocolVersion !== undefined && protocolVersion !== SUPPORTED_PROTOCOL_VERSION) {
+    throw new TypeError(`Unsupported device protocol version: ${String(protocolVersion)}`);
   }
   if (!isRecord(value.enums)) throw new TypeError('Device protocol enums must be an object');
   if (!isRecord(value.structs)) throw new TypeError('Device protocol structs must be an object');
@@ -54,14 +55,21 @@ export const parseProtocolDefinition = (value: unknown): IProtocolDefinition => 
   if (!enums.KEY) throw new TypeError('Device protocol KEY enum is required');
 
   const structs: Record<string, IProtocolField[]> = {};
-  for (const [name, fields] of Object.entries(value.structs)) {
-    if (!Array.isArray(fields) || !fields.every(isProtocolField)) {
+  for (const [name, entry] of Object.entries(value.structs)) {
+    // Accept both the compact list (`Name: [fields]`) and the full
+    // `parseProtocol` shape (`Name: { size, fields }`).
+    const fields = Array.isArray(entry)
+      ? entry
+      : isRecord(entry) && Array.isArray(entry.fields)
+        ? entry.fields
+        : null;
+    if (!fields || !fields.every(isProtocolField)) {
       throw new TypeError(`Device protocol struct ${name} is invalid`);
     }
     structs[name] = fields;
   }
 
-  return { ...(value.protocolVersion === undefined ? {} : { protocolVersion: SUPPORTED_PROTOCOL_VERSION }), enums, structs };
+  return { ...(protocolVersion === undefined ? {} : { protocolVersion: SUPPORTED_PROTOCOL_VERSION }), enums, structs };
 };
 
 export class DeviceProtocol {

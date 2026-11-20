@@ -13,10 +13,7 @@ import { attachVuespObjects } from '@server/modules/devices/application/vuespObj
 import { VuespActionTarget } from '@server/modules/devices/application/vuespActionTarget.ts';
 import { AdapterManager } from '@server/modules/adapters/application/adapterManager.ts';
 import { CompositeActionTarget } from '@server/modules/adapters/application/compositeActionTarget.ts';
-import { SqliteStateStore } from '@server/shared/storage/sqliteStateStore.ts';
-import { SqliteConfigStore } from '@server/shared/storage/sqliteConfigStore.ts';
 import { CONFIG_SECTIONS, createHubStoreModel } from '@server/shared/storage/hubStoreModel.ts';
-import { SqliteHistoryStore } from '@server/shared/storage/sqliteHistoryStore.ts';
 import { AutomationEngine } from '@server/modules/automations/application/automationEngine.ts';
 import { ScriptRuntime } from '@core/application/scriptRuntime.ts';
 import { BackupService } from '@server/modules/backup/application/backupService.ts';
@@ -24,6 +21,7 @@ import { Watchdog, type IWatchdogTarget } from '@core/application/watchdog.ts';
 import { AuditLog } from '@server/modules/audit/application/auditLog.ts';
 import { loadModuleTrustPolicy } from '@server/modules/modules/application/moduleTrust.ts';
 import { openWithRecovery } from '@server/shared/storage/recovery.ts';
+import { createStorageFactories } from '@server/shared/storage/providers.ts';
 import { UpdateManager } from '@server/modules/update/application/updateManager.ts';
 import { APP_VERSION, DATA_SCHEMA_VERSION } from '@server/shared/version.ts';
 import { backupFileName } from '@server/modules/backup/application/backupNaming.ts';
@@ -131,25 +129,20 @@ export const createHub = ({
     );
     core.markDegraded(`${name} store was recreated after corruption`);
   };
-  let stateStore: SqliteStateStore | undefined;
-  if (dataDirectory) {
+  const storage = dataDirectory ? createStorageFactories({ dataDirectory }) : undefined;
+  const statePath = dataDirectory ? path.join(dataDirectory, 'state.sqlite') : undefined;
+  const configPath = dataDirectory ? path.join(dataDirectory, 'config.sqlite') : undefined;
+  let stateStore: IStateStore | undefined;
+  if (storage && statePath) {
     try {
-      stateStore = openWithRecovery(
-        path.join(dataDirectory, 'state.sqlite'),
-        () => new SqliteStateStore(path.join(dataDirectory, 'state.sqlite')),
-        recovery('state'),
-      );
+      stateStore = openWithRecovery(statePath, () => storage.createState(), recovery('state'));
     } catch (error) {
       core.log(`State store could not be opened: ${errorMessage(error)}`, 'error', 'state');
       core.markDegraded('state store unavailable');
     }
   }
-  const configStore = dataDirectory
-    ? openWithRecovery(
-        path.join(dataDirectory, 'config.sqlite'),
-        () => new SqliteConfigStore(path.join(dataDirectory, 'config.sqlite')),
-        recovery('config'),
-      )
+  const configStore = storage && configPath
+    ? openWithRecovery(configPath, () => storage.createConfig(), recovery('config'))
     : undefined;
   const effectiveStoreModel = createHubStoreModel({ ...(configStore ? { configStore } : {}), fallback: storeModel });
 
@@ -159,12 +152,9 @@ export const createHub = ({
   const adapters = new AdapterManager(objects);
   const actions = new ActionService({ registry: objects, target: new CompositeActionTarget(new VuespActionTarget(runtime), adapters) });
   core.registerService('actions', actions);
-  const historyStore = dataDirectory
-    ? openWithRecovery(
-        path.join(dataDirectory, 'history.sqlite'),
-        () => new SqliteHistoryStore(path.join(dataDirectory, 'history.sqlite')),
-        recovery('history'),
-      )
+  const historyPath = dataDirectory ? path.join(dataDirectory, 'history.sqlite') : undefined;
+  const historyStore = storage && historyPath
+    ? openWithRecovery(historyPath, () => storage.createHistory(), recovery('history'))
     : undefined;
   const historyRecorder = historyStore
     ? new HistoryRecorder({
@@ -332,6 +322,7 @@ export const createHub = ({
     ...(backup ? { backup } : {}),
     ...(audit ? { audit } : {}),
     ...(update ? { update } : {}),
+    adapters,
     host,
     port,
   });

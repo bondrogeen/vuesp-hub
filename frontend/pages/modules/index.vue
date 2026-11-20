@@ -86,16 +86,17 @@
               </div>
               <span
                 class="shrink-0 rounded-full px-2 py-1 text-xs font-semibold uppercase tracking-wide"
-                :class="item.running
-                  ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400'
-                  : 'bg-gray-dark-25/15 text-gray-dark-25 dark:text-gray-main'"
+                :class="statusClass(item)"
               >
-                {{ item.running ? t('modules.running') : t('modules.stopped') }}
+                {{ statusLabel(item) }}
               </span>
             </div>
 
             <p v-if="item.description" class="text-xs leading-relaxed text-gray-dark-25 dark:text-gray-light-10">
               {{ item.description }}
+            </p>
+            <p v-if="item.error" class="rounded-md bg-red-500/10 px-3 py-2 text-xs text-red-600 dark:text-red-300">
+              {{ item.error }}
             </p>
 
             <div class="text-xs text-gray-dark-25 dark:text-gray-main">
@@ -359,6 +360,21 @@ const catalogLoading = ref(false);
 const catalogError = ref('');
 const catalog = ref<ICatalogModule[]>([]);
 const catalogInstalling = ref('');
+
+const statusLabel = (item: IModuleSummary): string => {
+  if (item.status === 'blocked') return t('modules.blocked');
+  if (item.status === 'error') return t('modules.error');
+  return item.running ? t('modules.running') : t('modules.stopped');
+};
+
+const statusClass = (item: IModuleSummary): string => {
+  if (item.status === 'blocked' || item.status === 'error') {
+    return 'bg-red-500/15 text-red-600 dark:text-red-300';
+  }
+  return item.running
+    ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400'
+    : 'bg-gray-dark-25/15 text-gray-dark-25 dark:text-gray-main';
+};
 
 const sections = computed<ModuleSection[]>(() => {
   const grouped = new Map<string, ModuleSection>();

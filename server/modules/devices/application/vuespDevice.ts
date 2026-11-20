@@ -202,13 +202,14 @@ class VuespDevice extends EventEmitter {
     let definition: unknown;
 
     try {
-      const { data } = await this.#fetch.get({ url: `http://${this.#ip}/protocol.json` });
-      definition = data;
+      const config = await this.#loadDefaultConfig();
+      definition = isRecord(config) ? config.struct : undefined;
+      if (!definition) throw new Error('default.json has no struct');
     } catch (error) {
       this.#protocolReady = false;
       this.#onEvent('compatibility-warning', {
         reason: 'protocol-unavailable',
-        message: 'No protocol.json was found; device data decoding is unavailable.',
+        message: 'No struct was found in /default.json; device data decoding is unavailable.',
       });
       console.warn(errorMessage(error));
       return;
@@ -308,7 +309,7 @@ class VuespDevice extends EventEmitter {
     this.#isConnect = true;
     this.#time = Date.now();
     this.#reconnectAttempt = 0;
-    // Liveness must not depend on `/protocol.json`, `/fs` or `/menu.json`:
+    // Liveness must not depend on `/default.json`, `/fs` or `/menu.json`:
     // a device that answers on the socket is online even while those files
     // are slow or missing.
     this.#onEvent('open', e);

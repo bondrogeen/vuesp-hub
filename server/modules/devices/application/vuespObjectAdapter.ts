@@ -200,7 +200,7 @@ export const attachVuespObjects = (
       return;
     }
     // Create the registry entry on the first ping/init even when the device
-    // never reaches `open` (for example, a missing protocol.json).
+    // never reaches `open` (for example, a missing struct in default.json).
     if (payload.event === 'init' || payload.event === 'ready' || payload.event === 'compatibility-warning' || previous !== next || !isKnown) {
       schedule(payload, true);
     }

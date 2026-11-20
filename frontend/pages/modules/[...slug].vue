@@ -18,11 +18,13 @@
           {{ module.id }} · v{{ module.version }}
           <span
             class="ml-2 rounded-full px-2 py-0.5 text-xs font-semibold uppercase tracking-wide"
-            :class="module.running
-              ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400'
-              : 'bg-gray-dark-25/15 text-gray-dark-25 dark:text-gray-main'"
+            :class="module.status === 'blocked' || module.status === 'error'
+              ? 'bg-red-500/15 text-red-600 dark:text-red-300'
+              : module.running
+                ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400'
+                : 'bg-gray-dark-25/15 text-gray-dark-25 dark:text-gray-main'"
           >
-            {{ module.running ? t('modules.running') : t('modules.stopped') }}
+            {{ module.status === 'blocked' ? t('modules.blocked') : module.status === 'error' ? t('modules.error') : module.running ? t('modules.running') : t('modules.stopped') }}
           </span>
         </p>
       </div>
@@ -53,6 +55,14 @@
       class="mb-4 rounded-md border border-red-400/40 bg-red-500/10 px-4 py-3 text-sm text-red-600 dark:text-red-300"
     >
       {{ error }}
+    </div>
+
+    <div
+      v-else-if="module?.error"
+      role="alert"
+      class="mb-4 rounded-md border border-red-400/40 bg-red-500/10 px-4 py-3 text-sm text-red-600 dark:text-red-300"
+    >
+      {{ module.error }}
     </div>
 
     <div v-if="loading" class="text-sm text-gray-dark-25 dark:text-gray-main">
