@@ -126,7 +126,10 @@ interface PairingState {
 
 const joinUrl = (base: string, path: string): string => `${base.replace(/\/+$/, '')}${path}`;
 
-const toSocketUrl = (base: string): string => {
+/** Versioned base for every cloud HTTP call; the stored origin stays untouched. */
+export const apiBaseUrl = (base: string): string => joinUrl(base, '/v1');
+
+export const toSocketUrl = (base: string): string => {
   const url = new URL(base);
   url.protocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
   url.pathname = '/hub';
@@ -399,7 +402,7 @@ export const createCloudService = ({
     const token = accessToken.trim();
     if (!token) throw new Error('Access token is required');
 
-    const response = await fetchImpl(joinUrl(config.url, '/auth/hub/access'), {
+    const response = await fetchImpl(joinUrl(apiBaseUrl(config.url), '/auth/hub/access'), {
       method: 'POST',
       headers: {
         authorization: `Bearer ${config.token}`,
@@ -487,7 +490,7 @@ export const createCloudService = ({
       return;
     }
 
-    const response = await fetchImpl(joinUrl(config.url, '/telemetry/snapshots'), {
+    const response = await fetchImpl(joinUrl(apiBaseUrl(config.url), '/telemetry/snapshots'), {
       method: 'POST',
       headers: {
         authorization: `Bearer ${config.token}`,
@@ -586,7 +589,7 @@ export const createCloudService = ({
     sender = new TelemetrySender({
       runtime,
       getDeviceModel,
-      url: config.url,
+      url: apiBaseUrl(config.url),
       token: config.token,
       hubName: config.name,
       dataDirectory,
@@ -600,7 +603,7 @@ export const createCloudService = ({
   const pollPairing = async (): Promise<void> => {
     if (!pairing) return;
     try {
-      const response = await fetchImpl(joinUrl(baseUrl, `/hub/pair/sessions/${encodeURIComponent(pairing.sessionId)}`), {
+      const response = await fetchImpl(joinUrl(apiBaseUrl(baseUrl), `/hub/pair/sessions/${encodeURIComponent(pairing.sessionId)}`), {
         headers: { 'x-pair-secret': pairing.secret },
       });
       if (!response.ok) {
@@ -641,7 +644,7 @@ export const createCloudService = ({
     lastError = '';
 
     try {
-      const response = await fetchImpl(joinUrl(baseUrl, '/hub/pair/start'), {
+      const response = await fetchImpl(joinUrl(apiBaseUrl(baseUrl), '/hub/pair/start'), {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ name: hostname(), installationId: localHubId, platform: process.platform }),

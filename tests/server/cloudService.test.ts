@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { EventEmitter } from 'node:events';
-import { mkdtempSync } from 'node:fs';
+import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { test } from 'node:test';
@@ -8,7 +8,7 @@ import { test } from 'node:test';
 import { WebSocketServer, type WebSocket } from 'ws';
 import type { IDashboardItem } from 'vuesp-dashboard-core';
 
-import { createCloudService, type ICloudRuntime } from '@server/modules/cloud/application/cloudService.ts';
+import { apiBaseUrl, createCloudService, toSocketUrl, type ICloudRuntime } from '@server/modules/cloud/application/cloudService.ts';
 import type { IDeviceRecord } from '@root/shared/device.ts';
 
 const records: IDeviceRecord[] = [
@@ -63,8 +63,10 @@ test('publishes safe resolved tiles and applies an action on the hub', async () 
   const port = typeof address === 'object' && address ? address.port : 0;
 
   const snapshots: Array<Record<string, any>> = [];
+  const socketPaths: string[] = [];
   let socket: WebSocket | undefined;
-  server.on('connection', (ws) => {
+  server.on('connection', (ws, request) => {
+    socketPaths.push(request.url ?? '');
     socket = ws;
     ws.on('message', (raw) => {
       const message = JSON.parse(raw.toString()) as Record<string, any>;
@@ -105,6 +107,7 @@ test('publishes safe resolved tiles and applies an action on the hub', async () 
     cloud.start();
     await waitFor(() => (cloud.status().connected ? true : undefined), 'cloud connection');
     await waitFor(() => socket, 'hub socket');
+    assert.equal(socketPaths[0], '/hub', 'the hub socket stays on /hub without the API version');
 
     runtime.emit('data', {
       event: 'message',
@@ -196,5 +199,131 @@ test('publishes safe resolved tiles and applies an action on the hub', async () 
     socket?.close();
     await cloud.stop();
     await new Promise<void>((resolve) => server.close(() => resolve()));
+  }
+});
+
+const secretProvider = {
+  encrypt: (value: string) => Buffer.from(value).toString('base64'),
+  decrypt: (value: string) => Buffer.from(value, 'base64').toString(),
+};
+
+const jsonResponse = (body: unknown, status = 200): Response =>
+  ({ ok: status >= 200 && status < 300, status, json: async () => body }) as Response;
+
+const readStoredCloud = (dataDirectory: string): Record<string, unknown> =>
+  JSON.parse(readFileSync(path.join(dataDirectory, 'cloud.json'), 'utf8')) as Record<string, unknown>;
+
+test('builds the versioned HTTP base and the versionless hub socket URL', () => {
+  assert.equal(apiBaseUrl('https://api.example.test'), 'https://api.example.test/v1');
+  assert.equal(apiBaseUrl('https://api.example.test/'), 'https://api.example.test/v1');
+  assert.equal(toSocketUrl('https://api.example.test'), 'wss://api.example.test/hub');
+  assert.equal(toSocketUrl('http://127.0.0.1:8080'), 'ws://127.0.0.1:8080/hub');
+});
+
+test('uses /v1 for authenticated HTTP while cloud.json keeps the origin', async () => {
+  const dataDirectory = mkdtempSync(path.join(tmpdir(), 'vuesp-cloud-'));
+  writeFileSync(
+    path.join(dataDirectory, 'cloud.json'),
+    JSON.stringify({
+      url: 'http://127.0.0.1:1',
+      hubId: 'hub-1',
+      name: 'Home',
+      token: secretProvider.encrypt('hub-token'),
+      pairedAt: '2026-01-01T00:00:00.000Z',
+    })
+  );
+
+  const calls: string[] = [];
+  const fetchImpl = (async (input: RequestInfo | URL) => {
+    calls.push(String(input));
+    return jsonResponse({ hubId: 'hub-1', user: { id: 'user-1', name: 'User' } });
+  }) as typeof fetch;
+
+  const runtime = new FakeRuntime([button('device.output.0')]);
+  const cloud = createCloudService({
+    dataDirectory,
+    secretProvider,
+    runtime: runtime as unknown as ICloudRuntime,
+    getDeviceModel: async () => ({ getAll: () => records }),
+    fetchImpl,
+  });
+
+  try {
+    cloud.start();
+
+    const session = await cloud.mobileSession('user-token');
+    assert.equal(session.hubId, 'hub-1');
+    assert.equal(calls[0], 'http://127.0.0.1:1/v1/auth/hub/access');
+
+    runtime.emit('data', {
+      event: 'message',
+      id: 1,
+      ip: '192.0.2.5',
+      name: 'Lamp',
+      key: 'DEVICE',
+      data: { key: 6, output: 1, command: 0 },
+    });
+
+    const snapshotCall = await waitFor(
+      () => calls.find(url => url.endsWith('/telemetry/snapshots')),
+      'HTTP snapshot fallback'
+    );
+    assert.equal(snapshotCall, 'http://127.0.0.1:1/v1/telemetry/snapshots');
+
+    assert.equal(cloud.status().url, 'http://127.0.0.1:1');
+    assert.equal(readStoredCloud(dataDirectory).url, 'http://127.0.0.1:1', 'the stored origin must not gain /v1');
+  } finally {
+    await cloud.stop();
+  }
+});
+
+test('pairs through /v1 and still stores the origin', async () => {
+  const dataDirectory = mkdtempSync(path.join(tmpdir(), 'vuesp-cloud-'));
+  const calls: string[] = [];
+  const fetchImpl = (async (input: RequestInfo | URL) => {
+    const url = String(input);
+    calls.push(url);
+    if (url.endsWith('/v1/hub/pair/start')) {
+      return jsonResponse({
+        sessionId: 'session-1',
+        secret: 'pair-secret',
+        code: '123456',
+        expiresAt: '2026-01-01T00:05:00.000Z',
+      });
+    }
+    return jsonResponse({ status: 'linked', token: 'hub-token', hubId: 'hub-1', name: 'Home' });
+  }) as typeof fetch;
+
+  const runtime = new FakeRuntime([button('device.output.0')]);
+  const cloud = createCloudService({
+    dataDirectory,
+    secretProvider,
+    runtime: runtime as unknown as ICloudRuntime,
+    getDeviceModel: async () => ({ getAll: () => records }),
+    fetchImpl,
+    bootstrap: { url: 'http://127.0.0.1:1', token: 'bootstrap-token' },
+  });
+
+  try {
+    const status = await cloud.startPairing();
+    assert.equal(status.state, 'pairing');
+    assert.equal(calls[0], 'http://127.0.0.1:1/v1/hub/pair/start');
+
+    const pollCall = await waitFor(
+      () => calls.find(url => url.includes('/hub/pair/sessions/')),
+      'pairing poll'
+    );
+    assert.equal(pollCall, 'http://127.0.0.1:1/v1/hub/pair/sessions/session-1');
+
+    const stored = await waitFor(() => {
+      try {
+        return readStoredCloud(dataDirectory);
+      } catch {
+        return undefined;
+      }
+    }, 'stored cloud config');
+    assert.equal(stored.url, 'http://127.0.0.1:1');
+  } finally {
+    await cloud.stop();
   }
 });

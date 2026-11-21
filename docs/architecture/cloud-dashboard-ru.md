@@ -40,7 +40,7 @@ interface PublicDashboardTile {
 ## Снимок
 
 Хаб отправляет снимок по WebSocket `wss://api.vuesp.ru/hub` (HTTP
-`POST /telemetry/snapshots` остаётся fallback):
+`POST /v1/telemetry/snapshots` остаётся fallback):
 
 ```json
 {
@@ -61,13 +61,21 @@ interface PublicDashboardTile {
 ```
 
 Backend хранит только последний снимок на устройство и отдаёт его владельцу
-или администратору через `GET /my/hubs/:id`.
+или администратору через `GET /v1/my/hubs/:id`.
+
+HTTP-пути облачного backend версионированы префиксом `/v1`, а WebSocket
+подключается к `wss://api.vuesp.ru/hub` без версии. В `cloud.json` хранится
+только origin (`https://api.vuesp.ru`), поэтому существующие конфигурации не
+требуют миграции: хаб сам добавляет `/v1` к каждому HTTP-вызову
+(`/v1/telemetry/snapshots`, `/v1/auth/hub/access`, `/v1/hub/pair/start`,
+`/v1/hub/pair/sessions/:id`). Локальные маршруты хаба (`/cloud/tiles`) и
+WebSocket `/hub` остаются без версии.
 
 ## Действие
 
 ```text
 LK
-  POST /my/hubs/:hubId/devices/:deviceId/action  { tileId, tileKey, value }
+  POST /v1/my/hubs/:hubId/devices/:deviceId/action  { tileId, tileKey, value }
     → backend проверяет владельца и наличие устройства
     → HubGateway.requestAction()
     → WS { type: 'action', requestId, deviceId, tileId, tileKey, value }
