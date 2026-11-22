@@ -72,8 +72,8 @@
     "vue": "3.5.41",
     "vue-i18n": "^11.4.18",
     "vue-router": "5.4.0",
-    "vuesp-components": "^4.1.0",
-    "vuesp-dashboard-core": "^0.3.0",
+    "vuesp-components": "^5.0.1",
+    "vuesp-dashboard-core": "^0.3.1",
     "vuesp-struct": "^2.0.1",
     "ws": "^8.22.1"
   },
